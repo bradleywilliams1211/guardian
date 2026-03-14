@@ -4,7 +4,7 @@ compatibility_date = "2026-03-06"
 
 [[kv_namespaces]]
 binding = "ESP32_KV"
-id = "c278f712361a4e10bd966d77ef1a41ee"
+id = "b035e3475ff147f1b825e5b6a30101d2"
 
 [assets]
 directory = "./public"

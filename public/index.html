@@ -4950,9 +4950,11 @@ function renderLastHour(points) {
    ============================================================ */
 async function loadDexcomRecent() {
   const t = getSessionToken();
+  window.__lastDexcomRecentError = "";
 
   if (!t) {
-    setAnalysisState("no_sensor", "No Dexcom found.");
+    window.__lastDexcomRecentError = "No Dexcom session found.";
+    setAnalysisState("no_sensor", window.__lastDexcomRecentError);
     return null;
   }
 
@@ -4974,23 +4976,27 @@ async function loadDexcomRecent() {
     try {
       j = JSON.parse(text);
     } catch {
-      setAnalysisState("no_sensor", "No Dexcom found.");
+      window.__lastDexcomRecentError = text || "Dexcom returned an invalid response.";
+      setAnalysisState("no_sensor", window.__lastDexcomRecentError);
       setEmpty(true);
       return null;
     }
 
     if (j?.status === "no_active_sensor") {
-      setAnalysisState("no_sensor", "No Dexcom found.");
+      window.__lastDexcomRecentError = j?.message || "No active Dexcom sensor session.";
+      setAnalysisState("no_sensor", window.__lastDexcomRecentError);
       setEmpty(true);
       return j;
     }
 
     if (!r.ok || !j || !j.ok) {
-      setAnalysisState("no_sensor", "No Dexcom found.");
+      window.__lastDexcomRecentError = j?.error || text || `Dexcom data request failed (${r.status}).`;
+      setAnalysisState("no_sensor", window.__lastDexcomRecentError);
       setEmpty(true);
       return null;
     }
 
+    window.__lastDexcomRecentError = "";
     if (!j.points || j.points.length === 0) {
       setAnalysisState("no_data");
     } else {
@@ -4998,8 +5004,9 @@ async function loadDexcomRecent() {
     }
 
     return j;
-  } catch {
-    setAnalysisState("no_sensor", "No Dexcom found.");
+  } catch (err) {
+    window.__lastDexcomRecentError = err?.message || "Dexcom data request failed.";
+    setAnalysisState("no_sensor", window.__lastDexcomRecentError);
     setEmpty(true);
     return null;
   }
@@ -5298,7 +5305,10 @@ async function enterDashboard(){
 
   const recent = await loadDexcomRecent();
   if (!recent) {
-    alert("Dexcom acount connected but no Device found");
+    const recentError = window.__lastDexcomRecentError || "Could not load Dexcom data after login.";
+    dbg("Recent Dexcom load failed: " + recentError);
+    document.getElementById("dexcom-state").textContent = recentError;
+    alert(recentError);
     return;
   }
 

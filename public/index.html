@@ -1345,7 +1345,8 @@
         gap: 6px;
         padding: 14px;
         user-select: none;
-        pointer-events: none;
+        pointer-events: auto;
+        cursor: pointer;
         opacity: .55;
         transform: scale(.88);
         filter: saturate(.8);
@@ -1384,6 +1385,11 @@
 
     .model-card.active .model-card-sub{
         opacity: .94;
+    }
+
+    .model-card:focus-visible{
+        outline: 2px solid rgba(9,176,44,.92);
+        outline-offset: 3px;
     }
 
     .robot-card{
@@ -3672,6 +3678,25 @@ function initModelWheel() {
   if (!wheel || wheel.dataset.ready === "1") return;
 
   wheel.dataset.ready = "1";
+
+  Array.from(wheel.querySelectorAll(".model-card")).forEach(card => {
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+
+    card.addEventListener("click", () => {
+      const animal = card.dataset.animal;
+      if (!animal) return;
+
+      setRobotAnimal(animal);
+      centerModelWheelOn(animal, true);
+    });
+
+    card.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      card.click();
+    });
+  });
 
   wheel.addEventListener("scroll", () => {
     updateModelWheelSelection();

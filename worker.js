@@ -441,7 +441,7 @@ async function handleDexcomLogin(request, env) {
   try {
     const accountId = await dexcomPost(
       region,
-      "General/LoginPublisherAccountByName",
+      "General/AuthenticatePublisherAccount",
       {
         accountName: username,
         password,
@@ -458,9 +458,9 @@ async function handleDexcomLogin(request, env) {
 
     const sessionId = await dexcomPost(
       region,
-      "General/AuthenticatePublisherAccount",
+      "General/LoginPublisherAccountById",
       {
-        accountName: username,
+        accountId,
         password,
         applicationId: APPLICATION_IDS[region],
       }
@@ -519,14 +519,37 @@ async function handleDexcomRecent(request, env) {
   const minutes = Math.max(1, Math.min(1440, Number(url.searchParams.get("minutes") || 180)));
   const maxCount = Math.max(1, Math.min(288, Number(url.searchParams.get("maxCount") || 72)));
 
+  let freshAccountId = null;
   let freshSessionId = null;
 
   try {
-    freshSessionId = await dexcomPost(
+    freshAccountId = await dexcomPost(
       session.region,
       "General/AuthenticatePublisherAccount",
       {
         accountName: session.username,
+        password: session.password,
+        applicationId: APPLICATION_IDS[session.region],
+      }
+    );
+
+    if (!freshAccountId || typeof freshAccountId !== "string") {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Dexcom re-auth failed: no account id returned",
+          debug_saved_session_id: session.sessionId || null,
+          debug_fresh_session_id: null,
+        },
+        401
+      );
+    }
+
+    freshSessionId = await dexcomPost(
+      session.region,
+      "General/LoginPublisherAccountById",
+      {
+        accountId: freshAccountId,
         password: session.password,
         applicationId: APPLICATION_IDS[session.region],
       }

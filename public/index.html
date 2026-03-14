@@ -5183,8 +5183,9 @@ async function saveDexcomCreds() {
     try {
       data = JSON.parse(text);
     } catch {
-      dbg("Login response was not valid JSON: " + text);
-      stateEl.textContent = "Login failed";
+      const loginError = text || "Login failed";
+      dbg("Login response was not valid JSON: " + loginError);
+      stateEl.textContent = loginError;
       return;
     }
 

@@ -643,11 +643,11 @@ export default {
       const url = new URL(request.url);
 
       if (!env?.ESP32_KV) {
-        return new Response("KV binding missing: ESP32_KV", { status: 500 });
+        return jsonResponse({ ok: false, error: "KV binding missing: ESP32_KV" }, 500);
       }
 
       if (!env?.SESSION_SECRET) {
-        return new Response("Secret missing: SESSION_SECRET", { status: 500 });
+        return jsonResponse({ ok: false, error: "Secret missing: SESSION_SECRET" }, 500);
       }
 
       if (request.method === "OPTIONS") {

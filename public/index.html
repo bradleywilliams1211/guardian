@@ -3903,6 +3903,16 @@ function loadRobotModel(modelKey = "dog") {
   const config = ROBOT_MODELS[modelKey];
   if (!config) return;
 
+  currentRobotAnimal = modelKey;
+  document.querySelectorAll(".model-card").forEach(card => {
+    card.classList.toggle("active", card.dataset.animal === modelKey);
+  });
+
+  const wrap = document.getElementById("robotModelViewer");
+  if (wrap) {
+    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">Loading ' + modelKey + ' model...</div>';
+  }
+
   const loader = new THREE.GLTFLoader();
 
   const dracoLoader = new THREE.DRACOLoader();
@@ -3913,12 +3923,6 @@ function loadRobotModel(modelKey = "dog") {
     config.path,
 
     function (gltf) {
-      currentRobotAnimal = modelKey;
-      document.querySelectorAll(".model-card").forEach(card => {
-      card.classList.toggle("active", card.dataset.animal === modelKey);
-      });
-
-      const wrap = document.getElementById("robotModelViewer");
       if (wrap && robotRenderer && !wrap.contains(robotRenderer.domElement)) {
         wrap.innerHTML = "";
         wrap.appendChild(robotRenderer.domElement);
@@ -4004,9 +4008,8 @@ function loadRobotModel(modelKey = "dog") {
     function (error) {
       console.error("Model failed to load:", modelKey, error);
 
-      const wrap = document.getElementById("robotModelViewer");
       if (wrap) {
-        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">3D model failed to load.<br>Check file path for: ' + modelKey + '</div>';
+        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">' + modelKey + ' model is not available yet.<br>Missing file: ' + config.path + '</div>';
       }
     }
   );

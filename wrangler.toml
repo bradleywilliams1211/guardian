@@ -1,0 +1,18 @@
+name = "guardian"
+main = "worker.js"
+compatibility_date = "2026-03-06"
+
+[[kv_namespaces]]
+binding = "ESP32_KV"
+id = "b035e3475ff147f1b825e5b6a30101d2"
+
+[assets]
+directory = "./public"
+
+[[routes]]
+pattern = "getguardian.org"
+custom_domain = true
+
+[[routes]]
+pattern = "www.getguardian.org"
+custom_domain = true

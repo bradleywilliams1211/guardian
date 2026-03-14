@@ -1,0 +1,3703 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta charset="UTF-8" />
+  <title>Guardian</title>
+
+  <link rel="icon" href="/images/favicon/favicon.ico">
+  <link rel="shortcut icon" href="/images/favicon/favicon.ico">
+  <link rel="apple-touch-icon" href="/images/favicon/apple-touch-icon.png">
+  <link rel="icon" href="/images/favicon/favicon.ico?v=2">
+  <link rel="shortcut icon" href="/images/favicon/favicon.ico?v=2">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+   <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root{
+      --g: #09B02C;
+      --ink: #101915;
+      --muted: rgba(16,25,21,.65);
+      --glass: rgba(255,255,255,.55);
+      --stroke: rgba(255,255,255,.55);
+      --shadow: 0 18px 50px rgba(0,0,0,.14);
+      --inner: inset 0 1px 0 rgba(255,255,255,.35);
+      --blur: blur(18px) saturate(165%);
+    }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 520px at 18% 12%, rgba(9,176,44,.22), transparent 60%),
+        radial-gradient(820px 520px at 82% 18%, rgba(255,255,255,.55), transparent 65%),
+        radial-gradient(960px 600px at 50% 92%, rgba(140,150,145,.25), transparent 62%),
+        linear-gradient(135deg, #f4f6f5 0%, #e3e7e5 55%, #d7dcda 100%);
+      overflow-x: hidden;
+    }
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      mix-blend-mode: soft-light;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+    }
+
+    /* ---------- PAGE TRANSITIONS ---------- */
+    .app-page-wrap{
+      position: relative;
+    }
+
+    .page{
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .22s ease, transform .22s ease;
+    }
+
+    .page.active{
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #user-screen.page.active,
+    #home.page.active,
+    #settings.page.active{
+      display: flex;
+    }
+    #content.page.active{
+      display: block;
+    }
+    .home-card{
+      width: min(520px, 92vw);
+      max-width: min(520px, 92vw);
+      height: auto;
+      overflow: visible;
+    }
+    .card{
+      background: var(--glass);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow), var(--inner);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-radius: 18px;
+      padding: 18px;
+      max-width: 80vw;
+    }
+
+    .card strong{ display:block; margin-bottom: 10px; }
+    .card p{ color: rgba(16,25,21,.75); line-height: 1.25; }
+
+    .card input, .card select{
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(120,130,125,.30);
+      background: rgba(255,255,255,.62);
+      outline: none;
+    }
+
+    .card button{
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(180deg, rgba(9,176,44,1) 0%, rgba(8,155,39,1) 100%);
+      font-weight: 800;
+      cursor: pointer;
+      color: white;
+    }
+
+    .smallbtn{
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(120,130,125,.30);
+      background: rgba(255,255,255,.62);
+      font-weight: 700;
+      cursor: pointer;
+      color: rgba(16,25,21,.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .chart-controls{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+      flex-wrap: wrap;
+    }
+
+    .chart-controls button{
+      flex: 1 1 220px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(120,130,125,.30);
+      background: rgba(255,255,255,.62);
+      font-weight: 900;
+      cursor: pointer;
+      color: rgba(16,25,21,.85);
+      user-select:none;
+    }
+
+    .chart-controls button.primary{
+      background: linear-gradient(180deg, rgba(9,176,44,1) 0%, rgba(8,155,39,1) 100%);
+      border: none;
+      color: white;
+    }
+
+    .footer {
+      display:none;
+      justify-content:center;
+      position:fixed;
+      bottom:16px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:100;
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(255,255,255,.55);
+      box-shadow: 0 16px 40px rgba(0,0,0,.14);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      padding: 8px 18px;
+      border-radius: 999px;
+    }
+
+    .footer-wrap { display:flex; gap: 12px; }
+
+    .foot-card{
+      width: 42px;
+      height: 36px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 12px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(255,255,255,.55);
+      cursor: pointer;
+    }
+
+    #setup {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:1rem;
+      padding:8px 0 0 0;
+    }
+
+    .setup-card{
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(255,255,255,.55);
+      box-shadow: var(--shadow), var(--inner);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      padding:2rem;
+      border-radius:18px;
+      width:100%;
+      height:420px;
+      display:flex;
+      flex-direction:column;
+      gap:1rem;
+    }
+
+    .step-panel{ display:none; }
+    .step-panel.active{ display:block; }
+
+    .setup-footer{
+      margin-top:auto;
+      width:100%;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      align-items:center;
+    }
+
+    #backBtn,
+    #nextBtn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:44px;
+      border-radius:12px;
+      font-weight:800;
+    }
+
+    #backBtn{
+      width:52px;
+      min-width:52px;
+    }
+
+    #backBtn:disabled{
+      cursor: default;
+      opacity: .7;
+    }
+
+    #nextBtn{
+      flex:1;
+    }
+
+    .setup-card button{
+      max-width:260px;
+      height:36px;
+      border-radius:12px;
+      border:none;
+      background: linear-gradient(180deg, rgba(9,176,44,1) 0%, rgba(8,155,39,1) 100%);
+      color:white;
+      cursor:pointer;
+      font-weight:800;
+    }
+
+    .step-indicator{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      align-items:center;
+      padding:2rem;
+    }
+
+    .step-dot{
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      background: rgba(255,255,255,.45);
+      border:.5px solid rgba(9,176,44,.55);
+      opacity:.55;
+      transition: all .25s ease;
+    }
+
+    .step-dot.done{
+      background: rgba(9,176,44,.25);
+      border:1px solid rgba(9,176,44,.55);
+      opacity:.9;
+    }
+
+    .step-dot.active{
+      width:14px;
+      height:14px;
+      background: linear-gradient(180deg, #54de71 0%, #09B02C 100%);
+      border:none;
+      opacity:1;
+    }
+
+    #user-screen{
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:14px;
+      padding:8px;
+      min-height:100vh;
+    }
+
+    #content{
+      padding:18px;
+      padding-bottom:8px;
+    }
+
+    #home{
+      flex-direction:column;
+      padding:18px;
+      padding-bottom:8px;
+      align-items:center;
+      justify-content:flex-start;
+    }
+
+    #settings{
+      flex-direction:column;
+      padding:18px;
+      padding-bottom:8px;
+      justify-content:flex-start;
+      align-items:center;
+    }
+
+    #home,
+    #settings{
+      flex-direction: column;
+    }
+    #home,
+    #settings,
+    #content,
+    #user-screen{
+      min-height: 100vh;
+    }
+    .logo-card{
+      width:min(600px, 92vw);
+      height:110px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    .logo-card img{
+      transform: scale(2.0);
+      max-width:92%;
+      max-height:92%;
+      object-fit:contain;
+    }
+
+    .page-title{
+      width:min(420px, 92vw);
+      margin-bottom:12px;
+    }
+
+    #settings .column{
+      width:min(420px, 92vw);
+    }
+
+    #robot{
+      display:none;
+      flex-direction:column;
+      gap:14px;
+      width:100%;
+      align-items:stretch;
+    }
+    .model-wheel-wrap{
+      position: relative;
+      margin-bottom: 14px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .model-wheel-center-line{
+      position: absolute;
+      top: 8px;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      border-radius: 999px;
+      background: linear-gradient(
+        to bottom,
+        rgba(9,176,44,0),
+        rgba(9,176,44,.65),
+        rgba(9,176,44,0)
+      );
+      pointer-events: none;
+      z-index: 3;
+      opacity: .9;
+    }
+
+    .model-wheel{
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px 0 14px 0;
+      scrollbar-width: none;
+    }
+
+    .model-wheel::-webkit-scrollbar{
+      display: none;
+    }
+
+    .wheel-spacer{
+      flex: 0 0 calc(50% - 80px);
+    }
+
+    .model-card{
+      flex: 0 0 160px;
+      min-height: 122px;
+      border-radius: 18px;
+      border: 1px solid rgba(120,130,125,.28);
+      background: rgba(255,255,255,.50);
+      box-shadow: 0 10px 24px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.35);
+      backdrop-filter: blur(10px) saturate(150%);
+      -webkit-backdrop-filter: blur(10px) saturate(150%);
+      scroll-snap-align: center;
+      transition:
+        transform .22s ease,
+        opacity .22s ease,
+        box-shadow .22s ease,
+        background .22s ease,
+        border-color .22s ease,
+        filter .22s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px;
+      user-select: none;
+      pointer-events: none;
+      opacity: .55;
+      transform: scale(.88);
+      filter: saturate(.8);
+    }
+
+    .model-card.near{
+      opacity: .82;
+      transform: scale(.95);
+    }
+
+    .model-card.active{
+      opacity: 1;
+      transform: scale(1);
+      filter: saturate(1);
+      background: linear-gradient(180deg, rgba(9,176,44,.96) 0%, rgba(8,155,39,.96) 100%);
+      color: white;
+      border-color: rgba(9,176,44,.92);
+      box-shadow: 0 14px 30px rgba(9,176,44,.26);
+    }
+
+    .model-card-icon{
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .model-card-title{
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .model-card-sub{
+      font-size: .82rem;
+      line-height: 1.2;
+      opacity: .8;
+    }
+
+    .model-card.active .model-card-sub{
+      opacity: .94;
+    }
+    .robot-card{
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+    .info-btn{
+      width:44px;
+      height:44px;
+      padding:0;
+      border:none;
+      background:transparent;
+      color:#09B02C;
+      font-size:1.6rem;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:none;
+      vertical-align:middle;
+      margin-right:6px;
+      line-height:1;
+    }
+
+    .dashboard{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+      max-width:1100px;
+      justify-content:center;
+    }
+
+    .row{
+      display:flex;
+      flex-direction:row;
+      gap:14px;
+    }
+
+    .column{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .chart-card{ padding:18px; }
+    .chart-container{ height:280px; position:relative; }
+
+    @media (max-width: 900px){
+      .dashboard{ grid-template-columns: 1fr; }
+    }
+
+    .chart-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .chart-sub{
+      font-size:.9rem;
+      opacity:.7;
+      white-space:nowrap;
+    }
+
+    .chart-empty{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:18px;
+      font-weight:700;
+      opacity:.65;
+    }
+
+    .analysis-debug{
+      margin-top:8px;
+      font-size:.85rem;
+      opacity:.85;
+      white-space:pre-wrap;
+    }
+
+
+    .model-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+
+    .model-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .model-actions button{
+      width:auto;
+      padding:8px 12px;
+      border-radius:10px;
+      border:1px solid rgba(120,130,125,.30);
+      background:rgba(255,255,255,.62);
+      font-weight:700;
+      cursor:pointer;
+      color:rgba(16,25,21,.85);
+    }
+
+    #robotModelViewer{
+      width:100%;
+      height:300px;
+      border-radius:16px;
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(0,0,0,.06);
+
+      background:
+        radial-gradient(circle at 50% 60%, rgba(0,0,0,.05), transparent 65%),
+        radial-gradient(circle at 50% 65%, rgba(255,255,255,.92) 0%, rgba(255,255,255,.96) 35%, transparent 70%),
+        rgba(200,200,200,.5);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    main {
+      flex: 0 0 auto;
+    }
+
+    .guard-footer {
+      position: relative;
+      width: 100%;
+      margin-top: 12px;
+      padding: 20px 24px 20px;
+      background: rgba(255,255,255,.45);
+      backdrop-filter: blur(18px) saturate(160%);
+      border-top: 1px solid rgba(255,255,255,.5);
+      box-shadow: 0 -10px 30px rgba(0,0,0,.08);
+    }
+
+    .guard-footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.4fr 2fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .footer-brand{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .footer-logo{
+      width:220px;
+      height:auto;
+    }
+    .footer-logo img{
+      width: 100%;
+      height: auto;
+      display: block;
+      transform: none;
+      margin: 0;
+    }
+
+    .footer-brand-text{
+      display: block;
+      max-width: 420px;
+    }
+    .footer-brand h2 {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: #09B02C;
+      letter-spacing: 1px;
+    }
+
+    .footer-brand p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(16,25,21,.75);
+      max-width: 420px;
+    }
+
+    .footer-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .footer-column h3 {
+      font-size: 16px;
+      margin-bottom: 14px;
+      color: #101915;
+    }
+
+    .footer-column a,
+    .footer-column p {
+      display: block;
+      margin-bottom: 10px;
+      text-decoration: none;
+      font-size: 14px;
+      color: rgba(16,25,21,.72);
+    }
+    .footer-brand-top{
+      display:flex;
+      align-items:center;
+      gap:20px;
+    }
+
+
+    .footer-qr img{
+      width:90px;
+      height:auto;
+      border-radius:8px;
+      background:white;
+      padding:4px;
+    }
+    .guard-footer-bottom {
+      max-width: 1200px;
+      margin: 30px auto 0;
+      padding-top: 18px;
+      border-top: 1px solid rgba(16,25,21,.12);
+      font-size: 13px;
+      color: rgba(16,25,21,.65);
+    }
+          #footer-pages{
+        width: 100%;
+        padding: 18px;
+      }
+
+      .footer-page{
+        min-height: 95vh;
+        display: none;
+        max-width: 1100px;
+        margin: 0 auto 12px auto;
+        padding: 24px;
+        padding-bottom: 90px;
+
+        border-radius: 18px;
+        background: rgba(255,255,255,.55);
+        border: 1px solid rgba(255,255,255,.55);
+        box-shadow: 0 18px 50px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.35);
+
+        backdrop-filter: blur(18px) saturate(165%);
+        -webkit-backdrop-filter: blur(18px) saturate(165%);
+
+        position: relative;
+        flex-direction: column;
+      }
+
+      .footer-page.active{
+        display: flex;
+      }
+
+      .footer-page h1{
+        width: 100%;
+        text-align: left;
+        margin-bottom: 24px;
+        flex: 0 0 auto;
+      }
+
+      .footer-page p{
+        text-align: center;
+        color: rgba(16,25,21,.78);
+        line-height: 1.6;
+        max-width: 650px;
+        margin: 0 auto;
+      }
+      .back-app-btn{
+        position: absolute;
+        bottom: 24px;
+        right: 24px;
+
+        max-width: 220px;
+        height: 44px;
+        padding: 0 16px;
+
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(180deg,#09B02C,#089B27);
+        color: white;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(0,0,0,.2);
+        z-index: 200;
+      }
+      .footercentertext{
+        max-width: 800px;
+        margin: 0 auto;
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+
+        flex:1;
+      }
+
+      .footercentertext h2{
+        text-align:left;
+      }
+
+      .footercentertext p{
+        text-align:left;
+      }
+      .footercentertext h3{
+        margin-top: 18px;
+      }
+
+      .footercentertext ul{
+        margin-left: 18px;
+        margin-bottom: 12px;
+      }
+      .about-founder{
+        display:flex;
+        align-items:flex-start;
+        gap:28px;
+        margin-top:20px;
+      }
+
+      .about-founder img{
+        width:140px;
+        height:140px;
+        object-fit:cover;
+        border-radius:14px;
+        box-shadow:0 10px 25px rgba(0,0,0,.18);
+      }
+
+      .founder-text{
+        max-width:560px;
+      }
+    @keyframes footerGlow{
+      0%,100%{
+        box-shadow:
+          0 10px 30px rgba(0,0,0,.15),
+          0 0 0 rgba(9,176,44,0);
+      }
+
+      50%{
+        box-shadow:
+          0 10px 30px rgba(0,0,0,.15),
+          0 0 12px rgba(9,176,44,.35);
+      }
+    }
+    @keyframes robotScan{
+      0%{ transform: translateY(-100%); }
+      100%{ transform: translateY(100%); }
+    }
+
+
+
+
+
+    
+        /* =========================
+      iPhone / mobile polish
+      ========================= */
+    @media (max-width: 700px){
+
+      body{
+        font-size: 16px;
+      }
+      body{
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .app-page-wrap{
+        min-height: auto;
+      }
+
+      .page{
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #user-screen,
+      #content,
+      #home,
+      #settings{
+        padding: 8px;
+      }
+
+      .card{
+        max-width: 100%;
+        width: 100%;
+        padding: 16px;
+        border-radius: 16px;
+      }
+
+      .home-card{
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .setup-card{
+        height: auto;
+        min-height: 360px;
+        padding: 18px;
+      }
+
+      .logo-card{
+        width: min(320px, 92vw);
+        height: 90px;
+      }
+
+      .logo-card img{
+        transform: scale(1.5);
+        margin-left: 0;
+      }
+
+      .page-title,
+      #settings .column{
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .dashboard{
+        grid-template-columns: 1fr;
+        gap: 12px;
+        max-width: 100%;
+      }
+
+      .column,
+      .row{
+        gap: 12px;
+      }
+
+      .row{
+        flex-direction: column;
+      }
+
+      .chart-card{
+        padding: 14px;
+      }
+
+      .chart-container{
+        height: 240px;
+      }
+
+      .chart-head{
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .chart-sub{
+        white-space: normal;
+      }
+
+      .chart-controls{
+        flex-direction: column;
+      }
+
+      .chart-controls button{
+        flex: 1 1 auto;
+        width: 100%;
+      }
+
+      .model-card{
+        flex: 0 0 138px;
+        min-height: 112px;
+      }
+
+      .wheel-spacer{
+        flex: 0 0 calc(50% - 69px);
+      }
+
+      #robotModelViewer{
+        height: 220px;
+      }
+
+      .footer{
+        bottom: max(12px, env(safe-area-inset-bottom));
+        padding: 8px 12px;
+      }
+
+      .footer-wrap{
+        gap: 8px;
+      }
+
+      .foot-card{
+        width: 46px;
+        height: 40px;
+      }
+      .guard-footer{
+        margin-top: 0;
+        padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+      }
+
+      .guard-footer-content{
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+
+      .footer-brand-top{
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .footer-brand-text h2{
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .footer-brand-text a{
+        display: inline-flex;
+        align-items: center;
+      }
+      .footer-logo{
+        width: 180px;
+      }
+
+      .footer-qr img{
+        width: 78px;
+      }
+
+      .footer-links{
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .footer-column h3{
+        margin-bottom: 8px;
+      }
+
+      .footer-column a,
+      .footer-column p{
+        margin-bottom: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+  <div class="app-page-wrap">
+    <!-- LOGIN -->
+    <div id="user-screen" class="page">
+      <div class="logo-card">
+        <img src="/images/GUARDIAN.png" alt="GUARD Logo">
+      </div>
+
+      <div class="card" style="width:min(420px, 92vw);">
+        <strong>Connect Dexcom</strong>
+        <p id="dexcom-state" style="opacity:.75;">Not logged in</p>
+
+        <form onsubmit="saveDexcomCreds(); return false;"
+              style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+              <input id="dxUser" placeholder="Dexcom username" autocomplete="username" required>
+              <input id="dxPass" type="password" placeholder="Dexcom password" autocomplete="current-password" required>     
+          <select id="dxRegion">
+            <option value="us">US</option>
+            <option value="ous">Outside US (OUS)</option>
+            <option value="jp">Japan</option>
+          </select>
+          <button type="submit">Login to Dexcom</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="content" class="page">
+      <h1 id="dashboardTitle" style="margin-bottom:12px;">Dashboard</h1>
+
+      <div class="dashboard">
+        <div class="column">
+          <div class="card">
+            <strong>Dexcom Poll</strong>
+            <p id="poll-status" style="opacity:.75;">Not started</p>
+            <button class="smallbtn" onclick="pollDexcomNow()">Poll Dexcom Now</button>
+          </div>
+
+          <div class="card">
+            <strong>Latest Glucose</strong>
+            <p><span id="glucose-value">—</span> mg/dL</p>
+            <p id="glucose-trend" style="opacity:.75;">Trend: —</p>
+            <p id="glucose-time" style="opacity:.65;font-size:.9rem;">—</p>
+            <p id="glucose-age" style="opacity:.65;font-size:.9rem;margin-top:6px;">—</p>
+          </div>
+
+          <!-- ✅ Analysis will NEVER be blank now -->
+          <div class="card">
+            <strong>Analysis</strong>
+            <div style="margin-top:8px; opacity:.75;">
+              <div id="avgchg">Average change (1h): waiting for data…</div>
+              <div id="Urgency">Urgency: waiting for data…</div>
+              <div id="analysis-debug" class="analysis-debug"></div>
+            </div>
+            <p style="margin-top:8px; opacity:.75;">
+              Demo only. Not medical advice.
+            </p>
+          </div>
+        </div>
+
+        <div class="column">
+          <div class="card chart-card">
+            <div class="chart-head">
+              <strong style="margin:0;">Glucose (last 60 min)</strong>
+              <div class="chart-sub" id="threshold-labels">Low — • High —</div>
+            </div>
+
+            <div class="chart-container">
+              <canvas id="glucoseChart"></canvas>
+              <div class="chart-empty" id="chart-empty">No CGM data in the last hour</div>
+            </div>
+
+            <div class="chart-controls">
+              <button id="resetZoomBtn" class="primary" type="button" onclick="resetZoomToNormal()">
+                Reset zoom
+              </button>
+            </div>
+
+            <div class="chart-sub" style="margin-top:10px;">
+              Tip: Wheel zooms toward your pointer (X+Y) but is clamped to the preset time window.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="home" class="page">
+      <h1 class="page-title">Home</h1>
+
+      <div class="card home-card">
+        <!-- SETUP -->
+        <div id="setup">
+          <div class="setup-card">
+            <div id="step1" class="step-panel">
+              <h3><span class="info-btn">ⓘ</span>Step 1</h3>
+              <p style="margin-top:8px;">Turn on robot.</p>
+            </div>
+
+            <div id="step2" class="step-panel">
+              <h3><span class="info-btn">ⓘ</span>Step 2</h3>
+              <p style="margin-top:8px;">Go to Phone Wi-Fi and connect to <b>GUARD-SETUP</b></p>
+              <p style="margin-top:10px; opacity:.8;">
+                A pop up will appear and ask for your local Wi-Fi and password.
+                <br><br><em>Leave password blank if public.</em>
+              </p>
+            </div>
+
+            <div id="step3" class="step-panel">
+              <h3><span class="info-btn">ⓘ</span>Step 3</h3>
+              <p style="margin-top:8px;">The pop up should close and your device will connect to Wi-Fi.</p>
+              <p style="margin-top:10px; opacity:.8;">
+                Your GUARD server is now set up. Continue to Dexcom login.
+              </p>
+            </div>
+
+            <div id="setup-footer" class="setup-footer">
+              <button id="backBtn" type="button" onclick="backStep()">←</button>
+              <button id="nextBtn" type="button" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+          </div>
+        </div>
+
+        <div id="robot">
+          <h2>Robot <button class="info-btn" type="button" onclick="info()">ⓘ</button></h2>
+
+          <div class="card">
+            <strong>GUARD Connection</strong>
+            <p id="wifi-status">Checking…</p>
+          </div>
+
+          <div class="card robot-card">
+              <div class="model-wheel-wrap">
+                <div class="model-wheel-center-line"></div>
+
+                <div class="model-wheel" id="modelWheel">
+                  <div class="wheel-spacer" aria-hidden="true"></div>
+
+                  <div class="model-card active" data-animal="dog">
+                    <div class="model-card-icon">🐶</div>
+                    <div class="model-card-title">Argos</div>
+                    <div class="model-card-sub">Heavy Guard Dog style</div>
+                  </div>
+
+                  <div class="model-card" data-animal="bird">
+                    <div class="model-card-icon">🐦</div>
+                    <div class="model-card-title">Osprey</div>
+                    <div class="model-card-sub">Light scout style</div>
+                  </div>
+
+                  <div class="model-card" data-animal="turtle">
+                    <div class="model-card-icon">🐢</div>
+                    <div class="model-card-title">Aegis</div>
+                    <div class="model-card-sub">Simple Pocket style</div>
+                  </div>
+                  <div class="wheel-spacer" aria-hidden="true"></div>
+                </div>
+              </div>
+
+
+
+            <div id="robotModelViewer"></div>
+
+            <p style="margin-top:10px; opacity:.75;">
+              Preview of the GUARD robotic companion design.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings" class="page">
+      <h1 class="page-title">Settings</h1>
+      <div class="column">
+        <div class="card">
+          <strong>Urgency</strong>
+          <form id="settingsForm" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+            <input id="lowInput" type="number" placeholder="Low threshold (mg/dL)">
+            <input id="highInput" type="number" placeholder="High threshold (mg/dL)">
+            <button type="submit">Save thresholds</button>
+          </form>
+          <p id="settingsStatus" style="margin-top:10px; opacity:.75;"></p>
+        </div>
+
+        <div class="card">
+          <button class="smallbtn" onclick="openlogin(); logout();">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <footer id="footerbuttons" class="footer">
+      <div class="footer-wrap">
+        <button onclick="home()" class="foot-card">🏠</button>
+        <button onclick="data()" class="foot-card">📊</button>
+        <button onclick="settings()" class="foot-card">⚙️</button>
+      </div>
+    </footer>
+  </div>
+  </main>
+
+
+
+<div id="footer-pages" style="display:none;">
+  <section id="mission-page" class="footer-page">
+    <h1>Our Mission</h1>
+        <div class="footercentertext">
+<h1>Our Mission</h1>
+
+<div class="footercentertext">
+
+<p>
+Guardian was created with a simple mission: to make diabetes management
+easier, smarter, and less stressful for the people who live with it every day.
+</p>
+
+<p>
+Managing diabetes requires constant attention — monitoring glucose levels,
+interpreting trends, and making decisions that affect your health.
+For many people, this responsibility never stops.
+</p>
+
+<p>
+Guardian aims to reduce that burden by providing tools that help people
+better understand their glucose data and respond more confidently
+to changes in their condition.
+</p>
+
+<p>
+Our goal is to build technology that allows people living with diabetes
+to spend less time worrying about their numbers and more time focusing
+on their lives.
+</p>
+
+</div>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="technology-page" class="footer-page">
+    <h1>Technology</h1>
+        <div class="footercentertext">
+<h1>Technology</h1>
+
+<div class="footercentertext">
+
+<h2>Dexcom Integration</h2>
+<p>
+Guardian securely connects to your Dexcom account to retrieve
+real-time glucose readings. These readings are used to generate
+charts, trend analysis, and insights that help users better
+understand their glucose patterns.
+</p>
+
+<h2>Glucose Analysis</h2>
+<p>
+Guardian analyzes recent glucose readings to identify trends,
+rate-of-change, and potential risk situations. This helps users
+quickly recognize when glucose levels may be rising or falling
+more rapidly than normal.
+</p>
+
+<h2>Predictive Modeling</h2>
+<p>
+Using trend analysis and predictive algorithms, Guardian can
+estimate possible future glucose changes based on recent data.
+These predictions are designed to help users anticipate
+potential changes before they happen.
+</p>
+
+<h2>Robotic Companion System</h2>
+<p>
+Guardian also includes a robotic companion system designed
+to provide awareness and physical feedback for glucose
+urgency events. The GUARD device connects to the Guardian
+platform and can respond to important glucose conditions.
+</p>
+
+<h2>Cloud-Based Platform</h2>
+<p>
+Guardian runs on a secure cloud-based platform that allows
+users to access their dashboard from any device while
+maintaining reliable data processing and visualization.
+</p>
+
+</div>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="pricing-page" class="footer-page">
+    <h1>Pricing</h1>
+        <div class="footercentertext">
+<h1>Pricing</h1>
+
+<div class="footercentertext">
+
+<h2>Early Development</h2>
+<p>
+Guardian is currently in active development and testing.
+During this stage, the platform is available for free while
+features continue to improve.
+</p>
+
+<h2>Future Plans</h2>
+<p>
+As Guardian grows, we plan to introduce optional subscription
+plans that support continued development and new features.
+Pricing details will be announced in the future.
+</p>
+
+<h2>Our Goal</h2>
+<p>
+Our goal is to keep Guardian accessible while continuing
+to build powerful tools that help people better manage
+their diabetes.
+</p>
+
+</div>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="helpcenter-page" class="footer-page">
+    <h1>Help Center</h1>
+        <div class="footercentertext">
+<h1>Help Center</h1>
+
+<div class="footercentertext">
+
+<h2>Getting Started</h2>
+
+<h3>Connecting Dexcom</h3>
+<p>
+To begin using Guardian, log in using your Dexcom username and password.
+Once connected, Guardian will retrieve your glucose data and display it
+on the dashboard.
+</p>
+
+<h3>Viewing Your Glucose Data</h3>
+<p>
+Your dashboard shows recent glucose readings and trends from your Dexcom
+account. Charts display recent glucose values and can be zoomed for
+more detailed viewing.
+</p>
+
+
+<h2>Robot Setup</h2>
+
+<h3>Step 1 – Turn on the GUARD device</h3>
+<p>
+Power on your GUARD device. It will broadcast a setup Wi-Fi network.
+</p>
+
+<h3>Step 2 – Connect to GUARD-SETUP</h3>
+<p>
+Open your phone’s Wi-Fi settings and connect to the network named
+<b>GUARD-SETUP</b>. A setup window will appear where you can enter
+your local Wi-Fi credentials.
+</p>
+
+<h3>Step 3 – Complete Setup</h3>
+<p>
+Once the device connects to your Wi-Fi network, return to the Guardian
+dashboard to begin using the system.
+</p>
+
+
+<h2>Troubleshooting</h2>
+
+<h3>Dexcom login not working</h3>
+<p>
+Make sure your Dexcom username, password, and region are correct.
+If the problem persists, try logging out and logging back in.
+</p>
+
+<h3>No glucose data appearing</h3>
+<p>
+If no glucose data appears, check that your Dexcom sensor is active
+and that your account connection is still valid.
+</p>
+
+<h3>Robot connection issues</h3>
+<p>
+If your GUARD device is not connecting, restart the device and repeat
+the setup process.
+</p>
+
+</div>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="faq-page" class="footer-page">
+    <h1>FAQ</h1>
+        <div class="footercentertext">
+<h1>Frequently Asked Questions</h1>
+
+<div class="footercentertext">
+
+<h2>What is Guardian?</h2>
+<p>
+Guardian is a platform designed to help people better understand and
+manage their glucose data by visualizing Dexcom readings, analyzing
+trends, and providing predictive insights.
+</p>
+
+<h2>Does Guardian replace Dexcom?</h2>
+<p>
+No. Guardian works alongside Dexcom by reading glucose data from your
+Dexcom account. It does not replace your Dexcom device or app.
+</p>
+
+<h2>Is Guardian medical advice?</h2>
+<p>
+No. Guardian is not a medical device and does not provide medical
+advice. The platform is intended for informational purposes only.
+Always consult your healthcare provider for medical decisions.
+</p>
+
+<h2>How do I connect Guardian to Dexcom?</h2>
+<p>
+You can connect Guardian by entering your Dexcom account credentials
+on the login screen. Guardian then securely retrieves your glucose
+data to display charts and analysis.
+</p>
+
+<h2>Is my data stored?</h2>
+<p>
+Guardian may temporarily store glucose data in order to display charts,
+analysis, and predictions. Your data is not sold or shared with
+advertisers.
+</p>
+
+<h2>Who created Guardian?</h2>
+<p>
+Guardian was founded by Bradley Williams after being diagnosed with
+diabetes in 2024. The project was created to help reduce the stress
+of managing diabetes.
+</p>
+
+<h2>Is Guardian free?</h2>
+<p>
+Guardian is currently under development and pricing information will
+be announced in the future.
+</p>
+
+</div>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="contactus-page" class="footer-page">
+    <h1>Contact Us</h1>
+        <div class="footercentertext">
+<h1>Contact Us</h1>
+
+<div class="footercentertext">
+
+  <p>
+    If you have questions, feedback, or need support with Guardian,
+    we'd be happy to help.
+  </p>
+
+  <p>
+    <strong>Email:</strong><br>
+    <a style="color:#09B02C;"  href="mailto:contactguardiansupport@gmail.com">
+      contactguardiansupport@gmail.com
+    </a>
+  </p>
+
+  <p>
+    We typically respond within 24–48 hours.
+  </p>
+
+  <p>
+    You can also follow updates and announcements on Instagram.
+  </p>
+
+  <p>
+    <a style="color:#09B02C;" href="https://www.instagram.com/getguardian/" target="_blank">
+      @getguardian
+    </a>
+  </p>
+
+</div>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="changelog-page" class="footer-page">
+    <h1>ChangeLog</h1>
+    <div class="footercentertext">
+            <h3>v0.4.0 — March 9 2026</h3>
+        <ul>
+          <li>Added developer mode login</li>
+          <li>Improved glucose forecasting</li>
+          <li>Fixed Dexcom session errors</li>
+        </ul>
+
+        <h3>v0.3.0 — March 5 2026</h3>
+        <ul>
+          <li>Added robot model viewer</li>
+          <li>Added model selector wheel</li>
+        </ul>
+      </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="aboutus-page" class="footer-page">
+      <h1>About Us</h1>
+
+      <div class="footercentertext">
+
+        <h2>Why We Started Guardian</h2>
+        <p>
+          Guardian was created to make diabetes management simpler, smarter,
+          and less stressful. Managing diabetes requires constant monitoring,
+          data analysis, and decision-making every single day.
+        </p>
+
+        <p>
+          Millions of people around the world — especially children, the elderly,
+          and those with disabilities — carry the burden of managing their
+          condition 24 hours a day.
+        </p>
+
+        <p>
+          Guardian aims to reduce that burden by creating technology that helps
+          people manage their condition more easily so they can spend less time
+          worrying about diabetes and more time living their lives.
+        </p>
+
+
+        <h2>Who We Are</h2>
+
+        <div class="about-founder">
+
+          <img src="/images/profile_casual.jpg" alt="Bradley Williams photo">
+
+          <div class="founder-text">
+
+            <p>
+              Guardian was founded by Bradley Williams, an 
+              <span id="age"></span>-year-old high school student who was diagnosed
+              with diabetes on September 3, 2024.
+            </p>
+
+            <p>
+              After experiencing firsthand the daily responsibility of monitoring
+              blood sugar and managing the condition, Bradley set out to build a
+              system that could help make diabetes management easier for others.
+            </p>
+
+            <p>
+              What began as a personal project quickly became Guardian — a mission
+              to create tools that reduce stress and improve the daily lives of
+              people living with diabetes.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+  <section id="termsofservice-page" class="footer-page">
+    <h1>Terms of Service</h1>
+        <div class="footercentertext">
+            <h1>Terms of Service</h1>
+
+<h2>Acceptance of Terms</h2>
+<p>
+By accessing or using Guardian, you agree to these Terms of Service.
+If you do not agree with these terms, you should not use the service.
+</p>
+
+<h2>Description of Service</h2>
+<p>
+Guardian provides tools that help users visualize and analyze glucose
+data obtained from compatible glucose monitoring services.
+</p>
+
+<h2>Not Medical Advice</h2>
+<p>
+Guardian is not a medical device and does not provide medical advice.
+The information provided by Guardian is for informational purposes only
+and should not replace professional medical advice, diagnosis, or treatment.
+</p>
+
+<h2>Third-Party Services</h2>
+<p>
+Guardian may integrate with third-party platforms such as Dexcom.
+Guardian is not affiliated with or endorsed by Dexcom.
+</p>
+
+<h2>Limitation of Liability</h2>
+<p>
+Guardian and its creator shall not be liable for any damages resulting
+from the use or inability to use the service.
+</p>
+
+<h2>Changes to Terms</h2>
+<p>
+These terms may be updated at any time. Continued use of the service
+after changes constitutes acceptance of the updated terms.
+</p>
+
+<h2>Contact</h2>
+<p>
+For questions about these Terms of Service, contact:
+contactguardiansupport@gmail.com
+</p>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+
+  <section id="privacypolicy-page" class="footer-page">
+    <h1>Privacy Policy</h1>
+        <div class="footercentertext">
+<h1>Privacy Policy</h1>
+
+<p>Last updated: March 9, 2026</p>
+
+<h2>Introduction</h2>
+<p>
+Guardian respects your privacy and is committed to protecting your personal information.
+This Privacy Policy explains how Guardian collects, uses, and protects information when you use the Guardian platform.
+</p>
+
+<h2>Information We Collect</h2>
+<p>Guardian may collect the following types of information:</p>
+
+<ul>
+<li><strong>Dexcom Data</strong> – Glucose readings, timestamps, and related data obtained through Dexcom integration.</li>
+<li><strong>Account Credentials</strong> – Dexcom login information entered by the user to connect their account.</li>
+<li><strong>Device Information</strong> – Basic technical information such as browser type or device type used to access the platform.</li>
+</ul>
+
+<h2>How We Use Information</h2>
+<p>The information collected is used to:</p>
+
+<ul>
+<li>Display glucose readings and trends</li>
+<li>Provide glucose analysis and predictions</li>
+<li>Improve the functionality and reliability of the Guardian platform</li>
+<li>Maintain the security and operation of the service</li>
+</ul>
+
+<h2>Data Storage</h2>
+<p>
+Guardian may temporarily store glucose data and settings in order to display charts, analysis, and predictions.
+Sensitive login credentials are used only to connect to Dexcom services and are not shared with third parties.
+</p>
+
+<h2>Third-Party Services</h2>
+<p>
+Guardian integrates with third-party services such as Dexcom.
+These services operate under their own privacy policies and terms.
+Guardian is not responsible for the privacy practices of third-party platforms.
+</p>
+
+<h2>Data Sharing</h2>
+<p>
+Guardian does not sell, rent, or share personal data with advertisers or third parties.
+</p>
+
+<h2>Security</h2>
+<p>
+Guardian takes reasonable measures to protect user data, but no system can guarantee complete security.
+Users should take steps to protect their own login credentials and devices.
+</p>
+
+<h2>Children's Privacy</h2>
+<p>
+Guardian does not knowingly collect personal information from children under the age of 13 without parental consent.
+</p>
+
+<h2>Changes to This Policy</h2>
+<p>
+This Privacy Policy may be updated from time to time.
+Continued use of the service after updates constitutes acceptance of the revised policy.
+</p>
+
+<h2>Contact</h2>
+<p>
+If you have questions about this Privacy Policy, contact:
+contactguardiansupport@gmail.com
+</p>
+    </div>
+    <button onclick="closeFooterPages()" class="back-app-btn" style="max-width:220px; margin-top:18px;">
+  Back to App
+</button>
+  </section>
+</div>
+
+
+
+
+
+<footer class="guard-footer">
+  <div class="guard-footer-content">
+          <div class="footer-brand">
+
+            <div class="footer-brand-top">
+              <img class="footer-logo" src="/images/GUARDIAN.png" alt="GUARD Logo">
+
+              <a href="https://getguardian.org/" class="footer-qr">
+                <img src="/images/qr-code.png" alt="qr code for site"></a>
+              
+            </div>
+
+            <div class="footer-brand-text">
+              <h2>Follow Us</h2>
+              <br>
+              <a href="https://www.instagram.com/getguardian/" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#09B02C" class="bi bi-instagram" viewBox="0 0 16 16">
+                  <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.9 3.9 0 0 0-1.417.923A3.9 3.9 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.9 3.9 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.9 3.9 0 0 0-.923-1.417A3.9 3.9 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599s.453.546.598.92c.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.5 2.5 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.5 2.5 0 0 1-.92-.598 2.5 2.5 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233s.008-2.388.046-3.231c.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92s.546-.453.92-.598c.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92m-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217m0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334"></path>
+                </svg></a>
+            </div>
+
+          </div>
+
+        <div class="footer-links">
+          <div class="footer-column">
+            <h3>Product</h3>
+            <a href="#" onclick="showFooterPage('mission-page'); return false;">Our Mission</a>
+            <a href="#" onclick="showFooterPage('technology-page'); return false;">Technology</a>
+            <a href="#" onclick="showFooterPage('pricing-page'); return false;">Pricing</a>
+          </div>
+
+          <div class="footer-column">
+            <h3>Help</h3>
+            <a href="#" onclick="showFooterPage('helpcenter-page'); return false;">Help Center</a>
+            <a href="#" onclick="showFooterPage('faq-page'); return false;">FAQ</a>
+            <a href="#" onclick="showFooterPage('contactus-page'); return false;">Contact Us</a>
+            <a href="#" onclick="showFooterPage('changelog-page'); return false;">ChangeLog</a>
+          </div>
+
+          <div class="footer-column">
+            <h3>Company</h3>
+            <a href="#" onclick="showFooterPage('aboutus-page'); return false;">About Us</a>
+            <a href="#" onclick="showFooterPage('termsofservice-page'); return false;">Terms of Service</a>
+            <a href="#" onclick="showFooterPage('privacypolicy-page'); return false;">Privacy Policy</a>
+          </div>
+        </div>
+  </div>
+
+  <div class="guard-footer-bottom">
+    <span id="copyright"></span>
+  </div>
+</footer>
+  <script>
+const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
+
+const SESSION_KEY = "guard_dex_session_token";
+const DEMO_USER = "dev";
+const DEMO_PASS = "123";
+const DEMO_TOKEN_PREFIX = "demo:";
+
+const year = new Date().getFullYear();
+
+document.getElementById("copyright").textContent =
+"© " + year + " Guardian. All rights reserved.";
+
+const birthDate = new Date(2007, 10, 12); // YEAR, MONTH(0-11), DAY
+
+function getExactAge(birth) {
+  const today = new Date();
+
+  let age = today.getFullYear() - birth.getFullYear();
+
+  const monthDiff = today.getMonth() - birth.getMonth();
+  const dayDiff = today.getDate() - birth.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age--;
+  }
+
+  return age;
+}
+
+const ageEl = document.getElementById("age");
+if (ageEl) {
+  ageEl.textContent = getExactAge(birthDate);
+}
+
+function showFooterPage(pageId) {
+  const main = document.querySelector("main");
+  const footerPagesWrap = document.getElementById("footer-pages");
+  const footerPages = document.querySelectorAll(".footer-page");
+  const footerNav = document.getElementById("footerbuttons");
+
+  if (main) main.style.display = "none";
+  if (footerPagesWrap) footerPagesWrap.style.display = "block";
+  if (footerNav) footerNav.style.display = "none";
+
+  footerPages.forEach(page => {
+    page.classList.remove("active");
+  });
+
+  const target = document.getElementById(pageId);
+  if (target) target.classList.add("active");
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeFooterPages() {
+  const main = document.querySelector("main");
+  const footerPagesWrap = document.getElementById("footer-pages");
+  const footerPages = document.querySelectorAll(".footer-page");
+  const footerNav = document.getElementById("footerbuttons");
+  const loginPage = document.getElementById("user-screen");
+
+  if (main) main.style.display = "";
+  if (footerPagesWrap) footerPagesWrap.style.display = "none";
+
+  footerPages.forEach(page => {
+    page.classList.remove("active");
+  });
+
+  if (footerNav) {
+    footerNav.style.display = loginPage?.classList.contains("active") ? "none" : "flex";
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function setRobotAnimal(type) {
+  if (!ROBOT_MODELS[type]) return;
+  if (currentRobotAnimal === type) return;
+
+  currentRobotAnimal = type;
+  loadRobotModel(type);
+
+  document.querySelectorAll(".model-card").forEach(card => {
+    card.classList.toggle("active", card.dataset.animal === type);
+  });
+}
+let modelWheelScrollTimer = null;
+
+function updateModelWheelSelection() {
+  const wheel = document.getElementById("modelWheel");
+  if (!wheel) return;
+
+  const cards = Array.from(wheel.querySelectorAll(".model-card"));
+  if (!cards.length) return;
+
+  const wheelRect = wheel.getBoundingClientRect();
+  const wheelCenter = wheelRect.left + wheelRect.width / 2;
+
+  let closestCard = null;
+  let closestDist = Infinity;
+
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const cardCenter = rect.left + rect.width / 2;
+    const dist = Math.abs(cardCenter - wheelCenter);
+
+    card.classList.remove("near", "active");
+
+    if (dist < 140) {
+      card.classList.add("near");
+    }
+
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestCard = card;
+    }
+  });
+
+  if (!closestCard) return;
+
+  closestCard.classList.add("active");
+
+  const animal = closestCard.dataset.animal;
+  if (animal && animal !== currentRobotAnimal) {
+    setRobotAnimal(animal);
+  }
+}
+
+function snapModelWheelToCenter(smooth = true) {
+  const wheel = document.getElementById("modelWheel");
+  if (!wheel) return;
+
+  const cards = Array.from(wheel.querySelectorAll(".model-card"));
+  if (!cards.length) return;
+
+  const wheelRect = wheel.getBoundingClientRect();
+  const wheelCenter = wheelRect.left + wheelRect.width / 2;
+
+  let closestCard = null;
+  let closestDist = Infinity;
+
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const cardCenter = rect.left + rect.width / 2;
+    const dist = Math.abs(cardCenter - wheelCenter);
+
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestCard = card;
+    }
+  });
+
+  if (!closestCard) return;
+
+  closestCard.scrollIntoView({
+    behavior: smooth ? "smooth" : "auto",
+    inline: "center",
+    block: "nearest"
+  });
+}
+
+function initModelWheel() {
+  const wheel = document.getElementById("modelWheel");
+  if (!wheel || wheel.dataset.ready === "1") return;
+
+  wheel.dataset.ready = "1";
+
+  wheel.addEventListener("scroll", () => {
+    updateModelWheelSelection();
+
+    clearTimeout(modelWheelScrollTimer);
+    modelWheelScrollTimer = setTimeout(() => {
+      snapModelWheelToCenter(true);
+      updateModelWheelSelection();
+    }, 90);
+  }, { passive: true });
+
+  window.addEventListener("resize", () => {
+    snapModelWheelToCenter(false);
+    updateModelWheelSelection();
+  });
+
+  requestAnimationFrame(() => {
+    centerModelWheelOn(currentRobotAnimal, false);
+    updateModelWheelSelection();
+  });
+}
+
+function centerModelWheelOn(animal, smooth = true) {
+  const wheel = document.getElementById("modelWheel");
+  if (!wheel) return;
+
+  const card = wheel.querySelector('.model-card[data-animal="' + animal + '"]');
+  if (!card) return;
+
+  card.scrollIntoView({
+    behavior: smooth ? "smooth" : "auto",
+    inline: "center",
+    block: "nearest"
+  });
+}
+
+let robotScene = null;
+let robotCamera = null;
+let robotRenderer = null;
+let robotControls = null;
+let robotModel = null;
+let robotWireframeGroup = null;
+let robotAnimFrame = null;
+let robotViewMode = "blueprint";
+let currentRobotAnimal = "dog";
+let cinematicCameraEnabled = false;
+let cinematicAngle = 0;
+
+const ROBOT_MODELS = {
+  dog: {
+    path: "/models/Guard_Bone_Shell.glb",
+    scale: [1.2, 1.2, 1.2],
+    position: [0, -0.6, 0],
+    rotation: [0, 0, 0]
+  },
+
+  bird: {
+    path: "/models/bird.glb",
+    scale: [1.2, 1.2, 1.2],
+    position: [0, -0.6, 0],
+    rotation: [0, 0, 0]
+  },
+    turtle: {
+    path: "/models/turtle.glb",
+    scale: [1.2, 1.2, 1.2],
+    position: [0, -0.6, 0],
+    rotation: [0, 0, 0]
+  },
+};
+/* ============================================================
+   ROBOT MODEL LIBRARY
+   ============================================================ */
+
+
+function showRobotViewerMessage(message) {
+  const wrap = document.getElementById("robotModelViewer");
+  if (!wrap) return;
+
+  let msg = document.getElementById("robotModelMessage");
+
+  if (!msg) {
+    msg = document.createElement("div");
+    msg.id = "robotModelMessage";
+    msg.style.position = "absolute";
+    msg.style.inset = "0";
+    msg.style.display = "flex";
+    msg.style.alignItems = "center";
+    msg.style.justifyContent = "center";
+    msg.style.textAlign = "center";
+    msg.style.padding = "16px";
+    msg.style.color = "white";
+    msg.style.opacity = ".85";
+    msg.style.zIndex = "5";
+    msg.style.pointerEvents = "none";
+    wrap.appendChild(msg);
+  }
+
+  msg.innerHTML = message;
+}
+
+function clearRobotViewerMessage() {
+  const msg = document.getElementById("robotModelMessage");
+  if (msg) msg.remove();
+}
+
+function initRobotViewer() {
+  const wrap = document.getElementById("robotModelViewer");
+  if (!wrap) return;
+
+  if (robotRenderer) {
+    resizeRobotViewer();
+    return;
+  }
+
+  wrap.innerHTML = "";
+
+  const width = wrap.clientWidth || 300;
+  const height = wrap.clientHeight || 300;
+
+  robotScene = new THREE.Scene();
+
+  robotCamera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+  robotCamera.position.set(0, 1.2, 4.8);
+
+  robotRenderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true
+  });
+  robotRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  robotRenderer.setSize(width, height);
+  wrap.appendChild(robotRenderer.domElement);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 1.7);
+  robotScene.add(ambient);
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  keyLight.position.set(3, 4, 5);
+  robotScene.add(keyLight);
+
+  const topLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  topLight.position.set(0, 5, 2);
+
+  robotScene.add(topLight);
+
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  fillLight.position.set(-3, 2, -4);
+  robotScene.add(fillLight);
+
+  robotControls = new THREE.OrbitControls(robotCamera, robotRenderer.domElement);
+  robotControls.enableDamping = true;
+  robotControls.enablePan = false;
+  robotControls.enableZoom = false;
+  robotControls.autoRotate = true;
+  robotControls.autoRotateSpeed = 1.4;
+
+
+  const platform = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.2, 1.45, 0.05, 48),
+    new THREE.MeshBasicMaterial({
+      color: 0x09B02C,
+      transparent: true,
+      opacity: 0.18
+    })
+  );
+
+  platform.position.y = -1.15;
+  robotScene.add(platform);
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.4, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.08
+    })
+  );
+
+  shadow.rotation.x = -Math.PI/2;
+  shadow.position.y = -1.16;
+
+  robotScene.add(shadow);
+  const ringGeo = new THREE.RingGeometry(1.5, 1.65, 64);
+
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0x09B02C,
+    transparent: true,
+    opacity: 0.55,
+    side: THREE.DoubleSide
+  });
+
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+
+  ring.rotation.x = -Math.PI/2;
+  ring.position.y = -1.14;
+
+  robotScene.add(ring);
+
+  loadRobotModel(currentRobotAnimal);
+  animateRobotViewer();
+
+  window.addEventListener("resize", resizeRobotViewer);
+}
+
+function loadRobotModel(modelKey = "dog") {
+  const config = ROBOT_MODELS[modelKey];
+  if (!config) return;
+
+  const loader = new THREE.GLTFLoader();
+
+  const dracoLoader = new THREE.DRACOLoader();
+  dracoLoader.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/");
+  loader.setDRACOLoader(dracoLoader);
+
+  loader.load(
+    config.path,
+
+    function (gltf) {
+      currentRobotAnimal = modelKey;
+      document.querySelectorAll(".model-card").forEach(card => {
+      card.classList.toggle("active", card.dataset.animal === modelKey);
+      });
+
+      const wrap = document.getElementById("robotModelViewer");
+      if (wrap && robotRenderer && !wrap.contains(robotRenderer.domElement)) {
+        wrap.innerHTML = "";
+        wrap.appendChild(robotRenderer.domElement);
+      }
+
+      if (robotModel) {
+        robotScene.remove(robotModel);
+      }
+
+      if (robotWireframeGroup) {
+        robotScene.remove(robotWireframeGroup);
+        robotWireframeGroup = null;
+      }
+
+      robotModel = gltf.scene;
+
+      robotModel.scale.set(config.scale[0], config.scale[1], config.scale[2]);
+      robotModel.position.set(config.position[0], config.position[1], config.position[2]);
+
+      if (config.rotation) {
+        robotModel.rotation.set(config.rotation[0], config.rotation[1], config.rotation[2]);
+      } else {
+        robotModel.rotation.set(0, 0, 0);
+      }
+      robotModel.traverse((child) => {
+        if (!child.isMesh) return;
+
+        if (child.geometry) {
+          child.geometry.computeBoundingBox?.();
+          child.geometry.computeBoundingSphere?.();
+        }
+
+        /* preserve skinned mesh behavior */
+        if (child.isSkinnedMesh) {
+          child.frustumCulled = false;
+          child.bindMode = "attached";
+          child.normalizeSkinWeights();
+        }
+
+        /* clone materials safely without breaking rigged rendering */
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((mat) => {
+            const newMat = mat.clone();
+
+            if ("color" in newMat) newMat.color = new THREE.Color(0x3a4a42);
+            if ("transparent" in newMat) newMat.transparent = true;
+            if ("opacity" in newMat) newMat.opacity = 0.9;
+            if ("emissiveIntensity" in newMat) newMat.emissiveIntensity = 0.12;
+            if ("metalness" in newMat) newMat.metalness = 0.45;
+            if ("roughness" in newMat) newMat.roughness = 0.35;
+            if ("side" in newMat) newMat.side = THREE.DoubleSide;
+            if ("skinning" in newMat) newMat.skinning = child.isSkinnedMesh;
+
+            return newMat;
+          });
+        } else if (child.material) {
+          const newMat = child.material.clone();
+
+          if ("color" in newMat) newMat.color = new THREE.Color(0x3a4a42);
+          if ("transparent" in newMat) newMat.transparent = true;
+          if ("opacity" in newMat) newMat.opacity = 0.9;
+          if ("emissive" in newMat) newMat.emissive = new THREE.Color(0x0a2a14);
+          if ("emissiveIntensity" in newMat) newMat.emissiveIntensity = 0.15;
+          if ("metalness" in newMat) newMat.metalness = 0.45;
+          if ("roughness" in newMat) newMat.roughness = 0.35;
+          if ("side" in newMat) newMat.side = THREE.DoubleSide;
+          if ("skinning" in newMat) newMat.skinning = child.isSkinnedMesh;
+
+          child.material = newMat;
+        }
+      });
+
+      robotScene.add(robotModel);
+      applyRobotViewMode(robotViewMode);
+      fitRobotCamera();
+    },
+
+    function (progress) {
+      const pct = progress.total ? (progress.loaded / progress.total * 100).toFixed(1) : "…";
+      console.log("Loading model:", modelKey, pct + "%");
+    },
+
+    function (error) {
+      console.error("Model failed to load:", modelKey, error);
+
+      const wrap = document.getElementById("robotModelViewer");
+      if (wrap) {
+        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">3D model failed to load.<br>Check file path for: ' + modelKey + '</div>';
+      }
+    }
+  );
+}
+
+function fitRobotCamera() {
+  if (!robotModel || !robotCamera || !robotControls) return;
+
+  const box = new THREE.Box3().setFromObject(robotModel);
+  if (box.isEmpty()) return;
+
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+  robotControls.target.copy(center);
+  robotCamera.position.set(center.x, center.y + maxDim * 0.35, center.z + maxDim * 2.2);
+  robotCamera.near = Math.max(0.01, maxDim / 100);
+  robotCamera.far = Math.max(100, maxDim * 20);
+  robotCamera.updateProjectionMatrix();
+  robotControls.update();
+}
+
+function buildWireframeGroupFromModel(model) {
+  const wfGroup = new THREE.Group();
+
+  model.traverse((child) => {
+    if (!child.isMesh || !child.geometry) return;
+
+    /* skip skinned meshes because edge overlays do not follow bone deformation correctly */
+    if (child.isSkinnedMesh) return;
+
+    const edges = new THREE.EdgesGeometry(child.geometry);
+    const line = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({
+        color: 0x7dff9a,
+        transparent: true,
+        opacity: 0.95
+      })
+    );
+
+    line.position.copy(child.position);
+    line.rotation.copy(child.rotation);
+    line.scale.copy(child.scale);
+    wfGroup.add(line);
+  });
+
+  return wfGroup;
+}
+
+function applyRobotViewMode(mode) {
+  robotViewMode = mode;
+  if (!robotModel) return;
+
+  if (robotWireframeGroup) {
+    robotScene.remove(robotWireframeGroup);
+    robotWireframeGroup = null;
+  }
+
+  robotModel.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+    materials.forEach((mat) => {
+      if (!mat) return;
+
+      if (mode === "solid") {
+        mat.wireframe = false;
+        mat.opacity = 0.92;
+        mat.transparent = true;
+        if ("emissive" in mat) mat.emissive = new THREE.Color(0x09B02C);
+        if ("emissiveIntensity" in mat) mat.emissiveIntensity = 0.22;
+      }
+
+      if (mode === "wireframe") {
+        mat.wireframe = false;
+        mat.opacity = 0.10;
+        mat.transparent = true;
+        if ("emissive" in mat) mat.emissive = new THREE.Color(0x09B02C);
+        if ("emissiveIntensity" in mat) mat.emissiveIntensity = 0.35;
+      }
+
+      if (mode === "blueprint") {
+        mat.wireframe = false;
+        mat.opacity = 0.22;
+        mat.transparent = true;
+        if ("emissive" in mat) mat.emissive = new THREE.Color(0x09B02C);
+        if ("emissiveIntensity" in mat) mat.emissiveIntensity = 0.42;
+      }
+
+      if ("skinning" in mat) mat.skinning = child.isSkinnedMesh;
+      if ("side" in mat) mat.side = THREE.DoubleSide;
+      mat.needsUpdate = true;
+    });
+
+    child.visible = true;
+  });
+
+  if (mode === "blueprint" || mode === "wireframe") {
+    robotWireframeGroup = buildWireframeGroupFromModel(robotModel);
+    robotWireframeGroup.position.copy(robotModel.position);
+    robotWireframeGroup.rotation.copy(robotModel.rotation);
+    robotWireframeGroup.scale.copy(robotModel.scale);
+    robotScene.add(robotWireframeGroup);
+  }
+}
+
+function setRobotViewMode(mode) {
+  applyRobotViewMode(mode);
+}
+
+function animateRobotViewer() {
+  if (!robotRenderer || !robotScene || !robotCamera) return;
+
+  function loop() {
+    robotAnimFrame = requestAnimationFrame(loop);
+
+    if (cinematicCameraEnabled && robotModel && robotControls) {
+      const box = new THREE.Box3().setFromObject(robotModel);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const radius = Math.max(size.x, size.z, 1) * 2.4;
+
+      cinematicAngle += 0.0035;
+
+      robotCamera.position.x = center.x + Math.cos(cinematicAngle) * radius;
+      robotCamera.position.z = center.z + Math.sin(cinematicAngle) * radius;
+      robotCamera.position.y = center.y + size.y * 0.55 + Math.sin(cinematicAngle * 1.8) * 0.2;
+
+      robotCamera.lookAt(center);
+    } else if (robotControls) {
+      robotControls.update();
+    }
+
+    if (robotWireframeGroup && robotModel) {
+      robotWireframeGroup.position.copy(robotModel.position);
+      robotWireframeGroup.rotation.copy(robotModel.rotation);
+      robotWireframeGroup.scale.copy(robotModel.scale);
+    }
+
+    robotRenderer.render(robotScene, robotCamera);
+  }
+
+  loop();
+}
+
+function resizeRobotViewer() {
+  const wrap = document.getElementById("robotModelViewer");
+  if (!wrap || !robotRenderer || !robotCamera) return;
+
+  const width = wrap.clientWidth || 300;
+  const height = wrap.clientHeight || 300;
+
+  robotCamera.aspect = width / height;
+  robotCamera.updateProjectionMatrix();
+  robotRenderer.setSize(width, height);
+}
+
+/* ============================================================
+   Footer button functions
+   ============================================================ */
+function showPage(pageId) {
+  const pages = ["user-screen", "content", "home", "settings"];
+
+  pages.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle("active", id === pageId);
+  });
+
+  const footer = document.getElementById("footerbuttons");
+  if (footer) {
+    footer.style.display = (pageId === "user-screen") ? "none" : "flex";
+  }
+
+  if (pageId === "content" && chart) {
+    setTimeout(() => {
+      chart.resize?.();
+      chart.update("none");
+    }, 230);
+  }
+}
+
+function home() {
+  showPage("home");
+
+  document.getElementById("robot").style.display = "none";
+  document.getElementById("setup").style.display = "flex";
+  document.getElementById("setup-footer").style.display = "flex";
+  setStep(0);
+}
+
+function data() {
+  showPage("content");
+}
+
+function settings() {
+  showPage("settings");
+}
+
+function openlogin() {
+  setStep(0);
+  showPage("user-screen");
+
+  document.getElementById("robot").style.display = "none";
+  document.getElementById("setup").style.display = "flex";
+  document.getElementById("setup-footer").style.display = "flex";
+}
+
+/* ============================================================
+   NEVER-SILENT DEBUG HELPERS
+   ============================================================ */
+function dbg(msg){
+  const el = document.getElementById("analysis-debug");
+  if (el) el.textContent = msg || "";
+}
+window.addEventListener("error", (e) => dbg("JS error: " + (e.message || "unknown")));
+window.addEventListener("unhandledrejection", (e) => dbg("Promise error: " + (e.reason?.message || e.reason || "unknown")));
+
+/* ============================================================
+   SESSION TOKEN MANAGEMENT
+   ============================================================ */
+/* ============================================================
+   get storage log in, set it, and alter it so it can communicate with API
+   ============================================================ */
+function getSessionToken() {
+  return localStorage.getItem(SESSION_KEY) || "";
+}
+
+function setSessionToken(t) {
+  t ? localStorage.setItem(SESSION_KEY, t) : localStorage.removeItem(SESSION_KEY);
+}
+
+function authHeaders() {
+  const t = getSessionToken();
+  return t ? { "Authorization": "Bearer " + t } : {};
+}
+
+function openRobotView() {
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("setup-footer").style.display = "none";
+  document.getElementById("robot").style.display = "flex";
+
+  setTimeout(() => {
+    initRobotViewer();
+    resizeRobotViewer();
+    initModelWheel();
+    centerModelWheelOn(currentRobotAnimal, false);
+    updateModelWheelSelection();
+  }, 50);
+}
+
+/* ============================================================
+   Step setter that also updates the UI to show which step is active and changes the "Next" button text on the last step
+   ============================================================ */
+function setStep(i) {
+  step = Math.max(0, Math.min(i, LAST_STEP));
+
+  steps.forEach((panel, idx) => panel.classList.toggle("active", idx === step));
+
+  dots.forEach((d, idx) => {
+    d.classList.toggle("active", idx === step);
+    d.classList.toggle("done", idx < step);
+  });
+
+  nextBtn.textContent = (step === LAST_STEP) ? "Continue to Robot" : "Next";
+
+  if (step === 0) {
+    backBtn.style.background = "rgba(200,200,200,.50)";
+    backBtn.style.color = "rgba(16,25,21,.45)";
+    backBtn.style.border = "1px solid rgba(120,130,125,.20)";
+    backBtn.disabled = true;
+  } else {
+    backBtn.style.background = "linear-gradient(180deg, rgba(9,176,44,1) 0%, rgba(8,155,39,1) 100%)";
+    backBtn.style.color = "white";
+    backBtn.style.border = "none";
+    backBtn.disabled = false;
+  }
+}
+
+function info() {
+  home();
+}
+
+/* ============================================================
+   Change setup screen step by 1 or if on last step, open login screen
+   ============================================================ */
+function backStep() {
+  if (step > 0) {
+    setStep(step - 1);
+  }
+}
+
+function nextStep() {
+  if (step === LAST_STEP) {
+    openRobotView();
+    setStep(0);
+    return;
+  }
+  setStep(step + 1);
+}
+
+/* ============================================================
+   Hide setup screen and show login screen
+   ============================================================ */
+
+/* ============================================================
+   CHART GLOBALS / CONSTANTS
+   ============================================================ */
+
+/* ============================================================
+   SMALL UI HELPERS
+   ============================================================ */
+function setEmpty(isEmpty) {
+  /*if chart is empty, check if element exists and if so hide it */
+  const el = document.getElementById("chart-empty");
+  if (el) el.style.display = isEmpty ? "flex" : "none";
+}
+
+/* ============================================================
+   Just displays the low and high range values in the chart header
+   ============================================================ */
+function setThresholdLabels() {
+  const el = document.getElementById("threshold-labels");
+  if (el) el.textContent = "Low " + RANGE_LOW + " • High " + RANGE_HIGH;
+}
+
+/* ============================================================
+   ✅ ANALYSIS THAT NEVER GOES BLANK
+   ============================================================ */
+function clamp(v, lo, hi) {
+  /*keeps numbers in range annd if out of range returns high or low*/
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/* ============================================================
+   average change of window
+   ============================================================ */
+function median(arr){
+  /*makes a copy of the array so that the original is not modified*/
+  const a = arr.slice().sort((x,y)=>x-y);
+  /*give the median value*/
+  return a[Math.floor(a.length/2)];
+}
+
+/* ============================================================
+   average change of window
+   ============================================================ */
+function normalizeDexcomPoints(points, {
+  bucketMin = 5,
+  minGlucose = 40,
+  maxGlucose = 400
+} = {}) {
+  const bucketMs = bucketMin * 60 * 1000;
+
+  const raw = (points || [])
+    /*converts dexcom data into readable format*/
+    .map(p => ({ x: Number(p.ts) * 1000, y: Number(p.glucose) }))
+    /*gets rid of invalid points*/
+    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y))
+    /*keeps valid points within the glucose range (I think this is pointless becuase dexcom already caps at 40 and 400 anyway)*/
+    .map(p => ({ x: p.x, y: Math.max(minGlucose, Math.min(maxGlucose, p.y)) }))
+    /*orders the time idk*/
+    .sort((a,b) => a.x - b.x);
+
+  if (!raw.length) return [];
+
+  const bucketMap = new Map();
+  for (const p of raw) {
+    /*rounds the time, also i think pointless because dexcom polls every 5 minutes, I guess if the 5 minute intervals are already not starting at 0:00 then it does it*/
+    const bucketKey = Math.round(p.x / bucketMs) * bucketMs;
+    const existing = bucketMap.get(bucketKey);
+    if (!existing || p.x >= existing._rawX) {
+      bucketMap.set(bucketKey, { x: bucketKey, y: p.y, _rawX: p.x });
+    }
+  }
+  /*has a rounded time, glucose value, and raw time array*/
+  return Array.from(bucketMap.values())
+    /*sorts it one more time*/
+    .sort((a,b) => a.x - b.x)
+    .map(p => ({ x: p.x, y: p.y }));
+}
+
+/* ============================================================
+   average change of window
+   ============================================================ */
+function avgChangeWindow(points, windowMin = 60) {
+  if (!points || points.length < 2) return { ok:false, reason:"No data" };
+  /* if there arnt points or less than 2 then not enough data*/
+  const last = points[points.length - 1];
+  /*most recent glucose point*/
+  const tNow = last.x;
+  /*most recent time value*/
+  const tTarget = tNow - windowMin * 60000;
+  /*most recent time value - look back window for average change analysis in miliseconds*/
+  /*start time for average change calculation*/
+
+  // Find earliest point >= tTarget (or fall back to earliest available)
+  let i = 0;
+  while (i < points.length && points[i].x < tTarget) i++;
+  /*the point index is less than its lentgh of indexes and its actual value of the time is in the lookout window*/
+
+  let yStart, tStart;
+  /*in the window (0< i < length of index)*/
+  if (i > 0 && i < points.length) {
+    const pA = points[i - 1];
+    /*point right before point*/
+    const pB = points[i];
+    /*the point*/
+    const dt = pB.x - pA.x;
+    /*difference of time of point and time of point before*/
+    /*delta time, time differencd*/
+    if (dt <= 0) return { ok:false, reason:"Bad timestamps" };
+    /*change in time cant be zero or negetive duh so error*/
+    const frac = (tTarget - pA.x) / dt;
+    /*time of target - time of next point all over change in time between point and next point*/
+    yStart = pA.y + frac * (pB.y - pA.y);
+    tStart = tTarget;
+  } else {
+    // Not enough history: use first point
+    const first = points[0];
+    yStart = first.y;
+    tStart = first.x;
+  }
+
+  const yNow = last.y;
+  const delta = yNow - yStart;
+  const minutes = Math.max(1e-6, (tNow - tStart) / 60000);
+  const ratePerHr = (delta / minutes) * 60;
+
+  return { ok:true, delta, ratePerHr, minutesUsed: minutes };
+}
+
+/* ============================================================
+   Update data Analysis card
+   ============================================================ */
+
+function updateAnalysisUI(normalizedPts) {
+  const avgEl = document.getElementById("avgchg");
+  const urgEl = document.getElementById("Urgency");
+
+  if (!avgEl || !urgEl) {
+    dbg("Missing analysis elements (#avgchg or #Urgency).");
+    return;
+  }
+
+  if (!normalizedPts || normalizedPts.length < 2) {
+    const debugText =
+      (document.getElementById("analysis-debug")?.textContent || "").toLowerCase();
+
+    if (debugText.includes("no active sensor") || debugText.includes("no dexcom")) {
+      setAnalysisState("no_sensor");
+    } else {
+      setAnalysisState("no_data");
+    }
+    return;
+  }
+
+  setAnalysisState("live");
+
+  const r = avgChangeWindow(normalizedPts, 60);
+
+  if (!r.ok) {
+    avgEl.textContent = "Average change (1h): —";
+    urgEl.textContent = "Urgency: —";
+    dbg("Analysis failed: " + (r.reason || "unknown"));
+    return;
+  }
+
+  const sign = r.delta >= 0 ? "+" : "-";
+  const label = r.minutesUsed >= 59.5 ? "1h" : (r.minutesUsed.toFixed(0) + " min");
+
+  avgEl.textContent =
+    "Average change (" + label + "): " + sign + r.delta.toFixed(0) + " mg/dL";
+
+  let u = "Low";
+  if (r.ratePerHr <= -60) u = "High";
+  else if (r.ratePerHr <= -30) u = "Medium";
+
+  urgEl.textContent = "Urgency: " + u;
+
+  dbg("Analysis OK. Points=" + normalizedPts.length + ". WindowUsed=" + r.minutesUsed.toFixed(1) + " min.");
+}
+/* ============================================================
+   Low and High RANGE lines draw
+   ============================================================ */
+const rangeBandsPlugin = {
+  id: "rangeBands",
+  beforeDraw(c) {
+    const { ctx, chartArea, scales } = c;
+    if (!chartArea) return;
+
+    const y = scales.y;
+    const left = chartArea.left, right = chartArea.right;
+    const top = chartArea.top, bottom = chartArea.bottom;
+
+    const yLow = y.getPixelForValue(RANGE_LOW);
+    const yHigh = y.getPixelForValue(RANGE_HIGH);
+
+    ctx.save();
+    ctx.fillStyle = "rgba(255,0,0,.06)";
+    ctx.fillRect(left, top, right - left, Math.max(0, yHigh - top));
+
+    ctx.fillStyle = "rgba(9,176,44,.09)";
+    ctx.fillRect(left, Math.min(yHigh, yLow), right - left, Math.abs(yLow - yHigh));
+
+    ctx.fillStyle = "rgba(255,200,0,.10)";
+    ctx.fillRect(left, Math.min(bottom, yLow), right - left, Math.max(0, bottom - yLow));
+    ctx.restore();
+  }
+};
+
+/* ============================================================
+   Draw Forecast start bound dashed line
+   ============================================================ */
+const forecastMarkerPlugin = {
+  id: "forecastMarker",
+  afterDatasetsDraw(chart) {
+    if (!Number.isFinite(FORECAST_X_MS) || !Number.isFinite(FORECAST_Y)) return;
+
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+
+    const xScale = scales.x;
+    const yScale = scales.y;
+
+    const xPx = xScale.getPixelForValue(FORECAST_X_MS);
+    const yPx = yScale.getPixelForValue(FORECAST_Y);
+
+    if (!Number.isFinite(xPx) || !Number.isFinite(yPx)) return;
+    if (xPx < chartArea.left || xPx > chartArea.right) return;
+
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = "rgba(16,25,21,.45)";
+
+    ctx.beginPath();
+    ctx.moveTo(xPx, chartArea.top);
+    ctx.lineTo(xPx, chartArea.bottom);
+    ctx.stroke();
+
+    if (yPx >= chartArea.top && yPx <= chartArea.bottom) {
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, yPx);
+      ctx.lineTo(chartArea.right, yPx);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+};
+
+/* ============================================================
+   FORECAST CORE (kept minimal - enough for your chart)
+   ============================================================ */
+function weightedSlope(points, lookbackMin = 25, tauMin = 8) {
+  if (!points || points.length < 4) return 0;
+
+  const last = points[points.length - 1];
+  /*last data from dexcom*/
+  const lookbackMs = lookbackMin * 60 * 1000;
+  /*turns lookback value from minutes to miliseconds (what the code uses for units of time)*/
+  const tauMs = tauMin * 60 * 1000;
+  /*turns weighted lookback value from minutes to miliseconds (what the code uses for units of time)*/
+  const recent = points.filter(p => p.x >= last.x - lookbackMs);
+  if (recent.length < 4) return 0;
+
+  const toT = (x) => (x - last.x) / 60000;
+  const wOf = (x) => Math.exp(-(last.x - x) / tauMs);
+
+  let Sw=0, St=0, Sy=0;
+  for (const p of recent) {
+    const w = wOf(p.x);
+    const t = toT(p.x);
+    Sw += w; St += w*t; Sy += w*p.y;
+  }
+  const mt = St / Sw;
+  const my = Sy / Sw;
+
+  let num=0, den=0;
+  for (const p of recent) {
+    const w = wOf(p.x);
+    const t = toT(p.x) - mt;
+    const y = p.y - my;
+    num += w * t * y;
+    den += w * t * t;
+  }
+
+  if (!Number.isFinite(den) || Math.abs(den) < 1e-9) return 0;
+  return num / den;
+}
+
+/* ============================================================
+   estimates acceleration of last 4 points for more recency bias
+   ============================================================ */
+function estimateAccel(points) {
+  if (!points || points.length < 4) return 0;
+
+  const p3 = points[points.length - 4];
+  const p2 = points[points.length - 3];
+  const p1 = points[points.length - 2];
+  const p0 = points[points.length - 1];
+
+  const dt1 = (p0.x - p1.x) / 60000;
+  const dt2 = (p1.x - p2.x) / 60000;
+  const dt3 = (p2.x - p3.x) / 60000;
+  if (!(dt1>0 && dt2>0 && dt3>0)) return 0;
+
+  const s1 = (p0.y - p1.y) / dt1;
+  const s2 = (p1.y - p2.y) / dt2;
+  const s3 = (p2.y - p3.y) / dt3;
+
+  const a1 = (s1 - s2) / Math.max(1e-6, (dt1+dt2)/2);
+  const a2 = (s2 - s3) / Math.max(1e-6, (dt2+dt3)/2);
+
+  return clamp(0.65*a1 + 0.35*a2, -6, 6);
+}
+
+/* ============================================================
+   How unpredictable your recent data is,
+   and returning that as a sigma (standard-deviation-ish) value
+   ============================================================ */
+function estimateResidualSigma(points, lookbackMin = 30, tauMin = 10) {
+  if (!points || points.length < 6) return 12;
+
+  const last = points[points.length - 1];
+  const lookbackMs = lookbackMin * 60 * 1000;
+
+  const recent = points.filter(p => p.x >= last.x - lookbackMs);
+  if (recent.length < 6) return 12;
+
+  const slope = weightedSlope(recent, lookbackMin, tauMin);
+  const lastY = last.y;
+  const toT = (x) => (x - last.x) / 60000;
+
+  const residuals = [];
+  for (const p of recent) {
+    const t = toT(p.x);
+    const yhat = lastY + slope * t;
+    residuals.push(p.y - yhat);
+  }
+
+  const absRes = residuals.map(r => Math.abs(r));
+  const med = median(absRes) || 0;
+  return clamp(med * 1.35, 6, 28);
+}
+
+/* ============================================================
+   Build Forecast
+   ============================================================ */
+function buildCgmForecastWithBands(rawPoints, {
+  horizonMin = PRED_HORIZON_MIN,
+  stepMin = PRED_STEP_MIN,
+  clampMin = 40,
+  clampMax = 350,
+  processNoisePerMin = 0.65,
+  horizonGrowth = 0.22
+} = {}) {
+  const pts = normalizeDexcomPoints(rawPoints);
+  if (pts.length < 4) return { mean: [], lo50: [], hi50: [], lo90: [], hi90: [] };
+
+  const last = pts[pts.length - 1];
+  const lastX = last.x;
+  const lastY = last.y;
+
+  let slope = clamp(weightedSlope(pts, 25, 8), -8, 8);
+  let accel = estimateAccel(pts);
+  const sigma0 = estimateResidualSigma(pts, 30, 10);
+
+  const mean = [{ x: lastX, y: lastY }];
+  const lo90 = [{ x: lastX, y: lastY }];
+  const hi90 = [{ x: lastX, y: lastY }];
+  const lo50 = [{ x: lastX, y: lastY }];
+  const hi50 = [{ x: lastX, y: lastY }];
+
+  const steps = Math.floor(horizonMin / stepMin);
+  const K50 = 0.67;
+  const K90 = 1.65;
+
+  for (let i=1; i<=steps; i++) {
+    const dt = stepMin;
+    const x = lastX + i * dt * 60000;
+
+    const prev = mean[mean.length - 1].y;
+    let y = prev + slope*dt + 0.5*accel*dt*dt;
+    y = clamp(y, clampMin, clampMax);
+
+    mean.push({ x, y });
+
+    const minutesAhead = i * dt;
+    const sigmaH = sigma0 + (horizonGrowth + processNoisePerMin) * Math.sqrt(minutesAhead);
+
+    lo50.push({ x, y: clamp(y - K50*sigmaH, clampMin, clampMax) });
+    hi50.push({ x, y: clamp(y + K50*sigmaH, clampMin, clampMax) });
+    lo90.push({ x, y: clamp(y - K90*sigmaH, clampMin, clampMax) });
+    hi90.push({ x, y: clamp(y + K90*sigmaH, clampMin, clampMax) });
+
+    slope *= 0.92;
+    accel *= 0.80;
+  }
+
+  return { mean, lo50, hi50, lo90, hi90 };
+}
+
+/* ============================================================
+   POINTER-CENTERED WHEEL ZOOM (CLAMPED)
+   ============================================================ */
+let __wheelZoomAttached = false;
+function attachPointerWheelZoom() {
+  if (!chart || __wheelZoomAttached) return;
+
+  const canvas = chart.canvas;
+  if (!canvas) return;
+
+  canvas.addEventListener("wheel", (e) => {
+    if (!chart?.chartArea) return;
+    e.preventDefault();
+
+    if (!Number.isFinite(NORMAL_MIN_X) || !Number.isFinite(NORMAL_MAX_X)) return;
+    const hasNormalY = Number.isFinite(NORMAL_MIN_Y) && Number.isFinite(NORMAL_MAX_Y);
+
+    const area = chart.chartArea;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+
+    if (px < area.left || px > area.right || py < area.top || py > area.bottom) return;
+
+    const xAtPointer = xScale.getValueForPixel(px);
+    const yAtPointer = yScale.getValueForPixel(py);
+
+    const curMinX = xScale.min, curMaxX = xScale.max;
+    const curMinY = yScale.min, curMaxY = yScale.max;
+
+    const rangeX = (curMaxX - curMinX) || 1;
+    const rangeY = (curMaxY - curMinY) || 1;
+
+    const normalRangeX = (NORMAL_MAX_X - NORMAL_MIN_X) || rangeX;
+    const normalRangeY = hasNormalY ? ((NORMAL_MAX_Y - NORMAL_MIN_Y) || rangeY) : null;
+
+    const ZOOM_INTENSITY = 0.0018;
+    const factor = Math.exp(e.deltaY * ZOOM_INTENSITY);
+
+    const newRangeX = clamp(rangeX * factor, 2 * 60 * 1000, normalRangeX);
+    const newRangeY = hasNormalY
+      ? clamp(rangeY * factor, 10, normalRangeY)
+      : clamp(rangeY * factor, 10, 300);
+
+    const rx = (xAtPointer - curMinX) / rangeX;
+    const ry = (yAtPointer - curMinY) / rangeY;
+
+    let newMinX = xAtPointer - rx * newRangeX;
+    let newMaxX = newMinX + newRangeX;
+
+    let newMinY = yAtPointer - ry * newRangeY;
+    let newMaxY = newMinY + newRangeY;
+
+    const widthX = newMaxX - newMinX;
+    newMinX = clamp(newMinX, NORMAL_MIN_X, NORMAL_MAX_X - widthX);
+    newMaxX = newMinX + widthX;
+
+    if (hasNormalY) {
+      const heightY = newMaxY - newMinY;
+      newMinY = clamp(newMinY, NORMAL_MIN_Y, NORMAL_MAX_Y - heightY);
+      newMaxY = newMinY + heightY;
+    }
+
+    chart.options.scales.x.min = newMinX;
+    chart.options.scales.x.max = newMaxX;
+    chart.options.scales.y.min = newMinY;
+    chart.options.scales.y.max = newMaxY;
+
+    chart.update("none");
+  }, { passive: false });
+
+  __wheelZoomAttached = true;
+}
+
+/* ============================================================
+   Get initial y-axis sizing (helps with reset zoom function)
+   ============================================================ */
+function captureNormalYBounds() {
+  if (!chart?.scales?.y) return;
+  const ymin = chart.scales.y.min;
+  const ymax = chart.scales.y.max;
+  if (Number.isFinite(ymin) && Number.isFinite(ymax) && ymax > ymin) {
+    NORMAL_MIN_Y = ymin;
+    NORMAL_MAX_Y = ymax;
+  }
+}
+
+/* ============================================================
+   Resets the zoom on graph
+   ============================================================ */
+function resetZoomToNormal() {
+  if (!chart) return;
+  if (typeof chart.resetZoom === "function") chart.resetZoom();
+
+  chart.options.scales.x.min = Number.isFinite(NORMAL_MIN_X) ? NORMAL_MIN_X : undefined;
+  chart.options.scales.x.max = Number.isFinite(NORMAL_MAX_X) ? NORMAL_MAX_X : undefined;
+
+  chart.options.scales.y.min = undefined;
+  chart.options.scales.y.max = undefined;
+
+  chart.update("none");
+  captureNormalYBounds();
+}
+
+/* ============================================================
+   CHART/Graph Setup
+   ============================================================ */
+function initChart() {
+  const ctx = document.getElementById("glucoseChart");
+  if (!ctx) return;
+
+  if (chart) {
+    chart.destroy();
+  }
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      datasets: [
+        { label:"Glucose", data:[], parsing:false, borderColor:"#09B02C", borderWidth:2, pointRadius:0, tension:0.35,
+          segment:{ borderColor:(segCtx)=> {
+            const x0 = segCtx.p0.parsed.x, x1 = segCtx.p1.parsed.x;
+            if (!Number.isFinite(x0) || !Number.isFinite(x1)) return "#09B02C";
+            return (x1-x0 > GAP_BREAK_MS) ? "rgba(0,0,0,0)" : "#09B02C";
+          }}
+        },
+        { label:"Low", data:[], parsing:false, borderColor:"rgba(255,0,0,.82)", borderWidth:1.25, borderDash:[6,6], pointRadius:0 },
+        { label:"High", data:[], parsing:false, borderColor:"rgba(255,0,0,.82)", borderWidth:1.25, borderDash:[6,6], pointRadius:0 },
+
+        { label:"Outer low (90%)", data:[], parsing:false, borderColor:"rgba(9,176,44,.28)", borderWidth:1.3, borderDash:[6,6], pointRadius:0, tension:0.35, fill:false },
+        { label:"Outer high (90%)", data:[], parsing:false, borderColor:"rgba(9,176,44,.28)", borderWidth:1.3, borderDash:[6,6], pointRadius:0, tension:0.35, fill:{target:3}, backgroundColor:"rgba(9,176,44,.10)" },
+
+        { label:"Inner low (50%)", data:[], parsing:false, borderColor:"rgba(9,176,44,.45)", borderWidth:1.5, borderDash:[4,6], pointRadius:0, tension:0.35, fill:false },
+        { label:"Inner high (50%)", data:[], parsing:false, borderColor:"rgba(9,176,44,.45)", borderWidth:1.5, borderDash:[4,6], pointRadius:0, tension:0.35, fill:{target:5}, backgroundColor:"rgba(9,176,44,.18)" },
+
+        { label:"Forecast mean", data:[], parsing:false, borderColor:"rgba(9,176,44,.95)", borderWidth:2, borderDash:[2,8], pointRadius:0, tension:0.35 }
+      ]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:false,
+      plugins: {
+        legend: { display:false },
+        zoom: {
+          zoom: { wheel:{ enabled:false }, pinch:{ enabled:true }, mode:"xy" },
+          pan: { enabled:false, mode:"xy" }
+        },
+        tooltip: {
+          intersect:false,
+          mode:"nearest",
+          callbacks: {
+            title(items){ const x = items?.[0]?.parsed?.x; return x ? new Date(x).toLocaleString() : ""; },
+            label(item){ const y = item?.parsed?.y; return Number.isFinite(y) ? (" " + Math.round(y) + " mg/dL") : ""; }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type:"linear",
+          grid:{ display:false },
+          ticks:{
+            maxTicksLimit:6,
+            callback:(v)=>new Date(Number(v)).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })
+          }
+        },
+        y: {
+          suggestedMin:50,
+          suggestedMax:250,
+          grid:{ color:"rgba(0,0,0,.06)" },
+          ticks:{ maxTicksLimit:6 }
+        }
+      }
+    },
+    plugins: [rangeBandsPlugin, forecastMarkerPlugin]
+  });
+
+  __wheelZoomAttached = false;
+  attachPointerWheelZoom();
+  setThresholdLabels();
+}
+
+/* ============================================================
+   RENDER: last hour + forecast envelopes on graph
+   ============================================================ */
+function renderLastHour(points) {
+  if (!chart) return;
+
+  const pts = normalizeDexcomPoints(points);
+
+  // ✅ ALWAYS update analysis (even if chart has no points)
+  updateAnalysisUI(pts);
+
+  const anchor = pts.length ? pts[pts.length - 1].x : Date.now();
+  const minX = anchor - WINDOW_MS;
+  const maxX = anchor + (PRED_HORIZON_MIN * 60 * 1000);
+
+  NORMAL_MIN_X = minX;
+  NORMAL_MAX_X = maxX;
+
+  const filtered = pts.filter(p => p.x >= minX && p.x <= anchor);
+
+  if (filtered.length) {
+    const lastReal = filtered[filtered.length - 1];
+    FORECAST_X_MS = lastReal.x;
+    FORECAST_Y = lastReal.y;
+  } else {
+    FORECAST_X_MS = null;
+    FORECAST_Y = null;
+  }
+
+  const fc = buildCgmForecastWithBands(points);
+
+  chart.data.datasets[0].data = filtered;
+  chart.data.datasets[1].data = [{ x:minX, y:RANGE_LOW }, { x:maxX, y:RANGE_LOW }];
+  chart.data.datasets[2].data = [{ x:minX, y:RANGE_HIGH }, { x:maxX, y:RANGE_HIGH }];
+
+  chart.data.datasets[3].data = fc.lo90;
+  chart.data.datasets[4].data = fc.hi90;
+  chart.data.datasets[5].data = fc.lo50;
+  chart.data.datasets[6].data = fc.hi50;
+  chart.data.datasets[7].data = fc.mean;
+
+  if (!Number.isFinite(chart.options.scales.x.min) || !Number.isFinite(chart.options.scales.x.max)) {
+    chart.options.scales.x.min = minX;
+    chart.options.scales.x.max = maxX;
+    chart.options.scales.y.min = undefined;
+    chart.options.scales.y.max = undefined;
+  }
+
+  setThresholdLabels();
+  setEmpty(filtered.length === 0);
+
+  chart.update("none");
+  captureNormalYBounds();
+}
+
+/* ============================================================
+   Get recent dexcom data
+   ============================================================ */
+async function loadDexcomRecent() {
+  const t = getSessionToken();
+
+  if (!t) {
+    setAnalysisState("no_sensor", "No Dexcom found.");
+    return null;
+  }
+
+  if (t.startsWith(DEMO_TOKEN_PREFIX)) {
+    return makeFakeDexcomRecent({ minutes: 180, stepMin: 5, base: 120 });
+  }
+
+  setAnalysisState("connecting");
+
+  try {
+    const r = await fetch(API_BASE + "/dexcom-recent?minutes=180&maxCount=72", {
+      cache: "no-store",
+      headers: authHeaders(),
+    });
+
+    const text = await r.text();
+    let j = null;
+
+    try {
+      j = JSON.parse(text);
+    } catch {
+      setAnalysisState("no_sensor", "No Dexcom found.");
+      setEmpty(true);
+      return null;
+    }
+
+    if (j?.status === "no_active_sensor") {
+      setAnalysisState("no_sensor", "No Dexcom found.");
+      setEmpty(true);
+      return j;
+    }
+
+    if (!r.ok || !j || !j.ok) {
+      setAnalysisState("no_sensor", "No Dexcom found.");
+      setEmpty(true);
+      return null;
+    }
+
+    if (!j.points || j.points.length === 0) {
+      setAnalysisState("no_data");
+    } else {
+      setAnalysisState("live");
+    }
+
+    return j;
+  } catch {
+    setAnalysisState("no_sensor", "No Dexcom found.");
+    setEmpty(true);
+    return null;
+  }
+}
+
+/* ============================================================
+   Right now glucose information
+   ============================================================ */
+async function refreshLatestCardFromRecent(recent) {
+  if (!recent?.latest) return;
+  const l = recent.latest;
+
+  document.getElementById("glucose-value").textContent = l.glucose ?? "—";
+  document.getElementById("glucose-trend").textContent = "Trend: " + (l.trend ?? "—");
+  document.getElementById("glucose-time").textContent =
+    "Dexcom time: " + new Date(l.ts * 1000).toLocaleString();
+
+  const ageEl = document.getElementById("glucose-age");
+  if (ageEl && Number.isFinite(l.ts)) {
+    const ageMs = Date.now() - (l.ts * 1000);
+    const ageMin = Math.max(0, Math.round(ageMs / 60000));
+    ageEl.textContent = "Age: " + ageMin + " min";
+  }
+}
+
+/* ============================================================
+   Check if robot is connected
+   ============================================================ */
+async function updateStatus() {
+  try {
+    const res = await fetch("/status", { cache: "no-store" });
+    const data = await res.json();
+    const el = document.getElementById("wifi-status");
+
+    if (!el) return;
+
+    if (!data.lastSeen) {
+      el.textContent = "Waiting for GUARD heartbeat…";
+      el.style.color = "grey";
+      return;
+    }
+
+    if (data.online) {
+      el.textContent = "Connected";
+      el.style.color = "green";
+    } else {
+      el.textContent = "Disconnected (no heartbeat)";
+      el.style.color = "red";
+    }
+  } catch {
+    const el = document.getElementById("wifi-status");
+    if (!el) return;
+    el.textContent = "Status error";
+    el.style.color = "red";
+  }
+}
+function setAnalysisState(state, extra = "") {
+  const avgEl = document.getElementById("avgchg");
+  const urgEl = document.getElementById("Urgency");
+
+  if (!avgEl || !urgEl) return;
+
+  if (state === "connecting") {
+    avgEl.textContent = "Average change (1h): Connecting to Dexcom…";
+    urgEl.textContent = "Urgency: Checking CGM session…";
+    dbg(extra || "Connecting to Dexcom...");
+    return;
+  }
+
+  if (state === "no_sensor") {
+    avgEl.textContent = "Average change (1h): No Dexcom connected";
+    urgEl.textContent = "Urgency: No CGM session detected";
+    dbg(extra || "Dexcom connected but no active sensor session.");
+    return;
+  }
+
+  if (state === "no_data") {
+    avgEl.textContent = "Average change (1h): Waiting for data…";
+    urgEl.textContent = "Urgency: Waiting for data…";
+    dbg(extra || "No glucose points available yet.");
+    return;
+  }
+
+  if (state === "live") {
+    dbg(extra || "");
+  }
+}
+/* ============================================================
+   SETTINGS customizer
+   ============================================================ */
+async function loadSettingsIntoForm() {
+  try {
+    const res = await fetch("/get-settings", { cache: "no-store" });
+    const s = await res.json();
+
+    RANGE_LOW = Number(s.glucose_low ?? 80) || 80;
+    RANGE_HIGH = Number(s.glucose_high ?? 180) || 180;
+
+    document.getElementById("lowInput").value = RANGE_LOW;
+    document.getElementById("highInput").value = RANGE_HIGH;
+
+    setThresholdLabels();
+    if (chart) chart.update("none");
+  } catch {}
+}
+
+document.getElementById("settingsForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const low = Number(document.getElementById("lowInput").value);
+  const high = Number(document.getElementById("highInput").value);
+
+  const statusEl = document.getElementById("settingsStatus");
+  statusEl.textContent = "Saving…";
+
+  try {
+    const res = await fetch("/set-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ glucose_low: low, glucose_high: high })
+    });
+
+    const out = await res.json().catch(() => ({}));
+    statusEl.textContent = out.ok ? "Saved ✅" : "Save failed ❌";
+
+    if (out.ok) {
+      RANGE_LOW = Number(out.settings?.glucose_low ?? low) || RANGE_LOW;
+      RANGE_HIGH = Number(out.settings?.glucose_high ?? high) || RANGE_HIGH;
+
+      NORMAL_MIN_Y = null;
+      NORMAL_MAX_Y = null;
+
+      setThresholdLabels();
+
+      const recent = await loadDexcomRecent();
+      if (!recent) return;
+
+      if (recent.status === "no_active_sensor") {
+        showNoActiveSensorUI()
+      } else {
+        renderLastHour(recent.points);
+        await refreshLatestCardFromRecent(recent);
+      }
+    }
+  } catch {
+    statusEl.textContent = "Save failed ❌";
+  }
+});
+
+/* ============================================================
+   LOGIN FLOW
+   ============================================================ */
+async function saveDexcomCreds() {
+  const username = document.getElementById("dxUser").value.trim();
+  const password = document.getElementById("dxPass").value.trim();
+  const region = document.getElementById("dxRegion").value;
+  const stateEl = document.getElementById("dexcom-state");
+
+  stateEl.textContent = "Logging in...";
+
+  // ✅ DEV MODE LOGIN
+  if (username === DEMO_USER && password === DEMO_PASS) {
+    const demoToken = DEMO_TOKEN_PREFIX + "local-demo";
+    setSessionToken(demoToken);
+    stateEl.textContent = "Logged in (Developer Mode)";
+    await enterDashboard();
+    return;
+  }
+
+  try {
+    const res = await fetch("/dexcom-login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        region
+      })
+    });
+
+    const text = await res.text();
+    let data = null;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      stateEl.textContent = "Login failed";
+      alert("Login failed: " + text);
+      return;
+    }
+
+    if (!res.ok || !data.ok) {
+      const raw = String(data.error || "");
+
+      let msg = "Login failed.";
+      if (raw.includes("AccountPasswordInvalid")) {
+        msg = "Wrong Dexcom username/password or wrong region selected.";
+      } else if (raw.includes("Session expired")) {
+        msg = "Your session expired. Please log in again.";
+      } else if (raw) {
+        msg = raw;
+      }
+
+      stateEl.textContent = "Login failed";
+      alert(msg);
+      return;
+    }
+
+    setSessionToken(data.token);
+    stateEl.textContent = "Logged in";
+    await enterDashboard();
+  } catch (err) {
+    stateEl.textContent = "Login failed";
+    alert("Login failed: " + (err?.message || err));
+  }
+}
+
+/* ============================================================
+   Logout
+   ============================================================ */
+async function logout() {
+  const t = getSessionToken();
+  setSessionToken("");
+  document.getElementById("dexcom-state").textContent = "Not logged in";
+
+  // ✅ Demo token: no server logout
+  if (t && t.startsWith(DEMO_TOKEN_PREFIX)) {
+    alert("Logged out");
+    return;
+  }
+
+  if (t) {
+    try {
+      await fetch("/dexcom-logout", {
+        method:"POST",
+        headers: { "Authorization":"Bearer " + t }
+      });
+    } catch {}
+  }
+  alert("Logged out");
+}
+
+/* ============================================================
+   ENTER DASHBOARD function
+   ============================================================ */
+function showNoActiveSensorUI() {
+  renderLastHour([]);
+  document.getElementById("glucose-value").textContent = "—";
+  document.getElementById("glucose-trend").textContent = "Trend: —";
+  document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
+  document.getElementById("glucose-age").textContent = "—";
+}
+async function enterDashboard(){
+  if (!getSessionToken()) {
+    alert("Please log in with Dexcom first.");
+    return;
+  }
+
+  showPage("content");
+
+  updateAnalysisUI([]);
+  dbg("Dashboard entered. Loading Dexcom data…");
+  await new Promise(requestAnimationFrame);
+  initChart();
+  await loadSettingsIntoForm();
+
+  const recent = await loadDexcomRecent();
+  if (!recent) {
+    alert("Dexcom acount connected but no Device found");
+    return;
+  }
+
+  if (recent.status === "no_active_sensor") {
+    showNoActiveSensorUI()
+  } else {
+    renderLastHour(recent.points);
+    await refreshLatestCardFromRecent(recent);
+  }
+
+  updateStatus();
+
+  const devMode = getSessionToken().startsWith(DEMO_TOKEN_PREFIX);
+  const titleEl = document.getElementById("dashboardTitle");
+  if (titleEl) {
+    titleEl.textContent = devMode ? "Dashboard Developer Mode" : "Dashboard";
+    titleEl.style.color = devMode ? "var(--g)" : "var(--ink)";
+    titleEl.style.opacity = devMode ? "1" : ".95";
+    titleEl.style.textShadow = devMode ? "0 6px 18px rgba(250,250,250,.1)" : "none";
+  }
+
+  if (!window.__pollersStarted) {
+    window.__pollersStarted = true;
+
+  setInterval(async () => {
+    const r = await loadDexcomRecent();
+    if (!r) return;
+
+    if (r.status === "no_active_sensor") {
+      showNoActiveSensorUI()
+      return;
+    }
+
+    renderLastHour(r.points);
+    await refreshLatestCardFromRecent(r);
+  }, 60000);
+
+    setInterval(updateStatus, 5000);
+  }
+}
+
+/* ============================================================
+   MANUAL POLL
+   ============================================================ */
+async function pollDexcomNow() {
+  const el = document.getElementById("poll-status");
+  el.textContent = "Refreshing…";
+
+  const r = await loadDexcomRecent();
+  if (!r) {
+    el.textContent = "Dexcom unavailable";
+    alert("Could not load Dexcom data.");
+    return;
+  }
+
+  if (r.status === "no_active_sensor") {
+    renderLastHour([]);
+    document.getElementById("glucose-value").textContent = "—";
+    document.getElementById("glucose-trend").textContent = "Trend: —";
+    document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
+    document.getElementById("glucose-age").textContent = "—";
+    el.textContent = "No active sensor";
+    return;
+  }
+
+  renderLastHour(r.points);
+  await refreshLatestCardFromRecent(r);
+  el.textContent = "Updated ✅";
+}
+
+function makeFakeDexcomRecent({ minutes = 180, stepMin = 5, base = 120 } = {}) {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const count = Math.floor(minutes / stepMin) + 1;
+
+  let g = base + (Math.random() * 10 - 5);
+  let slope = (Math.random() * 2 - 1) * 0.18; // mg/dL per minute-ish
+
+  const points = [];
+  for (let k = count - 1; k >= 0; k--) {
+    const ts = nowSec - k * stepMin * 60;
+
+    // drift
+    g += slope * stepMin;
+
+    // wiggle + noise
+    g += Math.sin((ts / 60) / 10) * 1.2;
+    g += (Math.random() * 6 - 3) * 0.35;
+
+    // occasional meal bump / correction dip
+    if (Math.random() < 0.03) { g += 25 + Math.random() * 35; slope += 0.22; }
+    if (Math.random() < 0.02) { g -= 15 + Math.random() * 25; slope -= 0.22; }
+
+    slope = clamp(slope, -1.2, 1.2);
+    g = clamp(g, 55, 300);
+
+    points.push({ ts, glucose: Math.round(g) });
+  }
+
+  const latestPt = points[points.length - 1];
+  return {
+    ok: true,
+    points,
+    latest: { ts: latestPt.ts, glucose: latestPt.glucose, trend: "Flat" }
+  };
+}
+
+/* ============================================================
+   Chart Main
+   ============================================================ */
+let chart;
+
+const WINDOW_MS = 60 * 60 * 1000;
+/*hour in miliseconds*/
+const GAP_BREAK_MS = 7 * 60 * 1000;
+/*7 minutes in milliseconds*/
+
+const PRED_HORIZON_MIN = 30;
+/*predict 30 minutes into the future*/
+const PRED_STEP_MIN = 5;
+/*prediction step every 5 minutes*/
+
+let RANGE_LOW = 80;
+/*base low range*/
+let RANGE_HIGH = 180;
+/*base high range*/
+
+/*until their defined they are null*/
+let FORECAST_X_MS = null;
+let FORECAST_Y = null;
+let NORMAL_MIN_X = null;
+let NORMAL_MAX_X = null;
+let NORMAL_MIN_Y = null;
+let NORMAL_MAX_Y = null;
+
+/* ============================================================
+   SETUP STEPS Main
+   ============================================================ */
+let step = 0;
+const dots = document.querySelectorAll(".step-dot");
+const steps = Array.from(document.querySelectorAll(".step-panel"));
+const nextBtn = document.getElementById("nextBtn");
+const backBtn = document.getElementById("backBtn");
+const LAST_STEP = steps.length - 1;
+document.getElementById("dexcom-state").textContent = "Not logged in";
+
+/* ============================================================
+   STARTUP Main
+   ============================================================ */
+setStep(0);
+openlogin();
+  </script>
+</body>
+</html>

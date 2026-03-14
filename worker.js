@@ -544,17 +544,6 @@ async function handleDexcomRecent(request, env) {
       );
     }
 
-    let active = false;
-    try {
-      active = await dexcomCheckRemoteMonitoring(session.region, freshSessionId);
-    } catch {
-      active = false;
-    }
-
-    if (!active) {
-      await dexcomStartRemoteMonitoring(session.region, freshSessionId, "");
-    }
-
     const points = await dexcomGetReadings(
       session.region,
       freshSessionId,
@@ -574,11 +563,27 @@ async function handleDexcomRecent(request, env) {
   } catch (e) {
     const msg = String(e?.message || "");
     const bodyText = String(e?.body || "");
+    const fullError = bodyText || msg || "";
+
+    if (fullError.includes("SessionIdNotFound")) {
+      return jsonResponse(
+        {
+          ok: true,
+          points: [],
+          latest: null,
+          status: "no_active_sensor",
+          message: "Dexcom authenticated, but no active CGM session was available.",
+          debug_saved_session_id: session.sessionId || null,
+          debug_fresh_session_id: freshSessionId,
+        },
+        200
+      );
+    }
 
     return jsonResponse(
       {
         ok: false,
-        error: bodyText || msg || "Failed to fetch Dexcom data",
+        error: fullError || "Failed to fetch Dexcom data",
         dexcom_status: e?.status || null,
         debug_saved_session_id: session.sessionId || null,
         debug_fresh_session_id: freshSessionId,

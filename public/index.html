@@ -103,7 +103,43 @@
         max-width: 100%;
         display: block;
     }
+    .creator-photo{
+    position: relative;
+    width: 220px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,.18);
+}
 
+.creator-photo img{
+    display: block;
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+}
+
+.creator-overlay{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 18px 16px 14px;
+    background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,0));
+    color: white;
+}
+
+.creator-overlay strong{
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.creator-overlay span{
+    display: block;
+    margin-top: 4px;
+    font-size: .9rem;
+    opacity: .88;
+}
     .wrap{
         width: min(var(--max), calc(100% - 32px));
         margin: 0 auto;
@@ -2501,7 +2537,13 @@
       </div>
     </section>
     <section>
-      <img src="images/me_fullscreen2.JPG" class="meimg" alt="Creator of the site"/>
+      <div class="creator-photo">
+        <img src="images/me_fullscreen2.JPG" class="meimg" alt="Creator of the site"/>
+  <div class="creator-overlay">
+    <strong>Bradley Williams</strong>
+    <span>Founder, Guardian</span>
+  </div>
+</div>
     </section>
     <section class="section" id="faq">
       <div class="wrap">

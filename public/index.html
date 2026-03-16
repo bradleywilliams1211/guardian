@@ -3499,13 +3499,27 @@ async function loadTrustedUsersCount() {
       throw new Error(data?.error || text || "Failed to load trusted users count.");
     }
 
-    el.dataset.count = String(count);
-    el.textContent = "0";
-    countUp(el);
+    setTrustedUsersCount(count);
   } catch {
     const fallback = Number(el.dataset.count || 0);
     el.textContent = Number.isFinite(fallback) ? String(fallback) : "0";
   }
+}
+
+function setTrustedUsersCount(count, options = {}) {
+  const el = document.getElementById("trusted-users-count");
+  if (!el) return;
+
+  const safeCount = Math.max(0, Math.floor(Number(count) || 0));
+  el.dataset.count = String(safeCount);
+
+  if (options.animate === false) {
+    el.textContent = String(safeCount);
+    return;
+  }
+
+  el.textContent = "0";
+  countUp(el);
 }
 
 void loadTrustedUsersCount();
@@ -5335,7 +5349,11 @@ async function saveDexcomCreds() {
 
     setSessionToken(data.token);
     stateEl.textContent = "Logged in";
-    await loadTrustedUsersCount();
+    if (Number.isFinite(Number(data?.trusted_users_count))) {
+      setTrustedUsersCount(Number(data.trusted_users_count));
+    } else {
+      await loadTrustedUsersCount();
+    }
     dbg("Login success. Entering dashboard...");
     await enterDashboard();
 

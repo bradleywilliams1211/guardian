@@ -500,10 +500,13 @@ async function handleDexcomLogin(request, env) {
       await rememberTrustedDexcomUser(env, region, accountId);
     } catch {}
 
+    const trustedUsers = await getTrustedUsersCount(env, { bypassCache: true });
+
     return jsonResponse({
       ok: true,
       token,
       region,
+      trusted_users_count: trustedUsers.count,
       debug_saved_session_id: sessionId,
     });
   } catch (e) {
@@ -568,11 +571,14 @@ async function rememberTrustedDexcomUser(env, region, accountId) {
   };
 }
 
-async function getTrustedUsersCount(env) {
-  const cached = await cacheGetJson(CACHE_TRUSTED_USERS);
-  const cachedCount = Number(cached?.count);
-  if (Number.isFinite(cachedCount) && cachedCount >= 0) {
-    return { ok: true, count: cachedCount, cached: true };
+async function getTrustedUsersCount(env, options = {}) {
+  const bypassCache = !!options?.bypassCache;
+  if (!bypassCache) {
+    const cached = await cacheGetJson(CACHE_TRUSTED_USERS);
+    const cachedCount = Number(cached?.count);
+    if (Number.isFinite(cachedCount) && cachedCount >= 0) {
+      return { ok: true, count: cachedCount, cached: true };
+    }
   }
 
   let count = 0;

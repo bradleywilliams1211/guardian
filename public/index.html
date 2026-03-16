@@ -5335,6 +5335,7 @@ async function saveDexcomCreds() {
 
     setSessionToken(data.token);
     stateEl.textContent = "Logged in";
+    await loadTrustedUsersCount();
     dbg("Login success. Entering dashboard...");
     await enterDashboard();
 

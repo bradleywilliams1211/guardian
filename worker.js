@@ -18,6 +18,7 @@ const TEXT_HEADERS = {
 
 const SETTINGS_KEY = "settings";
 const LAST_SEEN_KEY = "lastSeen";
+const TRUSTED_USER_PREFIX = "trustedUser:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
 const HEARTBEAT_MIN_WRITE_MS = 5 * 60 * 1000;
@@ -43,6 +44,7 @@ const APPLICATION_IDS = {
    CACHE KEYS
    ========================= */
 const CACHE_LASTSEEN = new Request("https://cache.guardian/local/lastSeen");
+const CACHE_TRUSTED_USERS = new Request("https://cache.guardian/local/trustedUsers");
 
 /* =========================
    CACHE HELPERS
@@ -413,6 +415,15 @@ async function setSettings(env, low, high) {
   return { settings, save: out };
 }
 
+async function handleTrustedUsersCount(env) {
+  const result = await getTrustedUsersCount(env);
+  return jsonResponse({
+    ok: true,
+    count: result.count,
+    cached: !!result.cached,
+  });
+}
+
 /* =========================
    ROUTE HELPERS
    ========================= */
@@ -485,6 +496,10 @@ async function handleDexcomLogin(request, env) {
       env.SESSION_SECRET
     );
 
+    try {
+      await rememberTrustedDexcomUser(env, region, accountId);
+    } catch {}
+
     return jsonResponse({
       ok: true,
       token,
@@ -507,6 +522,80 @@ async function handleDexcomLogin(request, env) {
       e?.status && Number.isFinite(e.status) ? e.status : 500
     );
   }
+}
+
+async function buildTrustedUserKey(region, accountId) {
+  const normalizedRegion = String(region || "us").trim().toLowerCase();
+  const normalizedAccountId = String(accountId || "").trim().toLowerCase();
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`${normalizedRegion}:${normalizedAccountId}`)
+  );
+  const hashed = b64urlEncodeBytes(new Uint8Array(digest));
+  return `${TRUSTED_USER_PREFIX}${hashed}`;
+}
+
+async function rememberTrustedDexcomUser(env, region, accountId) {
+  const cleanAccountId = String(accountId || "").trim();
+  if (!cleanAccountId) {
+    return { ok: false, skipped: true };
+  }
+
+  const key = await buildTrustedUserKey(region, cleanAccountId);
+  const existing = await env.ESP32_KV.get(key);
+  if (existing !== null) {
+    return { ok: true, created: false };
+  }
+
+  const save = await kvPutSafe(
+    env,
+    key,
+    JSON.stringify({
+      firstConnectedAt: Date.now(),
+      region: String(region || "us").trim().toLowerCase(),
+    })
+  );
+
+  try {
+    await caches.default.delete(CACHE_TRUSTED_USERS);
+  } catch {}
+
+  return {
+    ok: !!save.ok,
+    created: !!save.ok,
+    kvLimited: !!save.kvLimited,
+    error: save?.error || null,
+  };
+}
+
+async function getTrustedUsersCount(env) {
+  const cached = await cacheGetJson(CACHE_TRUSTED_USERS);
+  const cachedCount = Number(cached?.count);
+  if (Number.isFinite(cachedCount) && cachedCount >= 0) {
+    return { ok: true, count: cachedCount, cached: true };
+  }
+
+  let count = 0;
+  let cursor = undefined;
+
+  while (true) {
+    const page = await env.ESP32_KV.list({
+      prefix: TRUSTED_USER_PREFIX,
+      limit: 1000,
+      ...(cursor ? { cursor } : {}),
+    });
+
+    count += Array.isArray(page?.keys) ? page.keys.length : 0;
+
+    if (page?.list_complete || !page?.cursor) {
+      break;
+    }
+
+    cursor = page.cursor;
+  }
+
+  await cachePutJson(CACHE_TRUSTED_USERS, { count }, 10 * 60);
+  return { ok: true, count, cached: false };
 }
 
 async function handleDexcomRecent(request, env) {
@@ -697,6 +786,10 @@ export default {
 
       if (url.pathname === "/set-settings" && request.method === "POST") {
         return await handleSetSettings(request, env);
+      }
+
+      if (url.pathname === "/trusted-users-count" && request.method === "GET") {
+        return await handleTrustedUsersCount(env);
       }
 
       if (url.pathname === "/dexcom-login" && request.method === "POST") {

@@ -105,22 +105,50 @@
     }
 
 
-.creator-photo img{
+.creator-photo{
+    position: relative;
+    width: 100%;
+}
+
+.meimg{
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
 }
 
 .creator-overlay{
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 18px 16px 14px;
-    background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,0));
     color: white;
+    text-align: center;
+    width: 260px;
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.24);
+    box-shadow: 0 18px 40px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.18);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
+
+.creator-overlay.center-right{
+    top: 50%;
+    left: 66%;
+    width: 30%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.creator-overlay.bottom-left{
+    left: 24px;
+    bottom: 24px;
+    transform: none;
+}
+
+
+
 
 .creator-overlay strong{
     display: block;
@@ -259,13 +287,7 @@
         letter-spacing: -.065em;
         max-width: 11ch;
     }
-.meimg {
-    padding: 0;
-    display: block;
-    margin: 0 auto;
-    max-height: 80%;
-    max-width: 100%;
-}
+
     .hero p{
         margin: 0;
         max-width: 58ch;
@@ -2214,7 +2236,7 @@
 
   <header class="topbar">
     <div class="wrap nav" id="nav">
-      <a class="brand" href="#top">
+      <a class="brand" href="https://getguardian.org">
         <img class="footer-logo" src="/images/GUARDIAN.png" alt="GUARD Logo">
       </a>
 
@@ -2255,8 +2277,8 @@
               <span>trend visibility</span>
             </article>
             <article class="stat">
-              <strong data-count="96">0</strong>
-              <span>glucose points analyzed</span>
+              <strong id="trusted-users-count" data-count="0" data-live-count="trusted-users">0</strong>
+              <span>Trusted Users</span>
             </article>
             <article class="stat">
               <strong data-count="3">0</strong>
@@ -2532,11 +2554,24 @@
     </section>
     <section>
       <div class="creator-photo">
-        <img src="images/me_fullscreen2.JPG" class="meimg" alt="Creator of the site"/>
-  <div class="creator-overlay">
-    <strong>Bradley Williams</strong>
-    <span>Founder, Guardian</span>
-  </div>
+        <img src="/images/me_fullscreen2.JPG" class="meimg" alt="Creator of the site">
+        <div class="creator-overlay center-right">
+          <strong>Who I am</strong>
+  <span>I’m Bradley Williams, founder of Guardian. I’m an 18-year-old high school senior, 
+    future University of Maryland wrestler and engineer. Im a hobbyist/student passionate about coding and robotics. 
+    After being diagnosed with Type 1 diabetes in 2024, I set out to create technology 
+    that helps others manage it with less stress.<br><br>
+    find more at <br>
+    <strong><a href="#" onclick="showFooterPage('aboutus-page'); return false;">About Us</a></strong>
+    </span>
+
+    </div>
+
+<div class="creator-overlay bottom-left">
+  <strong>Bradley Williams</strong>
+  <span>Founder, Guardian</span>
+</div>
+
 </div>
     </section>
     <section class="section" id="faq">
@@ -3436,12 +3471,44 @@ contactguardiansupport@gmail.com
       requestAnimationFrame(tick);
     };
 
-    document.querySelectorAll('[data-count]').forEach((el) => countUp(el));
+    document.querySelectorAll('[data-count]').forEach((el) => {
+      if (el.dataset.liveCount === "trusted-users") return;
+      countUp(el);
+    });
 
     document.querySelectorAll('a[href^="#"]').forEach((link) => {
       link.addEventListener('click', () => nav.classList.remove('open'));
     });
     const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
+
+async function loadTrustedUsersCount() {
+  const el = document.getElementById("trusted-users-count");
+  if (!el) return;
+
+  try {
+    const res = await fetch(API_BASE + "/trusted-users-count");
+    const text = await res.text();
+    let data = null;
+
+    try {
+      data = JSON.parse(text);
+    } catch {}
+
+    const count = Number(data?.count);
+    if (!res.ok || !data?.ok || !Number.isFinite(count) || count < 0) {
+      throw new Error(data?.error || text || "Failed to load trusted users count.");
+    }
+
+    el.dataset.count = String(count);
+    el.textContent = "0";
+    countUp(el);
+  } catch {
+    const fallback = Number(el.dataset.count || 0);
+    el.textContent = Number.isFinite(fallback) ? String(fallback) : "0";
+  }
+}
+
+void loadTrustedUsersCount();
 
 const SESSION_KEY = "guard_dex_session_token";
 const DEMO_USER = "dev";

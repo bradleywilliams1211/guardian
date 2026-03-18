@@ -4431,34 +4431,210 @@ function resizeRobotViewer() {
 
 const HERO_MODEL_CONFIG = {
   name: "Argos",
+  // Load order for the hero model. The first path that exists and loads wins.
   assetCandidates: [
     "/models/Assembly/Argos_asm.glb",
     "/models/Argos_Assembly.glb",
     ROBOT_MODELS.dog.path
-  ],
-  scale: [1, 1, 1],
-  position: [0, 0, 0],
-  rotation: [0, Math.PI + 0.48, 0],
-  explodeStart: 0.12,
-  explodeEnd: 0.42
+  ]
 };
 
-// Simple testing controls:
+// ============================================================
+// HERO MODEL CONTROL SURFACE
+// Edit these blocks first when you want to change the 3D section.
+// The goal is that you should not need to dig through the math below
+// unless you are changing the behavior of the system itself.
+// ============================================================
+
+// Main model transform controls.
+const HERO_MODEL_TRANSFORM = {
+  // Base model scale before any scroll-based shrinking happens.
+  // [x, y, z]
+  scale: [1, 1, 1],
+
+  // Base rig position in scene space.
+  // x = left/right, y = up/down, z = forward/back
+  position: [0, 0, 0],
+
+  // Base rig rotation in radians.
+  // Math.PI is 180 degrees.
+  // x = tilt up/down, y = turn left/right, z = roll
+  rotation: [0, Math.PI + 0.48, 0]
+};
+
+// Overall material/look controls for the hero model.
+const HERO_MODEL_LOOK = {
+  // Main surface color. Hex number.
+  color: 0xf7fff9,
+
+  // Glow color. Hex number.
+  emissive: 0x0aa43a,
+
+  // How strong the emissive/glow effect feels.
+  emissiveIntensity: .08,
+
+  // 0 = matte, 1 = very metallic.
+  metalness: 0.38,
+
+  // 0 = glossy, 1 = rough.
+  roughness: 0.42,
+
+  // 1 = fully visible, lower = more transparent.
+  opacity: 1,
+
+  // Usually leave true if opacity might go below 1.
+  transparent: true,
+
+  // Useful for CAD-style models where faces may be viewed from behind.
+  doubleSided: true,
+
+  // Global renderer exposure. Higher = brighter overall render.
+  toneMappingExposure: 1.14
+};
+
+// Testing and playback controls.
 // mode: "scroll" | "exploded" | "imploded" | "manual"
 // triggerLine: lower values wait until the section is more on-screen before scroll takes over.
 const HERO_MODEL_PLAYBACK = {
+  // "scroll"   = normal behavior, driven by section scroll
+  // "exploded" = force fully exploded for testing
+  // "imploded" = force fully assembled for testing
+  // "manual"   = use manualProgress below
   mode: "scroll",
+
+  // Only used when mode = "manual".
+  // 0 = assembled, 1 = fully exploded.
   manualProgress: 1,
+
+  // Scroll does not affect the model until the section crosses this
+  // portion of the viewport height.
+  // Lower number = wait longer.
   triggerLine: 0.42
 };
 
-const HERO_EXPLODE_AXIS = {
-  x: 1,
-  y: 1,
-  z: 1
+// Scroll-driven turn/orbit controls.
+const HERO_MODEL_MOTION = {
+  // How quickly the model catches up in reduced-motion mode.
+  reducedMotionBlend: 0.24,
+
+  // How quickly the model catches up to scroll in normal mode.
+  // Higher = snappier, lower = floatier.
+  scrollBlend: 0.11,
+
+  // How smoothly the orbit angle chases its target.
+  orbitLerp: 0.08,
+
+  // Starting orbit angle of the camera around the model.
+  orbitStartAngle: -0.9,
+
+  // How much the camera orbits as scroll progresses.
+  orbitTurnPerScroll: 1.55,
+
+  // Extra rotation applied from scroll.
+  // These are added on top of HERO_MODEL_TRANSFORM.rotation.
+  rotateXPerScroll: -0.08,
+  rotateYPerScroll: Math.PI * 1.42,
+  rotateZPerScroll: 0,
+
+  // How much the model moves vertically as scroll progresses.
+  moveYPerScroll: 0.024,
+
+  // How far the model gets pushed back when exploded.
+  depthPullOnExplode: 1.18,
+
+  // How much the model lifts while exploding.
+  liftOnExplode: 0.05,
+
+  // How much the model shrinks as it explodes so more of it stays in frame.
+  scaleDownOnExplode: 0.12
 };
 
-const HERO_EXPLODE_RULES = [
+// Camera/zoom controls.
+const HERO_MODEL_CAMERA = {
+  // Perspective camera settings.
+  fov: 31,
+  near: 0.1,
+  far: 1000,
+
+  // Initial camera position before the orbit math takes over.
+  position: [0, 1.22, 6.6],
+
+  // Base orbit radius around the model.
+  radiusBase: 3.0,
+
+  // Extra zoom-out added as the model explodes.
+  radiusExplodeBoost: 2.05,
+
+  // Extra zoom-out added as scroll increases.
+  radiusScrollBoost: 0.48,
+
+  // Vertical camera follow settings.
+  heightBaseFactor: 0.28,
+  heightScrollFactor: 0.12,
+  heightExplodeFactor: 0.08,
+
+  // Where the camera looks on the model vertically.
+  lookAtYOffset: 0.1
+};
+
+// Light controls.
+const HERO_MODEL_LIGHTING = {
+  // Soft global light.
+  //ambient: { color: 0xffffff, intensity: 1.35 },
+
+  // Main directional light.
+  //key: { color: 0xf5fff7, intensity: 1.75, position: [4, 5, 6] },
+
+  // Back/rim light for edge definition.
+ // rim: { color: 0x63ff93, intensity: 1.15, position: [-5, 2, -4] },
+
+  // Hemisphere fill for a softer overall base.
+  //fill: { skyColor: 0xffffff, groundColor: 0x06210f, intensity: 0.95 }
+  ambient: { color: 0xffffff, intensity: 0.82 },
+  key: { color: 0xffffff, intensity: 2.2, position: [5.5, 6.5, 6] },
+  rim: { color: 0x63ff93, intensity: 1.2, position: [-5.5, 2.5, -5] },
+  fill: { skyColor: 0xf8fff9, groundColor: 0x04170a, intensity: 0.58 }
+};
+
+// Helpful while dialing in exact part IDs for per-part explosion control.
+const HERO_MODEL_DEBUG = {
+  // Turn this on, reload, then open the browser console.
+  // You will get a table of exact part IDs that can be pasted into
+  // HERO_EXPLODE_PART_RULES below.
+  logExplodePartIdsOnLoad: false
+};
+
+// Explosion controls.
+const HERO_EXPLODE_CONFIG = {
+  // Scroll progress range where the explosion happens.
+  // 0 = very start of the section scroll, 1 = very end.
+  start: 0.12,
+  end: 0.42,
+
+  // Global axis multiplier for the whole explosion.
+  // Use -1 to reverse an axis, 0 to flatten it, >1 to exaggerate it.
+  axis: { x: 1, y: 1, z: 1 },
+
+  // Default fallback spread if a part has no exact rule.
+  defaultDistanceBase: 0.18,
+  defaultDistanceCap: 0.35,
+
+  // Default fallback twist if a part has no exact rule.
+  defaultRotationBase: 0.14,
+  defaultRotationStep: 0.05,
+
+  // Fallback Y offset used when a part sits exactly at the center.
+  fallbackVerticalStep: 0.35
+};
+
+// Group fallbacks. These apply if there is no exact per-part override below.
+// Each rule can define:
+// match: regex against the part name
+// direction: [x, y, z]
+// distance: how far it travels
+// rotationAmount: how much it twists
+// rotationAxis: optional custom twist axis [x, y, z]
+const HERO_EXPLODE_GROUP_RULES = [
   { match: /BODY_REMODEL_LID|LID/i, direction: [0, 1.1, 0.15], distance: 0, rotationAmount: 0.0 },
   { match: /NOSE/i, direction: [0.14, 0.2, 1], distance: 0.82, rotationAmount: 0.00 },
   { match: /RH_LEG|RIGHT.*LEG/i, direction: [1, 0.12, 0.2], distance: 1.02, rotationAmount: 0.0 },
@@ -4468,6 +4644,18 @@ const HERO_EXPLODE_RULES = [
   { match: /CONTAINER_AXEL|CONTAINER/i, direction: [0, -0.28, 0.95], distance: 0.56, rotationAmount: 0.00 },
   { match: /SCREW|NUT/i, direction: [0, 0.85, 0], distance: 0.42, rotationAmount: 0.2 }
 ];
+
+// Exact per-part overrides.
+// Use the console output from HERO_MODEL_DEBUG.logExplodePartIdsOnLoad to copy exact IDs here.
+// These rules override the group rules above.
+// Example:
+// "NOSE_REMODEL-1__1": {
+//   direction: [0.2, 0, 1],
+//   distance: 1.1,
+//   rotationAmount: 0.04,
+//   rotationAxis: [0, 1, 0]
+// }
+const HERO_EXPLODE_PART_RULES = {};
 
 let heroModelScene = null;
 let heroModelCamera = null;
@@ -4481,7 +4669,7 @@ let heroModelSize = new THREE.Vector3(1, 1, 1);
 let heroModelMaxDim = 1;
 let heroModelScrollTarget = 0;
 let heroModelScrollCurrent = 0;
-let heroModelOrbitAngle = -0.95;
+let heroModelOrbitAngle = HERO_MODEL_MOTION.orbitStartAngle;
 let heroModelLoadedAsset = "";
 const heroMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 const heroModelTempQuat = new THREE.Quaternion();
@@ -4501,11 +4689,12 @@ function setHeroModelStatus(message) {
 }
 
 function getHeroModelPlaybackTarget() {
+  // This lets you test the model without scrolling.
   switch (HERO_MODEL_PLAYBACK.mode) {
     case "exploded":
-      return 0;
-    case "imploded":
       return 1;
+    case "imploded":
+      return 0;
     case "manual":
       return THREE.MathUtils.clamp(HERO_MODEL_PLAYBACK.manualProgress, 0, 1);
     default:
@@ -4522,6 +4711,7 @@ function clearHeroModelStatus() {
 }
 
 function styleHeroModel(root) {
+  // Applies the look controls above to every mesh in the loaded model.
   root.traverse((child) => {
     if (!child.isMesh) return;
 
@@ -4537,14 +4727,14 @@ function styleHeroModel(root) {
       if (!mat) return mat;
 
       const next = mat.clone();
-      if ("color" in next) next.color = new THREE.Color(0xFFFFFF);
-      if ("emissive" in next) next.emissive = new THREE.Color(0x09B02C);
-      if ("emissiveIntensity" in next) next.emissiveIntensity = .10;
-      if ("metalness" in next) next.metalness = 0.48;
-      if ("roughness" in next) next.roughness = 1;
-      if ("transparent" in next) next.transparent = true;
-      if ("opacity" in next) next.opacity = 1;
-      if ("side" in next) next.side = THREE.DoubleSide;
+      if ("color" in next && HERO_MODEL_LOOK.color != null) next.color = new THREE.Color(HERO_MODEL_LOOK.color);
+      if ("emissive" in next && HERO_MODEL_LOOK.emissive != null) next.emissive = new THREE.Color(HERO_MODEL_LOOK.emissive);
+      if ("emissiveIntensity" in next && HERO_MODEL_LOOK.emissiveIntensity != null) next.emissiveIntensity = HERO_MODEL_LOOK.emissiveIntensity;
+      if ("metalness" in next && HERO_MODEL_LOOK.metalness != null) next.metalness = HERO_MODEL_LOOK.metalness;
+      if ("roughness" in next && HERO_MODEL_LOOK.roughness != null) next.roughness = HERO_MODEL_LOOK.roughness;
+      if ("transparent" in next) next.transparent = HERO_MODEL_LOOK.transparent || HERO_MODEL_LOOK.opacity < 1;
+      if ("opacity" in next && HERO_MODEL_LOOK.opacity != null) next.opacity = HERO_MODEL_LOOK.opacity;
+      if ("side" in next) next.side = HERO_MODEL_LOOK.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
       if ("skinning" in next) next.skinning = child.isSkinnedMesh;
       next.needsUpdate = true;
       return next;
@@ -4632,12 +4822,24 @@ function collectHeroExplodeCandidates(node, candidates, seen) {
   });
 }
 
-function getHeroExplodeRule(nodeName) {
+function getHeroExplodePartId(nodeName, nameCounts) {
+  // Creates stable IDs like "NOSE_REMODEL-1__1" and "NOSE_REMODEL-1__2"
+  // so duplicate part names can still be edited individually.
+  const safeName = (nodeName || "Unnamed Part").trim() || "Unnamed Part";
+  nameCounts[safeName] = (nameCounts[safeName] || 0) + 1;
+  return safeName + "__" + nameCounts[safeName];
+}
+
+function getHeroExplodeRule(nodeName, partId) {
+  // Exact per-part rules win first, then group rules if no exact rule exists.
+  const exactRule = HERO_EXPLODE_PART_RULES[partId] || HERO_EXPLODE_PART_RULES[nodeName];
+  if (exactRule) return exactRule;
   if (!nodeName) return null;
-  return HERO_EXPLODE_RULES.find((rule) => rule.match.test(nodeName)) || null;
+  return HERO_EXPLODE_GROUP_RULES.find((rule) => rule.match.test(nodeName)) || null;
 }
 
 function buildHeroExplodeParts(root) {
+  // Builds the editable explosion metadata for every visible leaf part.
   heroModelExplodeParts = [];
   heroModelExplodeRoot = findHeroExplodeRoot(root);
 
@@ -4654,27 +4856,39 @@ function buildHeroExplodeParts(root) {
   }
 
   const assemblyCenterWorld = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
+  const partNameCounts = Object.create(null);
 
   candidates.forEach((node, index) => {
     const box = new THREE.Box3().setFromObject(node);
     if (box.isEmpty()) return;
 
-    const rule = getHeroExplodeRule(node.name || "");
+    const partId = getHeroExplodePartId(node.name || "", partNameCounts);
+    const rule = getHeroExplodeRule(node.name || "", partId);
     const partCenterWorld = box.getCenter(new THREE.Vector3());
     const partSize = box.getSize(new THREE.Vector3());
+
+    // If a rule defines a direction, use it.
+    // Otherwise the part automatically flies away from the assembly center.
     const directionWorld = rule
       ? new THREE.Vector3(rule.direction[0], rule.direction[1], rule.direction[2])
       : partCenterWorld.clone().sub(assemblyCenterWorld);
 
     if (directionWorld.lengthSq() < 1e-6) {
       const angle = (index / Math.max(candidates.length, 1)) * Math.PI * 2;
-      directionWorld.set(Math.cos(angle), ((index % 3) - 1) * 0.35, Math.sin(angle));
+      directionWorld.set(
+        Math.cos(angle),
+        ((index % 3) - 1) * HERO_EXPLODE_CONFIG.fallbackVerticalStep,
+        Math.sin(angle)
+      );
     }
 
     directionWorld.normalize();
 
     const sizeRatio = partSize.length() / Math.max(heroModelMaxDim, 1);
-    const spread = heroModelMaxDim * (rule?.distance ?? (0.18 + Math.min(sizeRatio, 0.35)));
+    const spread = heroModelMaxDim * (
+      rule?.distance ??
+      (HERO_EXPLODE_CONFIG.defaultDistanceBase + Math.min(sizeRatio, HERO_EXPLODE_CONFIG.defaultDistanceCap))
+    );
     const parent = node.parent || heroModelExplodeRoot;
     const localStart = parent.worldToLocal(partCenterWorld.clone());
     const localEnd = parent.worldToLocal(
@@ -4697,34 +4911,47 @@ function buildHeroExplodeParts(root) {
 
     heroModelExplodeParts.push({
       node,
+      partId,
+      partName: node.name || "Unnamed Part",
       restPosition: node.position.clone(),
       restQuaternion: node.quaternion.clone(),
       explodeOffset: localEnd.sub(localStart),
       rotationAxis,
-      rotationAmount: rule?.rotationAmount ?? (0.14 + (index % 4) * 0.05)
+      rotationAmount: rule?.rotationAmount ?? (
+        HERO_EXPLODE_CONFIG.defaultRotationBase + (index % 4) * HERO_EXPLODE_CONFIG.defaultRotationStep
+      )
     });
   });
+
+  if (HERO_MODEL_DEBUG.logExplodePartIdsOnLoad) {
+    // Browser console helper for creating exact per-part overrides.
+    console.groupCollapsed("Hero explode part IDs");
+    console.table(heroModelExplodeParts.map((part) => ({
+      id: part.partId,
+      name: part.partName
+    })));
+    console.groupEnd();
+  }
 }
 
 function applyHeroModelExplosion(progress) {
+  // Turns section scroll progress into explosion progress.
   const explodePhase = THREE.MathUtils.smootherstep(
     progress,
-    HERO_MODEL_CONFIG.explodeStart,
-    HERO_MODEL_CONFIG.explodeEnd
+    HERO_EXPLODE_CONFIG.start,
+    HERO_EXPLODE_CONFIG.end
   );
   const explodeProgress = explodePhase;
 
   heroModelExplodeParts.forEach((part) => {
     const offset = part.explodeOffset.clone();
 
-    // Easy global direction control:
-    // x: right/left
-    // y: up/down
-    // z: forward/backward
+    // Global axis multipliers let you flip or exaggerate the entire explosion.
+    // x: right/left, y: up/down, z: forward/backward
     offset.set(
-      offset.x * HERO_EXPLODE_AXIS.x,
-      offset.y * HERO_EXPLODE_AXIS.y,
-      offset.z * HERO_EXPLODE_AXIS.z
+      offset.x * HERO_EXPLODE_CONFIG.axis.x,
+      offset.y * HERO_EXPLODE_CONFIG.axis.y,
+      offset.z * HERO_EXPLODE_CONFIG.axis.z
     );
 
     part.node.position
@@ -4746,6 +4973,7 @@ function applyHeroModelExplosion(progress) {
 
 
 function updateHeroModelScrollProgress() {
+  // Scroll does nothing until the standalone model section is actually on screen.
   const section = document.querySelector(".argos-model-section");
   if (!section) return;
 
@@ -4810,9 +5038,9 @@ function loadHeroModel() {
         styleHeroModel(heroModelRoot);
 
         heroModelRoot.scale.set(
-          HERO_MODEL_CONFIG.scale[0],
-          HERO_MODEL_CONFIG.scale[1],
-          HERO_MODEL_CONFIG.scale[2]
+          HERO_MODEL_TRANSFORM.scale[0],
+          HERO_MODEL_TRANSFORM.scale[1],
+          HERO_MODEL_TRANSFORM.scale[2]
         );
         heroModelRoot.position.set(0, 0, 0);
         heroModelRoot.rotation.set(0, 0, 0);
@@ -4826,14 +5054,14 @@ function loadHeroModel() {
 
         heroModelRoot.position.set(-center.x, -center.y, -center.z);
         heroModelRig.position.set(
-          HERO_MODEL_CONFIG.position[0],
-          HERO_MODEL_CONFIG.position[1],
-          HERO_MODEL_CONFIG.position[2]
+          HERO_MODEL_TRANSFORM.position[0],
+          HERO_MODEL_TRANSFORM.position[1],
+          HERO_MODEL_TRANSFORM.position[2]
         );
         heroModelRig.rotation.set(
-          HERO_MODEL_CONFIG.rotation[0],
-          HERO_MODEL_CONFIG.rotation[1],
-          HERO_MODEL_CONFIG.rotation[2]
+          HERO_MODEL_TRANSFORM.rotation[0],
+          HERO_MODEL_TRANSFORM.rotation[1],
+          HERO_MODEL_TRANSFORM.rotation[2]
         );
 
         heroModelRig.add(heroModelRoot);
@@ -4869,40 +5097,50 @@ function animateHeroModelViewer() {
     updateHeroModelScrollProgress();
 
     const reducedMotion = !!heroMotionQuery?.matches;
-    const blend = reducedMotion ? 0.24 : 0.11;
+    const blend = reducedMotion ? HERO_MODEL_MOTION.reducedMotionBlend : HERO_MODEL_MOTION.scrollBlend;
     const targetProgress = getHeroModelPlaybackTarget();
     heroModelScrollCurrent += (targetProgress - heroModelScrollCurrent) * blend;
 
     if (heroModelRig) {
+      // explodeProgress is the one number that drives the visible separation.
       const explodeProgress = applyHeroModelExplosion(heroModelScrollCurrent);
-      const depthPull = explodeProgress * heroModelMaxDim * 1.18;
-      const explodeLift = explodeProgress * heroModelMaxDim * 0.05;
-      const zoomOut = explodeProgress * 1.85 + heroModelScrollCurrent * 0.48;
+      const depthPull = explodeProgress * heroModelMaxDim * HERO_MODEL_MOTION.depthPullOnExplode;
+      const explodeLift = explodeProgress * heroModelMaxDim * HERO_MODEL_MOTION.liftOnExplode;
+      const zoomOut =
+        explodeProgress * HERO_MODEL_CAMERA.radiusExplodeBoost +
+        heroModelScrollCurrent * HERO_MODEL_CAMERA.radiusScrollBoost;
 
-      heroModelOrbitAngle += ((-0.9 + heroModelScrollCurrent * 1.55) - heroModelOrbitAngle) * 0.08;
+      heroModelOrbitAngle += (
+        (HERO_MODEL_MOTION.orbitStartAngle + heroModelScrollCurrent * HERO_MODEL_MOTION.orbitTurnPerScroll) -
+        heroModelOrbitAngle
+      ) * HERO_MODEL_MOTION.orbitLerp;
 
-      heroModelRig.rotation.x = HERO_MODEL_CONFIG.rotation[0] - heroModelScrollCurrent * 0.08;
-      heroModelRig.rotation.y = HERO_MODEL_CONFIG.rotation[1] + heroModelScrollCurrent * Math.PI * 1.42;
-      heroModelRig.rotation.z = HERO_MODEL_CONFIG.rotation[2];
+      heroModelRig.rotation.x = HERO_MODEL_TRANSFORM.rotation[0] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateXPerScroll;
+      heroModelRig.rotation.y = HERO_MODEL_TRANSFORM.rotation[1] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateYPerScroll;
+      heroModelRig.rotation.z = HERO_MODEL_TRANSFORM.rotation[2] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateZPerScroll;
 
-      heroModelRig.position.x = HERO_MODEL_CONFIG.position[0];
+      heroModelRig.position.x = HERO_MODEL_TRANSFORM.position[0];
       heroModelRig.position.y =
-        HERO_MODEL_CONFIG.position[1] +
-        heroModelScrollCurrent * heroModelMaxDim * 0.024 -
+        HERO_MODEL_TRANSFORM.position[1] +
+        heroModelScrollCurrent * heroModelMaxDim * HERO_MODEL_MOTION.moveYPerScroll -
         explodeLift;
-      heroModelRig.position.z = HERO_MODEL_CONFIG.position[2] - depthPull;
-      heroModelRig.scale.setScalar(1 - explodeProgress * 0.12);
+      heroModelRig.position.z = HERO_MODEL_TRANSFORM.position[2] - depthPull;
+      heroModelRig.scale.setScalar(1 - explodeProgress * HERO_MODEL_MOTION.scaleDownOnExplode);
 
-      const radius = heroModelMaxDim * (3.2 + zoomOut);
+      const radius = heroModelMaxDim * (HERO_MODEL_CAMERA.radiusBase + zoomOut);
       heroModelCamera.position.x = heroModelRig.position.x + Math.cos(heroModelOrbitAngle) * radius;
       heroModelCamera.position.z = heroModelRig.position.z + Math.sin(heroModelOrbitAngle) * radius;
       heroModelCamera.position.y =
         heroModelRig.position.y +
-        heroModelSize.y * (0.28 + heroModelScrollCurrent * 0.12 + explodeProgress * 0.08);
+        heroModelSize.y * (
+          HERO_MODEL_CAMERA.heightBaseFactor +
+          heroModelScrollCurrent * HERO_MODEL_CAMERA.heightScrollFactor +
+          explodeProgress * HERO_MODEL_CAMERA.heightExplodeFactor
+        );
 
       heroModelCamera.lookAt(
         heroModelRig.position.x,
-        heroModelRig.position.y + heroModelSize.y * 0.08,
+        heroModelRig.position.y + heroModelSize.y * HERO_MODEL_CAMERA.lookAtYOffset,
         heroModelRig.position.z
       );
     }
@@ -4927,9 +5165,19 @@ function initHeroModelViewer() {
   const width = wrap.clientWidth || 640;
   const height = wrap.clientHeight || 640;
 
+  // Camera setup is controlled by HERO_MODEL_CAMERA above.
   heroModelScene = new THREE.Scene();
-  heroModelCamera = new THREE.PerspectiveCamera(33, width / height, 0.1, 1000);
-  heroModelCamera.position.set(0, 1.34, 6.9);
+  heroModelCamera = new THREE.PerspectiveCamera(
+    HERO_MODEL_CAMERA.fov,
+    width / height,
+    HERO_MODEL_CAMERA.near,
+    HERO_MODEL_CAMERA.far
+  );
+  heroModelCamera.position.set(
+    HERO_MODEL_CAMERA.position[0],
+    HERO_MODEL_CAMERA.position[1],
+    HERO_MODEL_CAMERA.position[2]
+  );
 
   heroModelRenderer = new THREE.WebGLRenderer({
     alpha: true,
@@ -4939,24 +5187,46 @@ function initHeroModelViewer() {
   heroModelRenderer.setSize(width, height);
   heroModelRenderer.outputEncoding = THREE.sRGBEncoding;
   heroModelRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  heroModelRenderer.toneMappingExposure = 1.08;
+  heroModelRenderer.toneMappingExposure = HERO_MODEL_LOOK.toneMappingExposure;
   heroModelRenderer.domElement.style.width = "100%";
   heroModelRenderer.domElement.style.height = "100%";
   heroModelRenderer.domElement.style.display = "block";
   heroModelRenderer.domElement.style.pointerEvents = "none";
   wrap.appendChild(heroModelRenderer.domElement);
 
-  heroModelScene.add(new THREE.AmbientLight(0xffffff, 1.35));
+  // Lighting setup is controlled by HERO_MODEL_LIGHTING above.
+  heroModelScene.add(new THREE.AmbientLight(
+    HERO_MODEL_LIGHTING.ambient.color,
+    HERO_MODEL_LIGHTING.ambient.intensity
+  ));
 
-  const keyLight = new THREE.DirectionalLight(0xf5fff7, 1.75);
-  keyLight.position.set(4, 5, 6);
+  const keyLight = new THREE.DirectionalLight(
+    HERO_MODEL_LIGHTING.key.color,
+    HERO_MODEL_LIGHTING.key.intensity
+  );
+  keyLight.position.set(
+    HERO_MODEL_LIGHTING.key.position[0],
+    HERO_MODEL_LIGHTING.key.position[1],
+    HERO_MODEL_LIGHTING.key.position[2]
+  );
   heroModelScene.add(keyLight);
 
-  const rimLight = new THREE.DirectionalLight(0x63ff93, 1.15);
-  rimLight.position.set(-5, 2, -4);
+  const rimLight = new THREE.DirectionalLight(
+    HERO_MODEL_LIGHTING.rim.color,
+    HERO_MODEL_LIGHTING.rim.intensity
+  );
+  rimLight.position.set(
+    HERO_MODEL_LIGHTING.rim.position[0],
+    HERO_MODEL_LIGHTING.rim.position[1],
+    HERO_MODEL_LIGHTING.rim.position[2]
+  );
   heroModelScene.add(rimLight);
 
-  const fillLight = new THREE.HemisphereLight(0xffffff, 0x06210f, 0.95);
+  const fillLight = new THREE.HemisphereLight(
+    HERO_MODEL_LIGHTING.fill.skyColor,
+    HERO_MODEL_LIGHTING.fill.groundColor,
+    HERO_MODEL_LIGHTING.fill.intensity
+  );
   heroModelScene.add(fillLight);
 
   updateHeroModelScrollProgress();

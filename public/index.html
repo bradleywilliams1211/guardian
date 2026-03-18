@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -258,13 +258,75 @@
     }
 
     .hero{
+        position: relative;
         padding: 44px 0 36px;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .argos-model-section{
+        position: relative;
+        min-height: 320vh;
+        margin: 12px 0 0;
+    }
+
+    .argos-model-sticky{
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .argos-model-stage{
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: .98;
+        background:
+        radial-gradient(circle at 24% 34%, rgba(255,255,255,.26), rgba(255,255,255,0) 34%),
+        radial-gradient(circle at 50% 50%, rgba(9,176,44,.18), rgba(9,176,44,.08) 34%, rgba(9,176,44,0) 72%),
+        radial-gradient(circle at 76% 58%, rgba(9,176,44,.14), rgba(9,176,44,0) 48%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.92) 10%, rgba(0,0,0,1) 22%, rgba(0,0,0,1) 78%, rgba(0,0,0,.92) 90%, transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.92) 10%, rgba(0,0,0,1) 22%, rgba(0,0,0,1) 78%, rgba(0,0,0,.92) 90%, transparent 100%);
+    }
+
+    .argos-model-stage::before,
+    .argos-model-stage::after{
+        content: "";
+        position: absolute;
+        inset: 0;
+    }
+
+    .argos-model-stage::before{
+        background:
+        radial-gradient(circle at 34% 42%, rgba(255,255,255,.3), rgba(255,255,255,0) 26%),
+        radial-gradient(circle at 50% 50%, rgba(9,176,44,.3), rgba(9,176,44,.12) 28%, rgba(9,176,44,0) 62%),
+        radial-gradient(circle at 68% 62%, rgba(9,176,44,.18), rgba(9,176,44,0) 42%);
+        filter: blur(64px);
+        transform: scale(1.1);
+    }
+
+    .argos-model-stage::after{
+        background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.12), rgba(255,255,255,0) 54%),
+        radial-gradient(circle at 50% 74%, rgba(9,176,44,.1), rgba(9,176,44,0) 38%);
+        filter: blur(36px);
+        opacity: .72;
     }
 
     .hero-grid{
         display: grid;
         grid-template-columns: 1.06fr .94fr;
         gap: 34px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-copy{
+        position: relative;
+        z-index: 2;
     }
 
     .eyebrow{
@@ -338,6 +400,7 @@
         align-content: start;
         gap: 18px;
         padding: 18px 0 12px;
+        z-index: 2;
     }
 
     .glow{
@@ -348,6 +411,33 @@
         background: radial-gradient(circle, rgba(9,176,44,.24), rgba(9,176,44,.04) 58%, transparent 70%);
         filter: blur(22px);
         pointer-events: none;
+    }
+
+    #heroModelViewer{
+        position: absolute;
+        inset: 0;
+    }
+
+    #heroModelViewer canvas{
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        filter: drop-shadow(0 28px 70px rgba(9,176,44,.18));
+    }
+
+    .hero-model-status{
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        color: rgba(16,34,24,.64);
+        font-size: .88rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        text-align: center;
     }
 #landing-page{
   display: block;
@@ -1952,6 +2042,15 @@
         grid-template-columns: 1fr;
         }
 
+        .argos-model-section{
+        min-height: 260vh;
+        }
+
+        .argos-model-stage{
+        inset: -4% -10%;
+        opacity: .88;
+        }
+
         .hero-visual{
         padding-top: 10px;
         }
@@ -1998,6 +2097,15 @@
 
         .hero{
         padding-top: 28px;
+        }
+
+        .argos-model-section{
+        min-height: 220vh;
+        }
+
+        .argos-model-stage{
+        inset: -2% -18%;
+        opacity: .62;
         }
 
         .hero h1{
@@ -2258,7 +2366,7 @@
   <main id="top">
     <section class="hero">
       <div class="wrap hero-grid">
-        <div class="reveal is-visible">
+        <div class="reveal is-visible hero-copy">
           <span class="eyebrow">Predictive Glucose Management</span>
           <h1>Less Stress,
             More Living.</h1>
@@ -2281,8 +2389,8 @@
               <span>Trusted Users</span>
             </article>
             <article class="stat">
-              <strong data-count="3">0</strong>
-              <span>core actions to understand a reading</span>
+              <strong>5 min</strong>
+              <span>update intervals, same as dexcom</span>
             </article>
           </div>
         </div>
@@ -2294,15 +2402,14 @@
           <div class="dashboard-card">
             <div class="card-header">
               <div>
-                <div class="card-title">Guardian glucose overview</div>
-                <div style="color:var(--muted);font-size:.92rem;margin-top:4px;">A focused dashboard for quick decisions</div>
+                <div class="card-title"><strong>Guardian glucose overview</strong></div>
               </div>
               <span class="pill">Updated now</span>
             </div>
 
             <div class="reading">
               <div class="reading-main">
-                <div class="small-label">Current reading</div>
+                <div class="small-label">30 min prediction</div>
                 <div class="big-number">112</div>
                 <div class="trend">↗ Stable rise</div>
               </div>
@@ -2316,7 +2423,7 @@
             <div class="chart">
               <div>
                 <div class="small-label">24 hour trend</div>
-                <div style="font-size:1.4rem;font-weight:800;letter-spacing:-.05em;margin-top:6px;">Visualized for humans, not robots pretending to be doctors</div>
+                <div style="font-size:1.4rem;font-weight:800;letter-spacing:-.05em;margin-top:6px;">Efficient Analysis for predictive insights</div>
               </div>
               <div class="chart-grid">
                 <svg class="chart-line" viewBox="0 0 700 220" preserveAspectRatio="none" aria-hidden="true">
@@ -2328,7 +2435,37 @@
                   </defs>
                   <path d="M0,170 C55,164 72,135 120,128 C168,121 198,145 236,138 C274,131 314,76 354,82 C394,88 430,150 466,144 C502,138 530,110 568,113 C606,116 648,87 700,96 L700,220 L0,220 Z" fill="url(#areaGradient)"></path>
                   <path d="M0,170 C55,164 72,135 120,128 C168,121 198,145 236,138 C274,131 314,76 354,82 C394,88 430,150 466,144 C502,138 530,110 568,113 C606,116 648,87 700,96" fill="none" stroke="#09B02C" stroke-width="6" stroke-linecap="round"></path>
-                  <circle cx="354" cy="82" r="8" fill="#09B02C"></circle>
+                  <line 
+                    x1="500" 
+                    y1="0" 
+                    x2="500" 
+                    y2="220" 
+                    stroke="#09B02C" 
+                    stroke-width="2"
+                    stroke-dasharray="8,8"
+                    opacity="0.6"
+                  />
+                  <line 
+                    x1="500" 
+                    y1="133" 
+                    x2="700" 
+                    y2="100" 
+                    stroke="#09B02C" 
+                    stroke-width="2"
+                    stroke-dasharray="8,8"
+                    opacity="0.6"
+                  />
+                  <line 
+                    x1="500" 
+                    y1="133" 
+                    x2="700" 
+                    y2="30" 
+                    stroke="#09B02C" 
+                    stroke-width="2"
+                    stroke-dasharray="8,8"
+                    opacity="0.6"
+                  />
+                  <circle cx="500" cy="133" r="8" fill="#09B02C"></circle>
                   <circle cx="700" cy="96" r="10" fill="#09B02C"></circle>
                 </svg>
               </div>
@@ -2352,12 +2489,18 @@
         </div>
       </div>
     </section>
-
+    <section class="argos-model-section" id="argos-model">
+      <div class="argos-model-sticky">
+        <div class="argos-model-stage" aria-hidden="true">
+          <div id="heroModelViewer"></div>
+        </div>
+      </div>
+    </section>
     <section class="section" id="features">
       <div class="wrap">
         <div class="section-head reveal">
           <div>
-            <h2>Clean design. Useful guidance.</h2>
+            <h2>Hands free. Useful guidance.</h2>
           </div>
         </div>
 
@@ -2446,9 +2589,9 @@
                   <div style="color:var(--muted);line-height:1.6;">Slow rise over the next hour</div>
                 </article>
                 <article class="mini-panel">
-                  <div class="small-label">Time in range</div>
-                  <strong>76%</strong>
-                  <div style="color:var(--muted);line-height:1.6;">Strong recent control</div>
+                  <div class="small-label">Bloodsugar in 30 min</div>
+                  <strong>82</strong>
+                  <div style="color:var(--muted);line-height:1.6;">Watch levels</div>
                 </article>
                 <article class="mini-panel">
                   <div class="small-label">Daily low</div>
@@ -2583,16 +2726,16 @@
           
         <div class="faq">
           <details class="reveal" open>
-            <summary>Is this the exact source code from the live site?</summary>
-            <p>No. This is a one-file visual clone inspired by the live layout and style, not copied source code.</p>
+            <summary>Is my Dexcom Data safe?</summary>
+            <p>Yes, the data is from the Dexcom API and your information is not hard coded so no data leaks.</p>
           </details>
           <details class="reveal">
-            <summary>Can I replace the fake numbers and cards with my real data?</summary>
-            <p>Yes. Swap the text, values, chart path, CTA links, and app screenshots with your actual content.</p>
+            <summary>How accurate is the forecast?</summary>
+            <p>While the accuracy will depend on the noise or variation of your bloodsugar, Ill test it soon to give an actual estimation of accuracy.</p>
           </details>
           <details class="reveal">
-            <summary>Can this be turned into a login page or full website next?</summary>
-            <p>Absolutely. This file can be split into components later or expanded into a multi-section marketing site with auth pages.</p>
+            <summary>Does it cost money?</summary>
+            <p>As of right now, no. The base website is free to use and you can find the code at <a href="https://github.com/bradleywilliams1211/guardian"><strong>Github</strong></a>, however the robotic part will require purchase but it is currently unreleased.</p>
           </details>
         </div>
       </div>
@@ -3863,20 +4006,20 @@ let cinematicAngle = 0;
 
 const ROBOT_MODELS = {
   dog: {
-    path: "/models/Guard_Bone_Shell.glb",
+    path: "/models/Assembly/Argos_asm.glb",
     scale: [1.2, 1.2, 1.2],
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
   },
 
   bird: {
-    path: "/models/bird.glb",
+    path: "/models/Assembly/bird.glb",
     scale: [1.2, 1.2, 1.2],
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
   },
     turtle: {
-    path: "/models/turtle.glb",
+    path: "/models/Assembly/turtle.glb",
     scale: [1.2, 1.2, 1.2],
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
@@ -4284,6 +4427,547 @@ function resizeRobotViewer() {
   robotCamera.aspect = width / height;
   robotCamera.updateProjectionMatrix();
   robotRenderer.setSize(width, height);
+}
+
+const HERO_MODEL_CONFIG = {
+  name: "Argos",
+  assetCandidates: [
+    "/models/Assembly/Argos_asm.glb",
+    "/models/Argos_Assembly.glb",
+    ROBOT_MODELS.dog.path
+  ],
+  scale: [1, 1, 1],
+  position: [0, 0, 0],
+  rotation: [0, Math.PI + 0.48, 0],
+  explodeStart: 0.12,
+  explodeEnd: 0.42
+};
+
+// Simple testing controls:
+// mode: "scroll" | "exploded" | "imploded" | "manual"
+// triggerLine: lower values wait until the section is more on-screen before scroll takes over.
+const HERO_MODEL_PLAYBACK = {
+  mode: "scroll",
+  manualProgress: 1,
+  triggerLine: 0.42
+};
+
+const HERO_EXPLODE_AXIS = {
+  x: 1,
+  y: 1,
+  z: 1
+};
+
+const HERO_EXPLODE_RULES = [
+  { match: /BODY_REMODEL_LID|LID/i, direction: [0, 1.1, 0.15], distance: 0, rotationAmount: 0.0 },
+  { match: /NOSE/i, direction: [0.14, 0.2, 1], distance: 0.82, rotationAmount: 0.00 },
+  { match: /RH_LEG|RIGHT.*LEG/i, direction: [1, 0.12, 0.2], distance: 1.02, rotationAmount: 0.0 },
+  { match: /LH_LEG|LEFT.*LEG/i, direction: [-1, 0.12, 0.2], distance: 1.02, rotationAmount: 0.0 },
+  { match: /SHOULDER|THIGH|WRIST|FOOT/i, direction: [0, -0.18, 0.55], distance: 0.72, rotationAmount: 0.0 },
+  { match: /GUARD_SHELL|SHELL/i, direction: [0, 0.34, -1], distance: 0.62, rotationAmount: 0.09 },
+  { match: /CONTAINER_AXEL|CONTAINER/i, direction: [0, -0.28, 0.95], distance: 0.56, rotationAmount: 0.00 },
+  { match: /SCREW|NUT/i, direction: [0, 0.85, 0], distance: 0.42, rotationAmount: 0.2 }
+];
+
+let heroModelScene = null;
+let heroModelCamera = null;
+let heroModelRenderer = null;
+let heroModelRig = null;
+let heroModelRoot = null;
+let heroModelExplodeRoot = null;
+let heroModelExplodeParts = [];
+let heroModelAnimFrame = null;
+let heroModelSize = new THREE.Vector3(1, 1, 1);
+let heroModelMaxDim = 1;
+let heroModelScrollTarget = 0;
+let heroModelScrollCurrent = 0;
+let heroModelOrbitAngle = -0.95;
+let heroModelLoadedAsset = "";
+const heroMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+const heroModelTempQuat = new THREE.Quaternion();
+
+function setHeroModelStatus(message) {
+  const wrap = document.getElementById("heroModelViewer");
+  if (!wrap) return;
+
+  let status = wrap.querySelector(".hero-model-status");
+  if (!status) {
+    status = document.createElement("div");
+    status.className = "hero-model-status";
+    wrap.appendChild(status);
+  }
+
+  status.textContent = message;
+}
+
+function getHeroModelPlaybackTarget() {
+  switch (HERO_MODEL_PLAYBACK.mode) {
+    case "exploded":
+      return 0;
+    case "imploded":
+      return 1;
+    case "manual":
+      return THREE.MathUtils.clamp(HERO_MODEL_PLAYBACK.manualProgress, 0, 1);
+    default:
+      return heroModelScrollTarget;
+  }
+}
+
+function clearHeroModelStatus() {
+  const wrap = document.getElementById("heroModelViewer");
+  if (!wrap) return;
+
+  const status = wrap.querySelector(".hero-model-status");
+  if (status) status.remove();
+}
+
+function styleHeroModel(root) {
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+
+    child.frustumCulled = false;
+
+    if (child.isSkinnedMesh) {
+      child.bindMode = "attached";
+      child.normalizeSkinWeights();
+    }
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    const nextMaterials = materials.map((mat) => {
+      if (!mat) return mat;
+
+      const next = mat.clone();
+      if ("color" in next) next.color = new THREE.Color(0xFFFFFF);
+      if ("emissive" in next) next.emissive = new THREE.Color(0x09B02C);
+      if ("emissiveIntensity" in next) next.emissiveIntensity = .10;
+      if ("metalness" in next) next.metalness = 0.48;
+      if ("roughness" in next) next.roughness = 1;
+      if ("transparent" in next) next.transparent = true;
+      if ("opacity" in next) next.opacity = 1;
+      if ("side" in next) next.side = THREE.DoubleSide;
+      if ("skinning" in next) next.skinning = child.isSkinnedMesh;
+      next.needsUpdate = true;
+      return next;
+    });
+
+    child.material = Array.isArray(child.material) ? nextMaterials : nextMaterials[0];
+  });
+}
+
+function hasRenderableDescendants(node) {
+  let hasRenderable = false;
+
+  node.traverse((child) => {
+    if (child.isMesh) {
+      hasRenderable = true;
+    }
+  });
+
+  return hasRenderable;
+}
+
+function findHeroExplodeRoot(root) {
+  let current = root;
+
+  while (
+    current &&
+    current.children.length === 1 &&
+    !current.children[0].isMesh &&
+    hasRenderableDescendants(current.children[0])
+  ) {
+    current = current.children[0];
+  }
+
+  const renderableChildren = current.children.filter(hasRenderableDescendants);
+  if (renderableChildren.length > 1) {
+    return current;
+  }
+
+  for (const child of current.children) {
+    if (child.isMesh || !hasRenderableDescendants(child)) continue;
+
+    const nestedRenderableChildren = child.children.filter(hasRenderableDescendants);
+    if (nestedRenderableChildren.length > 1) {
+      return child;
+    }
+  }
+
+  return current;
+}
+
+function collectHeroExplodeCandidates(node, candidates, seen) {
+  if (!node || !hasRenderableDescendants(node)) return;
+
+  if (node.isMesh) {
+    if (!seen.has(node.uuid)) {
+      seen.add(node.uuid);
+      candidates.push(node);
+    }
+    return;
+  }
+
+  const directMeshes = node.children.filter((child) => child.isMesh);
+  const nestedGroups = node.children.filter((child) => !child.isMesh && hasRenderableDescendants(child));
+
+  if (nestedGroups.length === 0) {
+    const targets = directMeshes.length <= 1 ? [node] : directMeshes;
+    targets.forEach((target) => {
+      if (!seen.has(target.uuid)) {
+        seen.add(target.uuid);
+        candidates.push(target);
+      }
+    });
+    return;
+  }
+
+  directMeshes.forEach((mesh) => {
+    if (!seen.has(mesh.uuid)) {
+      seen.add(mesh.uuid);
+      candidates.push(mesh);
+    }
+  });
+
+  nestedGroups.forEach((group) => {
+    collectHeroExplodeCandidates(group, candidates, seen);
+  });
+}
+
+function getHeroExplodeRule(nodeName) {
+  if (!nodeName) return null;
+  return HERO_EXPLODE_RULES.find((rule) => rule.match.test(nodeName)) || null;
+}
+
+function buildHeroExplodeParts(root) {
+  heroModelExplodeParts = [];
+  heroModelExplodeRoot = findHeroExplodeRoot(root);
+
+  const candidates = [];
+  const seen = new Set();
+
+  heroModelExplodeRoot.children
+    .filter(hasRenderableDescendants)
+    .forEach((child) => collectHeroExplodeCandidates(child, candidates, seen));
+
+  if (candidates.length <= 1) {
+    console.info("Hero model loaded without separable assembly parts:", heroModelLoadedAsset);
+    return;
+  }
+
+  const assemblyCenterWorld = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
+
+  candidates.forEach((node, index) => {
+    const box = new THREE.Box3().setFromObject(node);
+    if (box.isEmpty()) return;
+
+    const rule = getHeroExplodeRule(node.name || "");
+    const partCenterWorld = box.getCenter(new THREE.Vector3());
+    const partSize = box.getSize(new THREE.Vector3());
+    const directionWorld = rule
+      ? new THREE.Vector3(rule.direction[0], rule.direction[1], rule.direction[2])
+      : partCenterWorld.clone().sub(assemblyCenterWorld);
+
+    if (directionWorld.lengthSq() < 1e-6) {
+      const angle = (index / Math.max(candidates.length, 1)) * Math.PI * 2;
+      directionWorld.set(Math.cos(angle), ((index % 3) - 1) * 0.35, Math.sin(angle));
+    }
+
+    directionWorld.normalize();
+
+    const sizeRatio = partSize.length() / Math.max(heroModelMaxDim, 1);
+    const spread = heroModelMaxDim * (rule?.distance ?? (0.18 + Math.min(sizeRatio, 0.35)));
+    const parent = node.parent || heroModelExplodeRoot;
+    const localStart = parent.worldToLocal(partCenterWorld.clone());
+    const localEnd = parent.worldToLocal(
+      partCenterWorld.clone().add(directionWorld.clone().multiplyScalar(spread))
+    );
+    const localDirection = localEnd.clone().sub(localStart);
+
+    if (localDirection.lengthSq() < 1e-6) {
+      localDirection.set(directionWorld.x, directionWorld.y, directionWorld.z);
+    }
+
+    localDirection.normalize();
+    const rotationAxis = rule?.rotationAxis
+      ? new THREE.Vector3(rule.rotationAxis[0], rule.rotationAxis[1], rule.rotationAxis[2]).normalize()
+      : new THREE.Vector3(
+          localDirection.z || 0.25,
+          0.4 + (index % 5) * 0.08,
+          -localDirection.x || 0.25
+        ).normalize();
+
+    heroModelExplodeParts.push({
+      node,
+      restPosition: node.position.clone(),
+      restQuaternion: node.quaternion.clone(),
+      explodeOffset: localEnd.sub(localStart),
+      rotationAxis,
+      rotationAmount: rule?.rotationAmount ?? (0.14 + (index % 4) * 0.05)
+    });
+  });
+}
+
+function applyHeroModelExplosion(progress) {
+  const explodePhase = THREE.MathUtils.smootherstep(
+    progress,
+    HERO_MODEL_CONFIG.explodeStart,
+    HERO_MODEL_CONFIG.explodeEnd
+  );
+  const explodeProgress = explodePhase;
+
+  heroModelExplodeParts.forEach((part) => {
+    const offset = part.explodeOffset.clone();
+
+    // Easy global direction control:
+    // x: right/left
+    // y: up/down
+    // z: forward/backward
+    offset.set(
+      offset.x * HERO_EXPLODE_AXIS.x,
+      offset.y * HERO_EXPLODE_AXIS.y,
+      offset.z * HERO_EXPLODE_AXIS.z
+    );
+
+    part.node.position
+      .copy(part.restPosition)
+      .addScaledVector(offset, explodeProgress);
+
+    heroModelTempQuat.setFromAxisAngle(
+      part.rotationAxis,
+      part.rotationAmount * explodeProgress
+    );
+
+    part.node.quaternion
+      .copy(part.restQuaternion)
+      .multiply(heroModelTempQuat);
+  });
+
+  return explodeProgress;
+}
+
+
+function updateHeroModelScrollProgress() {
+  const section = document.querySelector(".argos-model-section");
+  if (!section) return;
+
+  const rect = section.getBoundingClientRect();
+  const triggerY = window.innerHeight * HERO_MODEL_PLAYBACK.triggerLine;
+
+  if (rect.bottom <= 0 || rect.top > triggerY) {
+    heroModelScrollTarget = 0;
+    return;
+  }
+
+  const range = Math.max(rect.height - triggerY + window.innerHeight * 0.55, 1);
+  const traveled = triggerY - rect.top;
+  heroModelScrollTarget = THREE.MathUtils.clamp(traveled / range, 0, 1);
+}
+
+function resizeHeroModelViewer() {
+  const wrap = document.getElementById("heroModelViewer");
+  if (!wrap || !heroModelRenderer || !heroModelCamera) return;
+
+  const width = wrap.clientWidth || 640;
+  const height = wrap.clientHeight || 640;
+
+  heroModelCamera.aspect = width / height;
+  heroModelCamera.updateProjectionMatrix();
+  heroModelRenderer.setSize(width, height);
+}
+
+function loadHeroModel() {
+  if (!heroModelScene) return;
+
+  setHeroModelStatus("Loading " + HERO_MODEL_CONFIG.name);
+
+  const loader = new THREE.GLTFLoader();
+  const dracoLoader = new THREE.DRACOLoader();
+  dracoLoader.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/");
+  loader.setDRACOLoader(dracoLoader);
+
+  const tryLoadAsset = (assetIndex) => {
+    const assetPath = HERO_MODEL_CONFIG.assetCandidates[assetIndex];
+
+    if (!assetPath) {
+      console.error("Hero model failed to load all asset candidates");
+      setHeroModelStatus(HERO_MODEL_CONFIG.name + " model unavailable");
+      return;
+    }
+
+    loader.load(
+      assetPath,
+      function (gltf) {
+        heroModelLoadedAsset = assetPath;
+        clearHeroModelStatus();
+
+        if (heroModelRig) {
+          heroModelScene.remove(heroModelRig);
+        }
+
+        heroModelRig = new THREE.Group();
+        heroModelRoot = gltf.scene;
+        heroModelExplodeParts = [];
+
+        styleHeroModel(heroModelRoot);
+
+        heroModelRoot.scale.set(
+          HERO_MODEL_CONFIG.scale[0],
+          HERO_MODEL_CONFIG.scale[1],
+          HERO_MODEL_CONFIG.scale[2]
+        );
+        heroModelRoot.position.set(0, 0, 0);
+        heroModelRoot.rotation.set(0, 0, 0);
+
+        const box = new THREE.Box3().setFromObject(heroModelRoot);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        heroModelSize.copy(size);
+        heroModelMaxDim = Math.max(size.x, size.y, size.z) || 1;
+
+        heroModelRoot.position.set(-center.x, -center.y, -center.z);
+        heroModelRig.position.set(
+          HERO_MODEL_CONFIG.position[0],
+          HERO_MODEL_CONFIG.position[1],
+          HERO_MODEL_CONFIG.position[2]
+        );
+        heroModelRig.rotation.set(
+          HERO_MODEL_CONFIG.rotation[0],
+          HERO_MODEL_CONFIG.rotation[1],
+          HERO_MODEL_CONFIG.rotation[2]
+        );
+
+        heroModelRig.add(heroModelRoot);
+        heroModelScene.add(heroModelRig);
+        heroModelRig.updateWorldMatrix(true, true);
+        buildHeroExplodeParts(heroModelRoot);
+        applyHeroModelExplosion(0);
+        resizeHeroModelViewer();
+        updateHeroModelScrollProgress();
+      },
+      undefined,
+      function (error) {
+        if (assetIndex < HERO_MODEL_CONFIG.assetCandidates.length - 1) {
+          console.warn("Hero model asset unavailable, trying fallback:", assetPath);
+          tryLoadAsset(assetIndex + 1);
+          return;
+        }
+
+        console.error("Hero model failed to load:", error);
+        setHeroModelStatus(HERO_MODEL_CONFIG.name + " model unavailable");
+      }
+    );
+  };
+
+  tryLoadAsset(0);
+}
+
+function animateHeroModelViewer() {
+  if (!heroModelRenderer || !heroModelScene || !heroModelCamera) return;
+
+  function loop(now) {
+    heroModelAnimFrame = requestAnimationFrame(loop);
+    updateHeroModelScrollProgress();
+
+    const reducedMotion = !!heroMotionQuery?.matches;
+    const blend = reducedMotion ? 0.24 : 0.11;
+    const targetProgress = getHeroModelPlaybackTarget();
+    heroModelScrollCurrent += (targetProgress - heroModelScrollCurrent) * blend;
+
+    if (heroModelRig) {
+      const explodeProgress = applyHeroModelExplosion(heroModelScrollCurrent);
+      const depthPull = explodeProgress * heroModelMaxDim * 1.18;
+      const explodeLift = explodeProgress * heroModelMaxDim * 0.05;
+      const zoomOut = explodeProgress * 1.85 + heroModelScrollCurrent * 0.48;
+
+      heroModelOrbitAngle += ((-0.9 + heroModelScrollCurrent * 1.55) - heroModelOrbitAngle) * 0.08;
+
+      heroModelRig.rotation.x = HERO_MODEL_CONFIG.rotation[0] - heroModelScrollCurrent * 0.08;
+      heroModelRig.rotation.y = HERO_MODEL_CONFIG.rotation[1] + heroModelScrollCurrent * Math.PI * 1.42;
+      heroModelRig.rotation.z = HERO_MODEL_CONFIG.rotation[2];
+
+      heroModelRig.position.x = HERO_MODEL_CONFIG.position[0];
+      heroModelRig.position.y =
+        HERO_MODEL_CONFIG.position[1] +
+        heroModelScrollCurrent * heroModelMaxDim * 0.024 -
+        explodeLift;
+      heroModelRig.position.z = HERO_MODEL_CONFIG.position[2] - depthPull;
+      heroModelRig.scale.setScalar(1 - explodeProgress * 0.12);
+
+      const radius = heroModelMaxDim * (3.2 + zoomOut);
+      heroModelCamera.position.x = heroModelRig.position.x + Math.cos(heroModelOrbitAngle) * radius;
+      heroModelCamera.position.z = heroModelRig.position.z + Math.sin(heroModelOrbitAngle) * radius;
+      heroModelCamera.position.y =
+        heroModelRig.position.y +
+        heroModelSize.y * (0.28 + heroModelScrollCurrent * 0.12 + explodeProgress * 0.08);
+
+      heroModelCamera.lookAt(
+        heroModelRig.position.x,
+        heroModelRig.position.y + heroModelSize.y * 0.08,
+        heroModelRig.position.z
+      );
+    }
+
+    heroModelRenderer.render(heroModelScene, heroModelCamera);
+  }
+
+  loop(0);
+}
+
+function initHeroModelViewer() {
+  const wrap = document.getElementById("heroModelViewer");
+  if (!wrap || !window.THREE) return;
+
+  if (heroModelRenderer) {
+    resizeHeroModelViewer();
+    return;
+  }
+
+  setHeroModelStatus("Loading " + HERO_MODEL_CONFIG.name);
+
+  const width = wrap.clientWidth || 640;
+  const height = wrap.clientHeight || 640;
+
+  heroModelScene = new THREE.Scene();
+  heroModelCamera = new THREE.PerspectiveCamera(33, width / height, 0.1, 1000);
+  heroModelCamera.position.set(0, 1.34, 6.9);
+
+  heroModelRenderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: true
+  });
+  heroModelRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  heroModelRenderer.setSize(width, height);
+  heroModelRenderer.outputEncoding = THREE.sRGBEncoding;
+  heroModelRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  heroModelRenderer.toneMappingExposure = 1.08;
+  heroModelRenderer.domElement.style.width = "100%";
+  heroModelRenderer.domElement.style.height = "100%";
+  heroModelRenderer.domElement.style.display = "block";
+  heroModelRenderer.domElement.style.pointerEvents = "none";
+  wrap.appendChild(heroModelRenderer.domElement);
+
+  heroModelScene.add(new THREE.AmbientLight(0xffffff, 1.35));
+
+  const keyLight = new THREE.DirectionalLight(0xf5fff7, 1.75);
+  keyLight.position.set(4, 5, 6);
+  heroModelScene.add(keyLight);
+
+  const rimLight = new THREE.DirectionalLight(0x63ff93, 1.15);
+  rimLight.position.set(-5, 2, -4);
+  heroModelScene.add(rimLight);
+
+  const fillLight = new THREE.HemisphereLight(0xffffff, 0x06210f, 0.95);
+  heroModelScene.add(fillLight);
+
+  updateHeroModelScrollProgress();
+  loadHeroModel();
+  animateHeroModelViewer();
+
+  if (!window.__heroModelEventsBound) {
+    window.__heroModelEventsBound = true;
+    window.addEventListener("resize", resizeHeroModelViewer);
+    window.addEventListener("scroll", updateHeroModelScrollProgress, { passive: true });
+  }
 }
 
 /* ============================================================
@@ -5606,6 +6290,7 @@ document.getElementById("dexcom-state").textContent = "Not logged in";
 /* ============================================================
    STARTUP Main
    ============================================================ */
+initHeroModelViewer();
 setStep(0);
 
   </script>

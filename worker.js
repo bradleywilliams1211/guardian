@@ -5,14 +5,14 @@ const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Device-Id,X-Device-Token",
   "Cache-Control": "no-store",
 };
 
 const TEXT_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Device-Id,X-Device-Token",
   "Cache-Control": "no-store",
 };
 
@@ -22,6 +22,10 @@ const MAILBOX_KEY = "mailbox";
 const TRUSTED_USER_PREFIX = "trustedUser:v1:";
 const SESSION_PREFIX = "session:v1:";
 const SESSION_COOKIE_NAME = "__Host-guardian_session";
+const DEVICE_PREFIX = "device:v1:";
+const DEVICE_SETTINGS_PREFIX = "deviceSettings:v1:";
+const DEVICE_LASTSEEN_PREFIX = "deviceLastSeen:v1:";
+const DEVICE_MAILBOX_PREFIX = "deviceMailbox:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
 const HEARTBEAT_MIN_WRITE_MS = 5 * 60 * 1000;
@@ -236,6 +240,278 @@ async function requireSession(request, env) {
 }
 
 /* =========================
+   DEVICE HELPERS
+   =========================
+
+   The long-term goal is one user -> one or more devices -> one private mailbox
+   per device. The website proves ownership with the normal authenticated user
+   session. The ESP32 proves ownership with a device token.
+*/
+async function sha256B64Url(text) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(String(text || ""))
+  );
+  return b64urlEncodeBytes(new Uint8Array(digest));
+}
+
+function normalizeDeviceId(value, fallback = "") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return fallback;
+
+  const cleaned = raw
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "")
+    .slice(0, 48);
+
+  return cleaned || fallback;
+}
+
+async function buildDefaultDeviceId(session) {
+  const ownerHash = await sha256B64Url(
+    `${String(session?.region || "us").trim().toLowerCase()}:${String(session?.accountId || "").trim()}`
+  );
+
+  return `guard-${ownerHash.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12)}`;
+}
+
+function readRequestedDeviceId(request) {
+  const url = new URL(request.url);
+  const fromQuery = url.searchParams.get("device_id");
+  const fromHeader = request.headers.get("x-device-id");
+  return normalizeDeviceId(fromQuery || fromHeader || "");
+}
+
+function readDeviceToken(request) {
+  return String(request.headers.get("x-device-token") || "").trim();
+}
+
+function buildDeviceKey(deviceId) {
+  return `${DEVICE_PREFIX}${deviceId}`;
+}
+
+function buildSettingsKey(deviceId) {
+  return `${DEVICE_SETTINGS_PREFIX}${deviceId}`;
+}
+
+function buildLastSeenKey(deviceId) {
+  return `${DEVICE_LASTSEEN_PREFIX}${deviceId}`;
+}
+
+function buildMailboxKey(deviceId) {
+  return `${DEVICE_MAILBOX_PREFIX}${deviceId}`;
+}
+
+function cacheLastSeenKey(deviceId) {
+  return new Request(
+    `https://cache.guardian/local/lastSeen/${encodeURIComponent(deviceId)}`
+  );
+}
+
+async function loadDeviceRecord(env, deviceId) {
+  if (!deviceId) return null;
+  const raw = await env.ESP32_KV.get(buildDeviceKey(deviceId));
+  const record = safeJsonParse(raw, null);
+  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+}
+
+async function saveDeviceRecord(env, deviceId, record) {
+  const out = await kvPutSafe(env, buildDeviceKey(deviceId), JSON.stringify(record));
+  return { record, save: out };
+}
+
+function sessionOwnsDevice(session, record) {
+  if (!session || !record) return false;
+
+  return (
+    String(session.accountId || "").trim() === String(record.owner_account_id || "").trim() &&
+    String(session.region || "us").trim().toLowerCase() ===
+      String(record.owner_region || "us").trim().toLowerCase()
+  );
+}
+
+async function ensureOwnedDevice(env, session) {
+  const deviceId = await buildDefaultDeviceId(session);
+  const existing = await loadDeviceRecord(env, deviceId);
+
+  if (existing) {
+    return {
+      ok: true,
+      deviceId,
+      record: existing,
+      created: false,
+      deviceToken: null,
+    };
+  }
+
+  const deviceToken = randomOpaqueId(24);
+  const now = Date.now();
+  const record = {
+    device_id: deviceId,
+    owner_account_id: String(session?.accountId || "").trim(),
+    owner_region: String(session?.region || "us").trim().toLowerCase(),
+    token_hash: await sha256B64Url(deviceToken),
+    token_hint: deviceToken.slice(-4),
+    created_at: now,
+    updated_at: now,
+  };
+
+  const save = await saveDeviceRecord(env, deviceId, record);
+  return {
+    ok: !!save.save.ok,
+    deviceId,
+    record,
+    created: !!save.save.ok,
+    deviceToken,
+    save: save.save,
+  };
+}
+
+async function rotateOwnedDeviceToken(env, session) {
+  const ensured = await ensureOwnedDevice(env, session);
+  if (!ensured.ok) return ensured;
+
+  const deviceToken = randomOpaqueId(24);
+  const record = {
+    ...ensured.record,
+    token_hash: await sha256B64Url(deviceToken),
+    token_hint: deviceToken.slice(-4),
+    updated_at: Date.now(),
+  };
+
+  const save = await saveDeviceRecord(env, ensured.deviceId, record);
+  return {
+    ok: !!save.save.ok,
+    deviceId: ensured.deviceId,
+    record,
+    deviceToken,
+    save: save.save,
+  };
+}
+
+async function requireOwnedDevice(request, env, options = {}) {
+  const session = await requireSession(request, env);
+  if (!session) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+
+  const requestedDeviceId = readRequestedDeviceId(request);
+  if (requestedDeviceId) {
+    const record = await loadDeviceRecord(env, requestedDeviceId);
+    if (!record) {
+      return { ok: false, status: 404, error: "Unknown device" };
+    }
+
+    if (!sessionOwnsDevice(session, record)) {
+      return { ok: false, status: 403, error: "That device belongs to a different user" };
+    }
+
+    return {
+      ok: true,
+      auth: "session",
+      session,
+      deviceId: requestedDeviceId,
+      device: record,
+      created: false,
+      deviceToken: null,
+    };
+  }
+
+  if (options.createIfMissing === false) {
+    const defaultDeviceId = await buildDefaultDeviceId(session);
+    const record = await loadDeviceRecord(env, defaultDeviceId);
+    if (!record) {
+      return { ok: false, status: 404, error: "No device registered for this user yet" };
+    }
+
+    return {
+      ok: true,
+      auth: "session",
+      session,
+      deviceId: defaultDeviceId,
+      device: record,
+      created: false,
+      deviceToken: null,
+    };
+  }
+
+  const ensured = await ensureOwnedDevice(env, session);
+  if (!ensured.ok) {
+    return {
+      ok: false,
+      status: ensured.save?.kvLimited ? 429 : 500,
+      error: "Could not prepare a device for this user",
+      kv_limited: !!ensured.save?.kvLimited,
+    };
+  }
+
+  return {
+    ok: true,
+    auth: "session",
+    session,
+    deviceId: ensured.deviceId,
+    device: ensured.record,
+    created: ensured.created,
+    deviceToken: ensured.deviceToken,
+  };
+}
+
+async function requireDeviceTokenAuth(request, env) {
+  const deviceId = readRequestedDeviceId(request);
+  if (!deviceId) {
+    return { ok: false, status: 400, error: "Missing device_id" };
+  }
+
+  const record = await loadDeviceRecord(env, deviceId);
+  if (!record) {
+    return { ok: false, status: 404, error: "Unknown device" };
+  }
+
+  const token = readDeviceToken(request);
+  if (!token) {
+    return { ok: false, status: 401, error: "Missing device token" };
+  }
+
+  const tokenHash = await sha256B64Url(token);
+  if (tokenHash !== record.token_hash) {
+    return { ok: false, status: 401, error: "Invalid device token" };
+  }
+
+  return {
+    ok: true,
+    auth: "device",
+    deviceId,
+    device: record,
+  };
+}
+
+async function resolveDeviceContext(request, env, options = {}) {
+  if (options.allowSession !== false) {
+    const owned = await requireOwnedDevice(request, env, {
+      createIfMissing: options.createIfMissing,
+    });
+
+    if (owned.ok) {
+      return owned;
+    }
+
+    // If the request named a device id and the signed-in user is not allowed to
+    // use it, fail immediately instead of silently falling through to another auth
+    // mode. This makes cross-user mistakes obvious.
+    if (owned.status && owned.status !== 401 && readRequestedDeviceId(request)) {
+      return owned;
+    }
+  }
+
+  if (options.allowDeviceToken) {
+    return await requireDeviceTokenAuth(request, env);
+  }
+
+  return { ok: false, status: 401, error: "Unauthorized" };
+}
+
+/* =========================
    Dexcom
    ========================= */
 function dexcomHeaders() {
@@ -378,34 +654,36 @@ async function dexcomGetReadings(region, sessionId, minutes = 60, maxCount = 24)
 /* =========================
    Heartbeat write throttle
    ========================= */
-async function heartbeatThrottled(env) {
+async function heartbeatThrottled(env, deviceId) {
   const now = Date.now();
+  const lastSeenKey = buildLastSeenKey(deviceId);
+  const cacheKey = cacheLastSeenKey(deviceId);
 
-  const lastSeenRaw = await env.ESP32_KV.get(LAST_SEEN_KEY);
+  const lastSeenRaw = await env.ESP32_KV.get(lastSeenKey);
   const lastKv = lastSeenRaw ? Number(lastSeenRaw) : 0;
 
   if (lastKv > 0 && (now - lastKv) < HEARTBEAT_MIN_WRITE_MS) {
     // Skip the expensive KV write, but still record the current heartbeat time
     // in cache so /status reflects live connectivity instead of a stale KV timestamp.
-    await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
+    await cachePutJson(cacheKey, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
     return { ok: true, wrote: false, lastSeen: now, used: "cache" };
   }
 
-  const out = await kvPutSafe(env, LAST_SEEN_KEY, String(now));
+  const out = await kvPutSafe(env, lastSeenKey, String(now));
   if (!out.ok && out.kvLimited) {
-    await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
+    await cachePutJson(cacheKey, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
     return { ok: true, wrote: false, lastSeen: now, used: "cache" };
   }
 
-  await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
+  await cachePutJson(cacheKey, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
   return { ok: true, wrote: true, lastSeen: now, used: "kv" };
 }
 
 /* =========================
    Settings (KV best effort)
    ========================= */
-async function getSettings(env) {
-  const raw = await env.ESP32_KV.get(SETTINGS_KEY);
+async function getSettings(env, deviceId) {
+  const raw = await env.ESP32_KV.get(buildSettingsKey(deviceId));
   const s =
     safeJsonParse(raw, { glucose_low: 80, glucose_high: 180 }) ||
     { glucose_low: 80, glucose_high: 180 };
@@ -416,7 +694,7 @@ async function getSettings(env) {
   };
 }
 
-async function setSettings(env, low, high) {
+async function setSettings(env, deviceId, low, high) {
   const cleanLow = Number(low);
   const cleanHigh = Number(high);
 
@@ -425,7 +703,7 @@ async function setSettings(env, low, high) {
     glucose_high: Number.isFinite(cleanHigh) ? cleanHigh : 180,
   };
 
-  const out = await kvPutSafe(env, SETTINGS_KEY, JSON.stringify(settings));
+  const out = await kvPutSafe(env, buildSettingsKey(deviceId), JSON.stringify(settings));
   return { settings, save: out };
 }
 
@@ -449,8 +727,8 @@ async function setSettings(env, low, high) {
   - The website can send many values in one request.
   - The ESP32 only has to poll one endpoint: /mailbox
 */
-async function readMailbox(env) {
-  const raw = await env.ESP32_KV.get(MAILBOX_KEY);
+async function readMailbox(env, deviceId) {
+  const raw = await env.ESP32_KV.get(buildMailboxKey(deviceId));
   const mailbox = safeJsonParse(raw, {});
   const cleanMailbox =
     mailbox && typeof mailbox === "object" && !Array.isArray(mailbox) ? mailbox : {};
@@ -458,7 +736,7 @@ async function readMailbox(env) {
   // low/high now live in mailbox too. If they are missing there, fall back to
   // the older settings storage so existing thresholds keep showing up until the
   // website saves them into mailbox.
-  const settings = await getSettings(env);
+  const settings = await getSettings(env, deviceId);
 
   return {
     glucose_low: Number(cleanMailbox.glucose_low ?? settings.low ?? 80) || 80,
@@ -467,11 +745,11 @@ async function readMailbox(env) {
   };
 }
 
-async function saveMailboxPatch(env, patch) {
+async function saveMailboxPatch(env, deviceId, patch) {
   // We merge the new keys into the existing mailbox instead of replacing
   // the whole object. That lets the website update one field at a time.
   // Example: posting { message: "Hello" } keeps current_glucose intact.
-  const current = await readMailbox(env);
+  const current = await readMailbox(env, deviceId);
   const mailbox = {
     ...current,
     ...patch,
@@ -480,7 +758,7 @@ async function saveMailboxPatch(env, patch) {
     updatedAt: Date.now(),
   };
 
-  const save = await kvPutSafe(env, MAILBOX_KEY, JSON.stringify(mailbox));
+  const save = await kvPutSafe(env, buildMailboxKey(deviceId), JSON.stringify(mailbox));
   return { mailbox, save };
 }
 
@@ -549,16 +827,18 @@ async function handleDexcomLogin(request, env) {
       );
     }
 
+    const ownerSession = {
+      username,
+      password,
+      region,
+      accountId,
+      sessionId,
+      createdAt: Date.now(),
+    };
+
     const storedSession = await saveServerSession(
       env,
-      {
-        username,
-        password,
-        region,
-        accountId,
-        sessionId,
-        createdAt: Date.now(),
-      }
+      ownerSession
     );
 
     if (!storedSession.ok) {
@@ -569,6 +849,18 @@ async function handleDexcomLogin(request, env) {
           kv_limited: !!storedSession.save?.kvLimited,
         },
         storedSession.save?.kvLimited ? 429 : 500
+      );
+    }
+
+    const deviceInfo = await ensureOwnedDevice(env, ownerSession);
+    if (!deviceInfo.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Logged in, but could not prepare a device for this account",
+          kv_limited: !!deviceInfo.save?.kvLimited,
+        },
+        deviceInfo.save?.kvLimited ? 429 : 500
       );
     }
 
@@ -583,6 +875,9 @@ async function handleDexcomLogin(request, env) {
         ok: true,
         region,
         trusted_users_count: trustedUsers.count,
+        device_id: deviceInfo.deviceId,
+        device_created: deviceInfo.created,
+        device_token: deviceInfo.created ? deviceInfo.deviceToken : null,
         debug_saved_session_id: sessionId,
       },
       200,
@@ -801,32 +1096,54 @@ async function handleDexcomLogout(request, env) {
   return jsonResponse({ ok: true }, 200, { "Set-Cookie": clearSessionCookie() });
 }
 
-async function handleStatus(env) {
-  const cached = await cacheGetJson(CACHE_LASTSEEN);
+async function handleStatus(request, env) {
+  const context = await resolveDeviceContext(request, env, {
+    allowSession: true,
+    allowDeviceToken: true,
+    createIfMissing: true,
+  });
+
+  if (!context.ok) {
+    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  }
+
+  const cached = await cacheGetJson(cacheLastSeenKey(context.deviceId));
   let lastSeen = Number(cached?.lastSeen || 0);
 
   if (!lastSeen) {
-    const raw = await env.ESP32_KV.get(LAST_SEEN_KEY);
+    const raw = await env.ESP32_KV.get(buildLastSeenKey(context.deviceId));
     lastSeen = raw ? Number(raw) : 0;
   }
 
   return jsonResponse({
     ok: true,
+    device_id: context.deviceId,
     lastSeen: lastSeen || 0,
     online: !!lastSeen && (Date.now() - lastSeen) <= ONLINE_WINDOW_MS,
   });
 }
 
-async function handleGetSettings(env) {
-  const s = await getSettings(env);
+async function handleGetSettings(request, env) {
+  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  if (!context.ok) {
+    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  }
+
+  const s = await getSettings(env, context.deviceId);
   return jsonResponse({
     ok: true,
+    device_id: context.deviceId,
     glucose_low: s.low,
     glucose_high: s.high,
   });
 }
 
 async function handleSetSettings(request, env) {
+  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  if (!context.ok) {
+    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  }
+
   const body = await readJson(request);
   if (!body.ok) {
     return jsonResponse({ ok: false, error: body.error }, 400);
@@ -834,18 +1151,19 @@ async function handleSetSettings(request, env) {
 
   const low = body.data?.glucose_low;
   const high = body.data?.glucose_high;
-  const result = await setSettings(env, low, high);
+  const result = await setSettings(env, context.deviceId, low, high);
 
   return jsonResponse({
     ok: true,
+    device_id: context.deviceId,
     settings: result.settings,
     kv_limited: !!result.save?.kvLimited,
   });
 }
 
 async function handleSessionStatus(request, env) {
-  const session = await requireSession(request, env);
-  if (!session) {
+  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  if (!context.ok) {
     return jsonResponse({ ok: true, logged_in: false });
   }
 
@@ -854,18 +1172,72 @@ async function handleSessionStatus(request, env) {
   return jsonResponse({
     ok: true,
     logged_in: true,
-    region: session.region || "us",
+    region: context.session.region || "us",
+    device_id: context.deviceId,
+    device_created: context.created,
     trusted_users_count: trustedUsers.count,
   });
 }
 
-async function handleMailboxGet(env) {
-  // GET /mailbox is intentionally simple:
-  // it just returns the full shared object so the ESP32 can read any keys it
-  // cares about without needing separate endpoints.
-  const mailbox = await readMailbox(env);
+async function handleDeviceInfo(request, env) {
+  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  if (!context.ok) {
+    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  }
+
   return jsonResponse({
     ok: true,
+    device_id: context.deviceId,
+    token_hint: context.device?.token_hint || null,
+    created_at: context.device?.created_at || null,
+    updated_at: context.device?.updated_at || null,
+  });
+}
+
+async function handleRotateDeviceToken(request, env) {
+  const session = await requireSession(request, env);
+  if (!session) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const rotated = await rotateOwnedDeviceToken(env, session);
+  if (!rotated.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Could not rotate device token",
+        kv_limited: !!rotated.save?.kvLimited,
+      },
+      rotated.save?.kvLimited ? 429 : 500
+    );
+  }
+
+  return jsonResponse({
+    ok: true,
+    device_id: rotated.deviceId,
+    device_token: rotated.deviceToken,
+    token_hint: rotated.record?.token_hint || null,
+  });
+}
+
+async function handleMailboxGet(request, env) {
+  // GET /mailbox is intentionally simple:
+  // it returns the full mailbox for one authenticated device instead of one
+  // global mailbox shared by every robot.
+  const context = await resolveDeviceContext(request, env, {
+    allowSession: true,
+    allowDeviceToken: true,
+    createIfMissing: true,
+  });
+
+  if (!context.ok) {
+    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  }
+
+  const mailbox = await readMailbox(env, context.deviceId);
+  return jsonResponse({
+    ok: true,
+    device_id: context.deviceId,
     mailbox,
   });
 }
@@ -873,9 +1245,9 @@ async function handleMailboxGet(env) {
 async function handleMailboxPost(request, env) {
   // POST /mailbox is protected with the normal authenticated website session.
   // This prevents random visitors from changing what the ESP32 receives.
-  const session = await requireSession(request, env);
-  if (!session) {
-    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  if (!context.ok) {
+    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
   }
 
   const body = await readJson(request);
@@ -892,7 +1264,7 @@ async function handleMailboxPost(request, env) {
   // and the website posts { predicted_far: 180 },
   // the saved mailbox becomes:
   // { current_glucose: 140, message: "Hi", predicted_far: 180, updatedAt: ... }
-  const result = await saveMailboxPatch(env, body.data);
+  const result = await saveMailboxPatch(env, context.deviceId, body.data);
   if (!result.save.ok) {
     return jsonResponse(
       {
@@ -906,6 +1278,7 @@ async function handleMailboxPost(request, env) {
 
   return jsonResponse({
     ok: true,
+    device_id: context.deviceId,
     mailbox: result.mailbox,
     kv_limited: !!result.save?.kvLimited,
   });
@@ -928,20 +1301,33 @@ export default {
       }
 
       if (url.pathname === "/heartbeat" && request.method === "GET") {
-        const out = await heartbeatThrottled(env);
-        return jsonResponse(out);
+        const context = await requireDeviceTokenAuth(request, env);
+        if (!context.ok) {
+          return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+        }
+
+        const out = await heartbeatThrottled(env, context.deviceId);
+        return jsonResponse({ ...out, device_id: context.deviceId });
       }
 
       if (url.pathname === "/status" && request.method === "GET") {
-        return await handleStatus(env);
+        return await handleStatus(request, env);
       }
 
       if (url.pathname === "/session" && request.method === "GET") {
         return await handleSessionStatus(request, env);
       }
 
+      if (url.pathname === "/device" && request.method === "GET") {
+        return await handleDeviceInfo(request, env);
+      }
+
+      if (url.pathname === "/device/rotate-token" && request.method === "POST") {
+        return await handleRotateDeviceToken(request, env);
+      }
+
       if (url.pathname === "/get-settings" && request.method === "GET") {
-        return await handleGetSettings(env);
+        return await handleGetSettings(request, env);
       }
 
       if (url.pathname === "/set-settings" && request.method === "POST") {
@@ -951,7 +1337,7 @@ export default {
       if ((url.pathname === "/mailbox" || url.pathname === "/device-state") && request.method === "GET") {
         // "/device-state" is kept as a legacy alias so older code keeps working,
         // but "/mailbox" is the clearer name going forward.
-        return await handleMailboxGet(env);
+        return await handleMailboxGet(request, env);
       }
 
       if ((url.pathname === "/mailbox" || url.pathname === "/device-state") && request.method === "POST") {

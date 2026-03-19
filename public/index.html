@@ -3623,6 +3623,61 @@ contactguardiansupport@gmail.com
       link.addEventListener('click', () => nav.classList.remove('open'));
     });
     const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
+    const DEVICE_ID_KEY = "guard_current_device_id";
+
+    /*
+      DEVICE OVERVIEW
+
+      The old prototype had one global mailbox for every ESP32.
+      The safer version gives each ESP32 its own device id, its own heartbeat,
+      and its own mailbox.
+
+      Important:
+      - device_id is okay to store in localStorage because it is not a secret
+      - device_token is secret and should stay private
+    */
+    let currentDeviceId = "";
+
+    function getCurrentDeviceId() {
+      if (currentDeviceId) return currentDeviceId;
+
+      try {
+        currentDeviceId = localStorage.getItem(DEVICE_ID_KEY) || "";
+      } catch {
+        currentDeviceId = "";
+      }
+
+      return currentDeviceId;
+    }
+
+    function setCurrentDeviceId(deviceId) {
+      currentDeviceId = String(deviceId || "").trim().toLowerCase();
+
+      try {
+        if (currentDeviceId) {
+          localStorage.setItem(DEVICE_ID_KEY, currentDeviceId);
+        } else {
+          localStorage.removeItem(DEVICE_ID_KEY);
+        }
+      } catch {}
+
+      return currentDeviceId;
+    }
+
+    function buildDeviceApiUrl(path) {
+      const url = new URL((API_BASE || "") + path, window.location.origin);
+      const deviceId = getCurrentDeviceId();
+
+      if (deviceId) {
+        url.searchParams.set("device_id", deviceId);
+      }
+
+      if (API_BASE) {
+        return url.toString();
+      }
+
+      return url.pathname + url.search;
+    }
 
 /*
   MAILBOX OVERVIEW
@@ -3648,7 +3703,7 @@ contactguardiansupport@gmail.com
 async function getMailbox() {
   // Returns the whole mailbox object.
   // This is useful for debugging or for updating UI with the current shared state.
-  const res = await fetch(API_BASE + "/mailbox", {
+  const res = await fetch(buildDeviceApiUrl("/mailbox"), {
     cache: "no-store",
     credentials: "same-origin"
   });
@@ -3667,7 +3722,7 @@ async function setMailbox(patch) {
   // await setMailbox({ message: "Hello" })
   //
   // That updates just "message" and leaves the other mailbox keys alone.
-  const res = await fetch(API_BASE + "/mailbox", {
+  const res = await fetch(buildDeviceApiUrl("/mailbox"), {
     method: "POST",
     credentials: "same-origin",
     headers: {
@@ -3687,12 +3742,64 @@ async function setMailbox(patch) {
 
 window.getMailbox = getMailbox;
 window.setMailbox = setMailbox;
+window.getCurrentDeviceId = getCurrentDeviceId;
 
 // Legacy aliases for older code.
 // New code should prefer getMailbox / setMailbox because the name matches
 // what the feature actually is.
 window.getDeviceState = getMailbox;
 window.setDeviceState = setMailbox;
+
+/*
+  DEVICE HELPERS
+
+  These are the pairing helpers you can use from the browser console.
+
+  Example:
+    const info = await getDeviceInfo();
+    console.log(info.device_id);
+
+    const creds = await rotateDeviceToken();
+    console.log(creds.device_id, creds.device_token);
+*/
+async function getDeviceInfo() {
+  const res = await fetch("/device", {
+    cache: "no-store",
+    credentials: "same-origin"
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || "Failed to load device info");
+  }
+
+  if (data.device_id) {
+    setCurrentDeviceId(data.device_id);
+  }
+
+  return data;
+}
+
+async function rotateDeviceToken() {
+  const res = await fetch("/device/rotate-token", {
+    method: "POST",
+    credentials: "same-origin"
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || "Failed to rotate device token");
+  }
+
+  if (data.device_id) {
+    setCurrentDeviceId(data.device_id);
+  }
+
+  return data;
+}
+
+window.getDeviceInfo = getDeviceInfo;
+window.rotateDeviceToken = rotateDeviceToken;
 
 async function loadTrustedUsersCount() {
   const el = document.getElementById("trusted-users-count");
@@ -5738,6 +5845,7 @@ function authHeaders() {
 async function refreshSessionState() {
   if (isDemoMode()) {
     hasServerSession = false;
+    setCurrentDeviceId("demo-device");
     return { ok: true, logged_in: true, demo: true };
   }
 
@@ -5748,9 +5856,13 @@ async function refreshSessionState() {
     });
     const data = await res.json().catch(() => ({}));
     hasServerSession = !!data.logged_in;
+    if (data.device_id) {
+      setCurrentDeviceId(data.device_id);
+    }
     return {
       ok: !!data.ok,
       logged_in: !!data.logged_in,
+      device_id: data.device_id || "",
       trusted_users_count: data.trusted_users_count,
       demo: false
     };
@@ -6559,7 +6671,10 @@ async function refreshLatestCardFromRecent(recent) {
    ============================================================ */
 async function updateStatus() {
   try {
-    const res = await fetch("/status", { cache: "no-store" });
+    const res = await fetch(buildDeviceApiUrl("/status"), {
+      cache: "no-store",
+      credentials: "same-origin"
+    });
     const data = await res.json();
     const el = document.getElementById("wifi-status");
 
@@ -6730,6 +6845,20 @@ async function saveDexcomCreds() {
 
     setSessionToken("server-session");
     stateEl.textContent = "Logged in";
+
+    if (data.device_id) {
+      setCurrentDeviceId(data.device_id);
+    }
+
+    if (data.device_created && data.device_token) {
+      dbg("A new device was created for this account.");
+      console.log("New GUARD device credentials:", {
+        device_id: data.device_id,
+        device_token: data.device_token
+      });
+      console.log("Copy these into ESP32-C3/website_setup.py.");
+    }
+
     if (Number.isFinite(Number(data?.trusted_users_count))) {
       setTrustedUsersCount(Number(data.trusted_users_count));
     } else {

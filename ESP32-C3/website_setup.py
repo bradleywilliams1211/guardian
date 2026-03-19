@@ -29,8 +29,31 @@ import ujson
 # WORKER ENDPOINTS
 # ============================================================
 WORKER_BASE = "https://getguardian.org"
-HEARTBEAT_URL = WORKER_BASE + "/heartbeat"
-MAILBOX_URL = WORKER_BASE + "/mailbox"
+
+# ============================================================
+# DEVICE PAIRING
+# ============================================================
+# Each ESP32 should have its own device id and its own device token.
+#
+# device_id:
+# - public identifier for this robot
+# - okay to store in code
+#
+# device_token:
+# - secret password for this robot
+# - do not share it publicly
+#
+# How to get them from the website after logging in:
+# 1. Open the browser console on your dashboard
+# 2. Run:
+#      const info = await getDeviceInfo();
+#      const creds = await rotateDeviceToken();
+#      console.log(creds.device_id, creds.device_token);
+# 3. Copy those values here
+#
+# The Worker will reject heartbeat/mailbox requests if these are blank or wrong.
+DEVICE_ID = ""
+DEVICE_TOKEN = ""
 
 # ============================================================
 # OPTIONAL DEFAULT WI-FI
@@ -159,6 +182,29 @@ def save_json_file(path, value):
 # ============================================================
 # HTTP / WORKER HELPERS
 # ============================================================
+# In the safer multi-device setup, the ESP32 always talks to URLs that include
+# its own device_id, and it sends its secret device_token as a header.
+#
+# That gives each robot:
+# - its own heartbeat
+# - its own mailbox
+# - its own online/offline status
+#
+# instead of every robot sharing one global Worker state.
+def device_credentials_ready():
+    return bool(DEVICE_ID and DEVICE_ID.strip() and DEVICE_TOKEN and DEVICE_TOKEN.strip())
+
+def worker_url(path):
+    if DEVICE_ID and DEVICE_ID.strip():
+        return "{}{}?device_id={}".format(WORKER_BASE, path, DEVICE_ID.strip())
+    return WORKER_BASE + path
+
+def device_headers():
+    headers = {}
+    if DEVICE_TOKEN and DEVICE_TOKEN.strip():
+        headers["X-Device-Token"] = DEVICE_TOKEN.strip()
+    return headers
+
 # This is a safer JSON fetch helper than the original /get polling code.
 # It checks:
 # - request success
@@ -169,10 +215,10 @@ def save_json_file(path, value):
 # It returns:
 # - (parsed_json, None) on success
 # - (None, error_message) on failure
-def get_json(url, timeout=8):
+def get_json(url, timeout=8, headers=None):
     r = None
     try:
-        r = urequests.get(url, timeout=timeout)
+        r = urequests.get(url, timeout=timeout, headers=headers or {})
         status = getattr(r, "status_code", None)
         text = r.text or ""
         trimmed = text.lstrip()
@@ -197,7 +243,7 @@ def get_json(url, timeout=8):
                 pass
 
 # MAILBOX OVERVIEW
-# The mailbox is one shared JSON object on the Worker.
+# The mailbox is one JSON object for this specific device on the Worker.
 #
 # Website example:
 #   await setMailbox({
@@ -218,8 +264,17 @@ def get_json(url, timeout=8):
 # This is now the only place this ESP32 reads low/high thresholds from.
 # It is also the easiest way to send new values to the board because you usually
 # only add a new key instead of building a whole new endpoint.
+# The important safety difference now is that the mailbox belongs to one
+# device_id instead of being shared by every ESP32.
 def get_mailbox():
-    data, err = get_json(MAILBOX_URL, timeout=8)
+    if not device_credentials_ready():
+        return None, "Missing DEVICE_ID or DEVICE_TOKEN"
+
+    data, err = get_json(
+        worker_url("/mailbox"),
+        timeout=8,
+        headers=device_headers()
+    )
     if err:
         return None, err
 
@@ -233,10 +288,20 @@ def get_mailbox():
     return mailbox, None
 
 def send_heartbeat():
-    data, err = get_json(HEARTBEAT_URL, timeout=5)
+    if not device_credentials_ready():
+        return False
+
+    data, err = get_json(
+        worker_url("/heartbeat"),
+        timeout=5,
+        headers=device_headers()
+    )
     return not err and bool(data and data.get("ok"))
 
 def worker_reachable():
+    if not device_credentials_ready():
+        return False
+
     mailbox, err = get_mailbox()
     return not err and bool(mailbox is not None)
 
@@ -616,6 +681,12 @@ def main():
     while True:
         if current_ssid:
             if connect_sta(current_ssid, current_pass):
+                if not device_credentials_ready():
+                    print("Missing DEVICE_ID / DEVICE_TOKEN.")
+                    print("Get them from the website console with getDeviceInfo() and rotateDeviceToken().")
+                    time.sleep(10)
+                    continue
+
                 print("Checking Worker connectivity...")
                 while not worker_reachable():
                     print("Waiting for Worker...")
@@ -638,6 +709,12 @@ def main():
         current_pass = pw
 
         if connect_sta(current_ssid, current_pass):
+            if not device_credentials_ready():
+                print("Missing DEVICE_ID / DEVICE_TOKEN.")
+                print("Get them from the website console with getDeviceInfo() and rotateDeviceToken().")
+                time.sleep(10)
+                continue
+
             print("Checking Worker connectivity...")
             while not worker_reachable():
                 print("Waiting for Worker...")

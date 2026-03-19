@@ -3624,6 +3624,38 @@ contactguardiansupport@gmail.com
     });
     const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
 
+async function getDeviceState() {
+  const res = await fetch(API_BASE + "/device-state", { cache: "no-store" });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || "Failed to load device state");
+  }
+
+  return data.state || {};
+}
+
+async function setDeviceState(patch) {
+  const res = await fetch(API_BASE + "/device-state", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
+    body: JSON.stringify(patch || {}),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || "Failed to save device state");
+  }
+
+  return data.state || {};
+}
+
+window.getDeviceState = getDeviceState;
+window.setDeviceState = setDeviceState;
+
 async function loadTrustedUsersCount() {
   const el = document.getElementById("trusted-users-count");
   if (!el) return;

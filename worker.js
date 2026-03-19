@@ -18,7 +18,7 @@ const TEXT_HEADERS = {
 
 const SETTINGS_KEY = "settings";
 const LAST_SEEN_KEY = "lastSeen";
-const DEVICE_STATE_KEY = "deviceState";
+const MAILBOX_KEY = "mailbox";
 const TRUSTED_USER_PREFIX = "trustedUser:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
@@ -416,10 +416,47 @@ async function setSettings(env, low, high) {
   return { settings, save: out };
 }
 
-async function getDeviceState(env) {
-  const raw = await env.ESP32_KV.get(DEVICE_STATE_KEY);
-  const state = safeJsonParse(raw, {});
-  return state && typeof state === "object" && !Array.isArray(state) ? state : {};
+/*
+  MAILBOX OVERVIEW
+
+  Think of the mailbox as one shared JSON object that the website can write and
+  the ESP32 can read. The goal is to avoid creating a brand new route every
+  time you want to send one more value to the device.
+
+  Example mailbox:
+  {
+    current_glucose: 142,
+    predicted_far: 185,
+    message: "Drink water",
+    robot_mode: "alert"
+  }
+
+  Why this is useful:
+  - Adding a new value usually means only adding a new key.
+  - The website can send many values in one request.
+  - The ESP32 only has to poll one endpoint: /mailbox
+*/
+async function readMailbox(env) {
+  const raw = await env.ESP32_KV.get(MAILBOX_KEY);
+  const mailbox = safeJsonParse(raw, {});
+  return mailbox && typeof mailbox === "object" && !Array.isArray(mailbox) ? mailbox : {};
+}
+
+async function saveMailboxPatch(env, patch) {
+  // We merge the new keys into the existing mailbox instead of replacing
+  // the whole object. That lets the website update one field at a time.
+  // Example: posting { message: "Hello" } keeps current_glucose intact.
+  const current = await readMailbox(env);
+  const mailbox = {
+    ...current,
+    ...patch,
+    // updatedAt is handy for debugging and lets the ESP32 tell when the
+    // mailbox was last changed.
+    updatedAt: Date.now(),
+  };
+
+  const save = await kvPutSafe(env, MAILBOX_KEY, JSON.stringify(mailbox));
+  return { mailbox, save };
 }
 
 async function handleTrustedUsersCount(env) {
@@ -764,15 +801,20 @@ async function handleSetSettings(request, env) {
   });
 }
 
-async function handleGetDeviceState(env) {
-  const state = await getDeviceState(env);
+async function handleMailboxGet(env) {
+  // GET /mailbox is intentionally simple:
+  // it just returns the full shared object so the ESP32 can read any keys it
+  // cares about without needing separate endpoints.
+  const mailbox = await readMailbox(env);
   return jsonResponse({
     ok: true,
-    state,
+    mailbox,
   });
 }
 
-async function handleSetDeviceState(request, env) {
+async function handleMailboxPost(request, env) {
+  // POST /mailbox is protected with the normal signed session token.
+  // This prevents random visitors from changing what the ESP32 receives.
   const session = await requireSession(request, env);
   if (!session) {
     return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
@@ -787,28 +829,27 @@ async function handleSetDeviceState(request, env) {
     return jsonResponse({ ok: false, error: "Expected a JSON object body" }, 400);
   }
 
-  const current = await getDeviceState(env);
-  const next = {
-    ...current,
-    ...body.data,
-    updatedAt: Date.now(),
-  };
-
-  const save = await kvPutSafe(env, DEVICE_STATE_KEY, JSON.stringify(next));
-  if (!save.ok) {
+  // body.data is treated as a "patch", not a full replacement.
+  // If the current mailbox is { current_glucose: 140, message: "Hi" }
+  // and the website posts { predicted_far: 180 },
+  // the saved mailbox becomes:
+  // { current_glucose: 140, message: "Hi", predicted_far: 180, updatedAt: ... }
+  const result = await saveMailboxPatch(env, body.data);
+  if (!result.save.ok) {
     return jsonResponse(
       {
         ok: false,
-        error: "Device state save failed",
-        kv_limited: !!save.kvLimited,
+        error: "Mailbox save failed",
+        kv_limited: !!result.save.kvLimited,
       },
-      save.kvLimited ? 429 : 500
+      result.save.kvLimited ? 429 : 500
     );
   }
 
   return jsonResponse({
     ok: true,
-    state: next,
+    mailbox: result.mailbox,
+    kv_limited: !!result.save?.kvLimited,
   });
 }
 
@@ -849,12 +890,14 @@ export default {
         return await handleSetSettings(request, env);
       }
 
-      if (url.pathname === "/device-state" && request.method === "GET") {
-        return await handleGetDeviceState(env);
+      if ((url.pathname === "/mailbox" || url.pathname === "/device-state") && request.method === "GET") {
+        // "/device-state" is kept as a legacy alias so older code keeps working,
+        // but "/mailbox" is the clearer name going forward.
+        return await handleMailboxGet(env);
       }
 
-      if (url.pathname === "/device-state" && request.method === "POST") {
-        return await handleSetDeviceState(request, env);
+      if ((url.pathname === "/mailbox" || url.pathname === "/device-state") && request.method === "POST") {
+        return await handleMailboxPost(request, env);
       }
 
       if (url.pathname === "/trusted-users-count" && request.method === "GET") {

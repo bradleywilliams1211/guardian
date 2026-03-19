@@ -5,24 +5,24 @@ import time
 import gc
 
 # ===== CONFIG =====
-#SSID = "HCS-Guest"
-SSID="ATT5Hnk3yN"
-PASS="8v7?4j2p=n8p"
+# SSID = "HCS-Guest"
+SSID = "ATT5Hnk3yN"
+PASS = "8v7?4j2p=n8p"
 WORKER_BASE = "https://getguardian.org"
 SETTINGS_URL = WORKER_BASE + "/get-settings"
 HEARTBEAT_URL = WORKER_BASE + "/heartbeat"
-DEVICE_STATE_URL = WORKER_BASE + "/device-state"
+MAILBOX_URL = WORKER_BASE + "/mailbox"
 
 VALUE_FILE = "value.txt"
 HIGH_VALUE_FILE = "glucose_high.txt"
-DEVICE_STATE_FILE = "device_state.json"
-POLL_INTERVAL = 1        # seconds
-HEARTBEAT_INTERVAL = 15   # seconds
+MAILBOX_FILE = "mailbox.json"
+POLL_INTERVAL = 1
+HEARTBEAT_INTERVAL = 15
 
 # ===== WIFI =====
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
-wlan.connect(SSID,PASS)
+wlan.connect(SSID, PASS)
 
 print("Connecting to Wi-Fi...")
 while not wlan.isconnected():
@@ -94,12 +94,44 @@ def save_json_file(path, value):
     with open(path, "w") as f:
         f.write(ujson.dumps(value))
 
+# MAILBOX OVERVIEW
+# The mailbox is one shared JSON object that lives in the Worker.
+# Your website writes keys into it, and the ESP32 reads them back.
+#
+# Example mailbox:
+# {
+#   "current_glucose": 142,
+#   "predicted_far": 185,
+#   "message": "Drink water",
+#   "robot_mode": "alert"
+# }
+#
+# Why this is easier:
+# - You do not need a new endpoint for every variable.
+# - To add a new variable, you usually just add a new key.
+# - The ESP32 can read one object and pull out only the keys it wants.
+def get_mailbox():
+    data, err = get_json(MAILBOX_URL, timeout=8)
+    if err:
+        return None, err
+
+    if not data or not data.get("ok"):
+        return None, "Bad mailbox response"
+
+    mailbox = data.get("mailbox", {})
+    if not isinstance(mailbox, dict):
+        return None, "Mailbox response missing object"
+
+    return mailbox, None
+
 # Keep the low threshold in value.txt for backward compatibility.
 current_value = load_value(VALUE_FILE, 70)
 current_high = load_value(HIGH_VALUE_FILE, 180)
-current_device_state = load_json_file(DEVICE_STATE_FILE, {})
+# This keeps the last mailbox on the ESP32 filesystem so you can inspect
+# what the device most recently received, even after a reset.
+current_mailbox = load_json_file(MAILBOX_FILE, {})
 print("Loaded low/high:", current_value, current_high)
-print("Loaded device state:", current_device_state)
+print("Loaded mailbox:", current_mailbox)
 
 def save_low(v):
     with open(VALUE_FILE, "w") as f:
@@ -142,26 +174,27 @@ while True:
         else:
             print("Bad response:", data)
 
-        state_data, state_err = get_json(DEVICE_STATE_URL, timeout=8)
-        if state_err:
-            print("Device state error:", state_err)
-        elif state_data and state_data.get("ok"):
-            new_state = state_data.get("state", {})
-            if isinstance(new_state, dict) and new_state != current_device_state:
-                current_device_state = new_state
-                save_json_file(DEVICE_STATE_FILE, current_device_state)
-                print("Updated device state:", current_device_state)
+        # Read the shared mailbox every loop.
+        # If nothing changed, we do nothing.
+        # If something changed, we save the whole mailbox locally and then read
+        # whichever keys we care about.
+        new_mailbox, mailbox_err = get_mailbox()
+        if mailbox_err:
+            print("Mailbox error:", mailbox_err)
+        elif new_mailbox != current_mailbox:
+            current_mailbox = new_mailbox
+            save_json_file(MAILBOX_FILE, current_mailbox)
+            print("Updated mailbox:", current_mailbox)
 
-                if "current_glucose" in current_device_state:
-                    print("Current glucose:", current_device_state.get("current_glucose"))
-
-                if "predicted_far" in current_device_state:
-                    print("Predicted far:", current_device_state.get("predicted_far"))
-
-                if "message" in current_device_state:
-                    print("Message:", current_device_state.get("message"))
-        else:
-            print("Bad device state:", state_data)
+            # Example reads:
+            # These lines show the exact pattern for pulling values out.
+            # To add a new variable later, copy one of these and change the key.
+            #
+            # Example:
+            # print("robot_mode =", current_mailbox.get("robot_mode"))
+            print("current_glucose =", current_mailbox.get("current_glucose"))
+            print("predicted_far =", current_mailbox.get("predicted_far"))
+            print("message =", current_mailbox.get("message"))
 
     except Exception as e:
         print("Loop error:", e)

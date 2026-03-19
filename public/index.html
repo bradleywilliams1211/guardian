@@ -3624,19 +3624,47 @@ contactguardiansupport@gmail.com
     });
     const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
 
-async function getDeviceState() {
-  const res = await fetch(API_BASE + "/device-state", { cache: "no-store" });
+/*
+  MAILBOX OVERVIEW
+
+  The mailbox is the easiest way for the website to send custom values to the
+  ESP32. Instead of building a custom route for every variable, the site writes
+  keys into one shared JSON object.
+
+  Example:
+  await setMailbox({
+    current_glucose: 142,
+    predicted_far: 185,
+    message: "Drink water",
+    robot_mode: "alert"
+  });
+
+  The Worker stores that object in KV.
+  The ESP32 polls /mailbox and reads any keys it wants.
+
+  Rule of thumb:
+  - Need one more value on the ESP32? Add one more key here.
+*/
+async function getMailbox() {
+  // Returns the whole mailbox object.
+  // This is useful for debugging or for updating UI with the current shared state.
+  const res = await fetch(API_BASE + "/mailbox", { cache: "no-store" });
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok || !data.ok) {
-    throw new Error(data.error || "Failed to load device state");
+    throw new Error(data.error || "Failed to load mailbox");
   }
 
-  return data.state || {};
+  return data.mailbox || {};
 }
 
-async function setDeviceState(patch) {
-  const res = await fetch(API_BASE + "/device-state", {
+async function setMailbox(patch) {
+  // "patch" means "only the keys you want to change".
+  // Example:
+  // await setMailbox({ message: "Hello" })
+  //
+  // That updates just "message" and leaves the other mailbox keys alone.
+  const res = await fetch(API_BASE + "/mailbox", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -3647,14 +3675,20 @@ async function setDeviceState(patch) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.ok) {
-    throw new Error(data.error || "Failed to save device state");
+    throw new Error(data.error || "Failed to save mailbox");
   }
 
-  return data.state || {};
+  return data.mailbox || {};
 }
 
-window.getDeviceState = getDeviceState;
-window.setDeviceState = setDeviceState;
+window.getMailbox = getMailbox;
+window.setMailbox = setMailbox;
+
+// Legacy aliases for older code.
+// New code should prefer getMailbox / setMailbox because the name matches
+// what the feature actually is.
+window.getDeviceState = getMailbox;
+window.setDeviceState = setMailbox;
 
 async function loadTrustedUsersCount() {
   const el = document.getElementById("trusted-users-count");

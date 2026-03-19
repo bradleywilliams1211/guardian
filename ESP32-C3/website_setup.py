@@ -103,6 +103,7 @@ AP_SSID = "GUARD-SETUP"
 PORTAL_PORT = 80
 BLE_DEVICE_PREFIX = "GUARD"
 BLE_ADVERTISING_INTERVAL_US = 250000
+FORCE_BLE_SETUP = False
 
 # ============================================================
 # BLUETOOTH PROVISIONING
@@ -132,14 +133,9 @@ _ADV_TYPE_FLAGS = const(0x01)
 _ADV_TYPE_NAME = const(0x09)
 _ADV_TYPE_UUID128_COMPLETE = const(0x07)
 
-if bluetooth:
-    BLE_SERVICE_UUID = bluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
-    BLE_RX_UUID = bluetooth.UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
-    BLE_TX_UUID = bluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
-else:
-    BLE_SERVICE_UUID = None
-    BLE_RX_UUID = None
-    BLE_TX_UUID = None
+BLE_SERVICE_UUID_STR = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+BLE_RX_UUID_STR = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+BLE_TX_UUID_STR = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
 # ============================================================
 # CAPTIVE PORTAL HTML
@@ -276,6 +272,7 @@ ble_status_payload = {}
 ble_setup_mode_active = False
 ble_device_name = ""
 ble_adv_payload = b""
+ble_disable_reason = ""
 
 def random_hex(byte_count=16):
     try:
@@ -338,6 +335,35 @@ def advertising_payload(name=None, services=None):
 
 def ble_is_supported():
     return bluetooth is not None
+
+def ble_setup_allowed():
+    # Commercially, Bluetooth setup is still the right onboarding direction.
+    # But right now the user's ESP32-C3 on MicroPython v1.27.0 is hitting a
+    # native NimBLE crash as soon as BLE setup starts. Because that is a
+    # firmware-level panic instead of a Python exception, the safe choice is to
+    # automatically disable BLE on this board unless a developer explicitly
+    # forces it back on after testing a newer firmware.
+    #
+    # This keeps the device usable today by falling back to GUARD-SETUP instead
+    # of reboot-looping the board.
+    if not ble_is_supported():
+        return False, "Bluetooth is not available in this MicroPython build."
+
+    if FORCE_BLE_SETUP:
+        return True, ""
+
+    try:
+        machine_name = str(os.uname().machine or "")
+    except:
+        machine_name = ""
+
+    if "ESP32C3" in machine_name.upper():
+        return False, (
+            "Bluetooth setup is disabled on this ESP32-C3 firmware because "
+            "the current MicroPython BLE stack is crashing on this board."
+        )
+
+    return True, ""
 
 def ble_update_status(state, message="", extra=None):
     global ble_status_payload
@@ -457,12 +483,20 @@ def ble_start_setup_mode():
     global ble_tx_handle
     global ble_setup_mode_active
     global ble_adv_payload
+    global ble_disable_reason
 
-    if not ble_is_supported():
-        print("Bluetooth setup unavailable on this firmware build.")
+    allowed, reason = ble_setup_allowed()
+    ble_disable_reason = reason
+
+    if not allowed:
+        print(reason)
         return False
 
     try:
+        ble_service_uuid = bluetooth.UUID(BLE_SERVICE_UUID_STR)
+        ble_rx_uuid = bluetooth.UUID(BLE_RX_UUID_STR)
+        ble_tx_uuid = bluetooth.UUID(BLE_TX_UUID_STR)
+
         if ble_radio is None:
             ble_radio = bluetooth.BLE()
             ble_radio.active(True)
@@ -470,10 +504,10 @@ def ble_start_setup_mode():
             ble_radio.irq(ble_irq)
 
             service = (
-                BLE_SERVICE_UUID,
+                ble_service_uuid,
                 (
-                    (BLE_RX_UUID, _FLAG_WRITE),
-                    (BLE_TX_UUID, _FLAG_READ | _FLAG_NOTIFY),
+                    (ble_rx_uuid, _FLAG_WRITE),
+                    (ble_tx_uuid, _FLAG_READ | _FLAG_NOTIFY),
                 ),
             )
             ((ble_rx_handle, ble_tx_handle),) = ble_radio.gatts_register_services((service,))
@@ -491,7 +525,7 @@ def ble_start_setup_mode():
         ble_setup_mode_active = True
         ble_adv_payload = advertising_payload(
             name=get_ble_device_name(),
-            services=[BLE_SERVICE_UUID]
+            services=[ble_service_uuid]
         )
         ble_update_status(
             "ready_for_wifi",
@@ -1186,6 +1220,7 @@ def run_captive_portal():
             "portal_ip": ap.ifconfig()[0],
             "portal_ssid": AP_SSID,
             "supports_bluetooth_setup": bool(ble_started),
+            "bluetooth_unavailable_reason": ble_disable_reason,
         }
     )
 

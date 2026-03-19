@@ -2811,7 +2811,7 @@
       <div id="deviceClaimCard" class="card login-card" style="display:none;">
         <strong>Claim Your GUARD</strong>
         <p id="device-claim-help" style="opacity:.75;">
-          Power on your GUARD, connect it to Wi-Fi, and enter the pairing code shown during setup.
+          Power on your GUARD, send it Wi-Fi from Guardian over Bluetooth or GUARD-SETUP, and enter the pairing code shown during setup.
         </p>
         <form onsubmit="claimDeviceFromCode(); return false;"
               style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
@@ -2893,23 +2893,23 @@
             <div class="setup-card">
               <div id="step1" class="step-panel">
                 <h3><span class="info-btn">ⓘ</span>Step 1</h3>
-                <p style="margin-top:8px;">Turn on robot.</p>
+                <p style="margin-top:8px;">Turn on your GUARD and keep this page open.</p>
               </div>
 
               <div id="step2" class="step-panel">
                 <h3><span class="info-btn">ⓘ</span>Step 2</h3>
-                <p style="margin-top:8px;">Go to Phone Wi-Fi and connect to <b>GUARD-SETUP</b></p>
+                <p style="margin-top:8px;">Use Bluetooth setup below to send your home Wi-Fi to GUARD.</p>
                 <p style="margin-top:10px; opacity:.8;">
-                  A pop up will appear and ask for your local Wi-Fi and password.
-                  <br><br><em>Leave password blank if public.</em>
+                  If your browser does not support Bluetooth, fall back to <b>GUARD-SETUP</b>.
+                  <br><br><em>Leave password blank if the network is public.</em>
                 </p>
               </div>
 
               <div id="step3" class="step-panel">
                 <h3><span class="info-btn">ⓘ</span>Step 3</h3>
-                <p style="margin-top:8px;">The pop up should close and your device will connect to Wi-Fi.</p>
+                <p style="margin-top:8px;">Claim the pairing code Guardian shows and your robot will finish setup.</p>
                 <p style="margin-top:10px; opacity:.8;">
-                  Your GUARD server is now set up. Continue to Dexcom login.
+                  After setup, GUARD stays on your Wi-Fi and keeps talking to Guardian in the cloud.
                 </p>
               </div>
 
@@ -2923,6 +2923,25 @@
               <div class="step-dot"></div>
               <div class="step-dot"></div>
               <div class="step-dot"></div>
+            </div>
+
+            <div class="card" style="margin-top:18px;">
+              <strong>Bluetooth Setup (Recommended)</strong>
+              <p style="opacity:.78; margin-top:8px;">
+                Stay on Guardian and send Wi-Fi to your robot over Bluetooth. If Bluetooth is unavailable, use the
+                fallback network <b>GUARD-SETUP</b>.
+              </p>
+              <form onsubmit="startGuardBluetoothSetup(); return false;"
+                    style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+                <input id="bleWifiSsid" placeholder="Home Wi-Fi name (SSID)" autocomplete="off" required>
+                <input id="bleWifiPassword" type="password" placeholder="Home Wi-Fi password" autocomplete="current-password">
+                <button id="bleSetupButton" type="submit">Connect with Bluetooth</button>
+              </form>
+              <p id="bleSetupState" style="margin-top:12px; opacity:.8;">Guardian will look for a nearby GUARD over Bluetooth.</p>
+              <p id="bleSetupClaim" style="margin-top:8px; font-weight:700;"></p>
+              <p style="margin-top:12px; opacity:.68;">
+                Best support: Chrome or Edge on Android, Windows, macOS, or Chromebook. Safari/iPhone users may need the GUARD-SETUP fallback.
+              </p>
             </div>
           </div>
 
@@ -3157,20 +3176,25 @@ more detailed viewing.
 
 <h3>Step 1 – Turn on the GUARD device</h3>
 <p>
-Power on your GUARD device. It will broadcast a setup Wi-Fi network.
+Power on your GUARD device and stay on the Guardian website.
 </p>
 
-<h3>Step 2 – Connect to GUARD-SETUP</h3>
+<h3>Step 2 – Send Wi-Fi over Bluetooth</h3>
 <p>
-Open your phone’s Wi-Fi settings and connect to the network named
-<b>GUARD-SETUP</b>. A setup window will appear where you can enter
-your local Wi-Fi credentials.
+Open Guardian in a supported browser, use the Bluetooth setup form,
+and send your local Wi-Fi name and password directly to the robot.
 </p>
 
 <h3>Step 3 – Complete Setup</h3>
 <p>
-Once the device connects to your Wi-Fi network, return to the Guardian
-dashboard to begin using the system.
+Guardian will show a pairing code after the device reaches Wi-Fi.
+Claim that code in your account and the robot will finish pairing.
+</p>
+
+<h3>Fallback – Use GUARD-SETUP</h3>
+<p>
+If your browser or phone does not support Web Bluetooth, connect to the
+network named <b>GUARD-SETUP</b> and enter your Wi-Fi credentials there.
 </p>
 
 
@@ -3190,8 +3214,9 @@ and that your account connection is still valid.
 
 <h3>Robot connection issues</h3>
 <p>
-If your GUARD device is not connecting, restart the device and repeat
-the setup process.
+If Bluetooth setup is unavailable, try Chrome or Edge, move closer to
+the robot, or use the GUARD-SETUP fallback. If Wi-Fi still fails, try a
+phone hotspot to rule out school or guest-network restrictions.
 </p>
 
 </div>
@@ -3637,6 +3662,11 @@ contactguardiansupport@gmail.com
     });
     const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
     const DEVICE_ID_KEY = "guard_current_device_id";
+    const LOCAL_MAILBOX_KEY = "guard_local_mailbox";
+    const GUARD_BLE_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const GUARD_BLE_RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    const GUARD_BLE_TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+    const BLE_PENDING_CLAIM_CODE_KEY = "guard_pending_claim_code";
 
     /*
       DEVICE OVERVIEW
@@ -3650,6 +3680,12 @@ contactguardiansupport@gmail.com
       - device_token is secret and should stay private
     */
     let currentDeviceId = "";
+    let guardBleSession = {
+      device: null,
+      server: null,
+      rx: null,
+      tx: null,
+    };
 
     function getCurrentDeviceId() {
       if (currentDeviceId) return currentDeviceId;
@@ -3692,6 +3728,32 @@ contactguardiansupport@gmail.com
       return url.pathname + url.search;
     }
 
+    function loadLocalMailbox() {
+      try {
+        const raw = localStorage.getItem(LOCAL_MAILBOX_KEY) || "";
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? parsed
+          : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveLocalMailboxPatch(patch) {
+      const mailbox = {
+        ...loadLocalMailbox(),
+        ...(patch || {}),
+        updatedAt: Date.now()
+      };
+
+      try {
+        localStorage.setItem(LOCAL_MAILBOX_KEY, JSON.stringify(mailbox));
+      } catch {}
+
+      return mailbox;
+    }
+
 /*
   MAILBOX OVERVIEW
 
@@ -3716,6 +3778,13 @@ contactguardiansupport@gmail.com
 async function getMailbox() {
   // Returns the whole mailbox object.
   // This is useful for debugging or for updating UI with the current shared state.
+  if (!getCurrentDeviceId()) {
+    // App-only mode:
+    // if no GUARD is paired yet, keep website-only settings locally so the chart
+    // can still use thresholds and the user can still use Guardian without hardware.
+    return loadLocalMailbox();
+  }
+
   const res = await fetch(buildDeviceApiUrl("/mailbox"), {
     cache: "no-store",
     credentials: "same-origin"
@@ -3735,6 +3804,10 @@ async function setMailbox(patch) {
   // await setMailbox({ message: "Hello" })
   //
   // That updates just "message" and leaves the other mailbox keys alone.
+  if (!getCurrentDeviceId()) {
+    return saveLocalMailboxPatch(patch);
+  }
+
   const res = await fetch(buildDeviceApiUrl("/mailbox"), {
     method: "POST",
     credentials: "same-origin",
@@ -3762,6 +3835,282 @@ window.getCurrentDeviceId = getCurrentDeviceId;
 // what the feature actually is.
 window.getDeviceState = getMailbox;
 window.setDeviceState = setMailbox;
+
+/*
+  BLUETOOTH SETUP OVERVIEW
+
+  The ESP32 now exposes a tiny Bluetooth setup service so Guardian can send the
+  user's Wi-Fi name/password directly from the website. This is only for local
+  onboarding. After setup, the robot still uses Wi-Fi for /mailbox and
+  /heartbeat.
+
+  Browser -> Bluetooth -> ESP32 -> Wi-Fi -> Worker
+
+  We keep the pairing code in localStorage temporarily so:
+  - the Home setup card can show it right away
+  - the login claim card can auto-fill it later
+*/
+function hasWebBluetoothSupport() {
+  return !!(navigator.bluetooth && window.isSecureContext);
+}
+
+function setBleSetupState(message, tone = "neutral") {
+  const el = document.getElementById("bleSetupState");
+  if (!el) return;
+
+  el.textContent = message || "";
+
+  if (tone === "error") {
+    el.style.color = "#b42318";
+    return;
+  }
+
+  if (tone === "success") {
+    el.style.color = "#0b8f2f";
+    return;
+  }
+
+  if (tone === "muted") {
+    el.style.color = "grey";
+    return;
+  }
+
+  el.style.color = "var(--ink)";
+}
+
+function setBleSetupBusy(busy) {
+  const btn = document.getElementById("bleSetupButton");
+  if (!btn) return;
+
+  btn.disabled = !!busy;
+  btn.textContent = busy ? "Connecting..." : "Connect with Bluetooth";
+}
+
+function getPendingClaimCode() {
+  try {
+    return (localStorage.getItem(BLE_PENDING_CLAIM_CODE_KEY) || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+  } catch {
+    return "";
+  }
+}
+
+function syncPendingClaimCodeUI() {
+  const code = getPendingClaimCode();
+  const claimEl = document.getElementById("bleSetupClaim");
+  const input = document.getElementById("claimCodeInput");
+
+  if (claimEl) {
+    claimEl.textContent = code ? ("Pairing code: " + code) : "";
+  }
+
+  if (input && code && !input.value.trim()) {
+    input.value = code;
+  }
+}
+
+function rememberPendingClaimCode(code) {
+  const cleanCode = String(code || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+  try {
+    if (cleanCode) {
+      localStorage.setItem(BLE_PENDING_CLAIM_CODE_KEY, cleanCode);
+    } else {
+      localStorage.removeItem(BLE_PENDING_CLAIM_CODE_KEY);
+    }
+  } catch {}
+
+  syncPendingClaimCodeUI();
+  return cleanCode;
+}
+
+function clearPendingClaimCode() {
+  rememberPendingClaimCode("");
+}
+
+function decodeBleValue(value) {
+  const bytes = value instanceof DataView
+    ? new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+    : new Uint8Array(value?.buffer || value || []);
+
+  return new TextDecoder().decode(bytes).replace(/\0+$/g, "").trim();
+}
+
+function parseBleStatus(value) {
+  const text = decodeBleValue(value);
+  if (!text) return null;
+
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function applyGuardBleStatus(status) {
+  if (!status) return;
+
+  const claimCode = rememberPendingClaimCode(status.claim_code || "");
+  const helpText = status.message || "Guardian sent a Bluetooth status update.";
+  const hint = status.network_hint ? (" " + status.network_hint) : "";
+  const state = String(status.state || "").trim().toLowerCase();
+
+  if (state === "ready_for_wifi") {
+    setBleSetupState(helpText, "neutral");
+    return;
+  }
+
+  if (state === "connecting_wifi" || state === "wifi_connected") {
+    setBleSetupState(helpText, "neutral");
+    return;
+  }
+
+  if (state === "claim_required") {
+    setBleSetupState(helpText, "success");
+    if (claimCode) {
+      const stateEl = document.getElementById("device-claim-state");
+      if (stateEl && !stateEl.textContent.trim()) {
+        stateEl.textContent = "Pairing code received. Log in and click Claim Device when ready.";
+      }
+    }
+    return;
+  }
+
+  if (state === "claimed") {
+    clearPendingClaimCode();
+    setBleSetupState(helpText, "success");
+    return;
+  }
+
+  if (state === "wifi_error" || state === "bootstrap_error" || state === "error") {
+    setBleSetupState(helpText + hint, "error");
+    return;
+  }
+
+  setBleSetupState(helpText, "neutral");
+}
+
+function handleGuardBleNotification(event) {
+  const status = parseBleStatus(event.target.value);
+  applyGuardBleStatus(status);
+}
+
+function handleGuardBleDisconnect() {
+  guardBleSession = {
+    device: null,
+    server: null,
+    rx: null,
+    tx: null,
+  };
+
+  setBleSetupState(
+    "Bluetooth connection closed. Reconnect if you want to send Wi-Fi again.",
+    "muted"
+  );
+}
+
+async function writeBleValue(characteristic, text) {
+  const bytes = new TextEncoder().encode(text);
+
+  if (typeof characteristic.writeValueWithResponse === "function") {
+    return characteristic.writeValueWithResponse(bytes);
+  }
+
+  if (typeof characteristic.writeValue === "function") {
+    return characteristic.writeValue(bytes);
+  }
+
+  throw new Error("This browser could not write to the GUARD Bluetooth service.");
+}
+
+async function connectGuardBluetooth() {
+  if (guardBleSession.rx && guardBleSession.tx && guardBleSession.device?.gatt?.connected) {
+    return guardBleSession;
+  }
+
+  if (!hasWebBluetoothSupport()) {
+    throw new Error("Web Bluetooth is not available here. Use Chrome or Edge, or fall back to GUARD-SETUP.");
+  }
+
+  setBleSetupState("Choose your GUARD from the Bluetooth picker…");
+
+  const device = await navigator.bluetooth.requestDevice({
+    filters: [{ namePrefix: "GUARD" }],
+    optionalServices: [GUARD_BLE_SERVICE_UUID],
+  });
+
+  device.addEventListener("gattserverdisconnected", handleGuardBleDisconnect);
+
+  setBleSetupState("Connecting to " + (device.name || "GUARD") + "…");
+
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(GUARD_BLE_SERVICE_UUID);
+  const rx = await service.getCharacteristic(GUARD_BLE_RX_UUID);
+  const tx = await service.getCharacteristic(GUARD_BLE_TX_UUID);
+
+  tx.addEventListener("characteristicvaluechanged", handleGuardBleNotification);
+  await tx.startNotifications();
+
+  guardBleSession = { device, server, rx, tx };
+
+  try {
+    const currentStatus = await tx.readValue();
+    applyGuardBleStatus(parseBleStatus(currentStatus));
+  } catch {}
+
+  return guardBleSession;
+}
+
+async function startGuardBluetoothSetup() {
+  const ssid = document.getElementById("bleWifiSsid")?.value.trim() || "";
+  const password = document.getElementById("bleWifiPassword")?.value || "";
+
+  if (!ssid) {
+    setBleSetupState("Enter your home Wi-Fi name first.", "error");
+    return;
+  }
+
+  clearPendingClaimCode();
+  setBleSetupBusy(true);
+
+  try {
+    const session = await connectGuardBluetooth();
+    const payload = JSON.stringify({
+      action: "provision_wifi",
+      ssid,
+      password,
+    });
+
+    await writeBleValue(session.rx, payload);
+    setBleSetupState("Wi-Fi sent to GUARD. Waiting for the robot to report back…", "neutral");
+  } catch (err) {
+    setBleSetupState(err?.message || "Bluetooth setup failed.", "error");
+  } finally {
+    setBleSetupBusy(false);
+  }
+}
+
+function initGuardBluetoothSetup() {
+  syncPendingClaimCodeUI();
+
+  if (!hasWebBluetoothSupport()) {
+    setBleSetupState(
+      "This browser does not support Guardian Bluetooth setup. Use Chrome/Edge or fall back to GUARD-SETUP.",
+      "muted"
+    );
+    return;
+  }
+
+  setBleSetupState("Guardian will look for a nearby GUARD over Bluetooth.");
+}
+
+window.startGuardBluetoothSetup = startGuardBluetoothSetup;
 
 /*
   DEVICE HELPERS
@@ -3831,16 +4180,20 @@ function setClaimCardVisible(visible, options = {}) {
   if (stateEl && typeof options.state === "string") {
     stateEl.textContent = options.state;
   }
+
+  if (visible) {
+    syncPendingClaimCodeUI();
+  }
 }
 
 async function claimDeviceFromCode() {
   const input = document.getElementById("claimCodeInput");
   const stateEl = document.getElementById("device-claim-state");
-  const rawCode = (input?.value || "").trim();
+  const rawCode = (input?.value || getPendingClaimCode()).trim();
   const claimCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   if (!claimCode) {
-    if (stateEl) stateEl.textContent = "Enter the pairing code shown during GUARD setup.";
+    if (stateEl) stateEl.textContent = "Enter the pairing code shown after Bluetooth or GUARD-SETUP setup.";
     return;
   }
 
@@ -3864,6 +4217,7 @@ async function claimDeviceFromCode() {
     }
 
     if (input) input.value = "";
+    clearPendingClaimCode();
     if (stateEl) stateEl.textContent = "Device claimed. Finishing setup…";
     setClaimCardVisible(false, { state: "" });
     await refreshSessionState();
@@ -5935,12 +6289,13 @@ async function refreshSessionState() {
     hasServerSession = !!data.logged_in;
     if (data.device_id) {
       setCurrentDeviceId(data.device_id);
+      clearPendingClaimCode();
       setClaimCardVisible(false, { state: "" });
     } else {
       setCurrentDeviceId("");
       if (data.logged_in) {
         setClaimCardVisible(true, {
-          help: "Guardian is ready for pairing. Enter the claim code shown by your GUARD after Wi-Fi setup.",
+          help: "Guardian is ready for pairing. Enter the claim code shown after Bluetooth or GUARD-SETUP setup.",
           state: ""
         });
       }
@@ -6758,15 +7113,21 @@ async function refreshLatestCardFromRecent(recent) {
    Check if robot is connected
    ============================================================ */
 async function updateStatus() {
+  const el = document.getElementById("wifi-status");
+  if (!el) return;
+
+  if (!getCurrentDeviceId()) {
+    el.textContent = "Not paired yet";
+    el.style.color = "grey";
+    return;
+  }
+
   try {
     const res = await fetch(buildDeviceApiUrl("/status"), {
       cache: "no-store",
       credentials: "same-origin"
     });
     const data = await res.json();
-    const el = document.getElementById("wifi-status");
-
-    if (!el) return;
 
     if (!data.lastSeen) {
       el.textContent = "Waiting for GUARD heartbeat…";
@@ -6782,8 +7143,6 @@ async function updateStatus() {
       el.style.color = "red";
     }
   } catch {
-    const el = document.getElementById("wifi-status");
-    if (!el) return;
     el.textContent = "Status error";
     el.style.color = "red";
   }
@@ -6939,19 +7298,16 @@ async function saveDexcomCreds() {
     } else {
       await loadTrustedUsersCount();
     }
-
-    if (sessionState.device_id) {
-      dbg("Login success. Entering dashboard...");
-      await enterDashboard();
-      return;
+    if (!sessionState.device_id) {
+      setClaimCardVisible(true, {
+        help: "Optional: pair your GUARD anytime by entering the claim code shown after Bluetooth or GUARD-SETUP setup.",
+        state: "Logged in. You can use Guardian now, even without a GUARD device."
+      });
+      stateEl.textContent = "Logged in";
     }
 
-    showPage("user-screen");
-    setClaimCardVisible(true, {
-      help: "Your account is ready. Enter the claim code shown by your GUARD after Wi-Fi setup.",
-      state: "Logged in. Waiting for your GUARD pairing code."
-    });
-    stateEl.textContent = "Logged in. Pair your GUARD to continue.";
+    dbg("Login success. Entering dashboard...");
+    await enterDashboard();
 
   } catch (err) {
     const loginError = err?.message || String(err) || "Login failed";
@@ -6999,15 +7355,6 @@ function showNoActiveSensorUI() {
 async function enterDashboard(){
   if (!getSessionToken()) {
     alert("Please log in with Dexcom first.");
-    return;
-  }
-
-  if (!isDemoMode() && !getCurrentDeviceId()) {
-    showPage("user-screen");
-    setClaimCardVisible(true, {
-      help: "Enter the claim code shown by your GUARD after Wi-Fi setup.",
-      state: "Pair your GUARD to continue."
-    });
     return;
   }
 
@@ -7081,15 +7428,6 @@ async function bootstrapExistingSession() {
     setTrustedUsersCount(Number(session.trusted_users_count));
   } else {
     await loadTrustedUsersCount();
-  }
-
-  if (!session.demo && !session.device_id) {
-    showPage("user-screen");
-    setClaimCardVisible(true, {
-      help: "Power on your GUARD, connect it to Wi-Fi, and enter its pairing code below.",
-      state: "You're logged in. Claim your GUARD to finish setup."
-    });
-    return;
   }
 
   await enterDashboard();
@@ -7204,6 +7542,7 @@ document.getElementById("dexcom-state").textContent = "Not logged in";
    ============================================================ */
 initHeroModelViewer();
 setStep(0);
+initGuardBluetoothSetup();
 void bootstrapExistingSession();
 
   </script>

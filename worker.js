@@ -23,7 +23,8 @@ const TRUSTED_USER_PREFIX = "trustedUser:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
 const HEARTBEAT_MIN_WRITE_MS = 5 * 60 * 1000;
-const ONLINE_WINDOW_MS = 12 * 60 * 1000;
+const ONLINE_WINDOW_MS = 60 * 1000;
+const LASTSEEN_CACHE_TTL_SECONDS = 2 * 60;
 
 /* ===== SIGNED SESSION TOKEN TTL ===== */
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
@@ -374,17 +375,19 @@ async function heartbeatThrottled(env) {
   const lastKv = lastSeenRaw ? Number(lastSeenRaw) : 0;
 
   if (lastKv > 0 && (now - lastKv) < HEARTBEAT_MIN_WRITE_MS) {
-    await cachePutJson(CACHE_LASTSEEN, { lastSeen: lastKv }, 12 * 60);
-    return { ok: true, wrote: false, lastSeen: lastKv, used: "noop" };
+    // Skip the expensive KV write, but still record the current heartbeat time
+    // in cache so /status reflects live connectivity instead of a stale KV timestamp.
+    await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
+    return { ok: true, wrote: false, lastSeen: now, used: "cache" };
   }
 
   const out = await kvPutSafe(env, LAST_SEEN_KEY, String(now));
   if (!out.ok && out.kvLimited) {
-    await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, 12 * 60);
+    await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
     return { ok: true, wrote: false, lastSeen: now, used: "cache" };
   }
 
-  await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, 12 * 60);
+  await cachePutJson(CACHE_LASTSEEN, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
   return { ok: true, wrote: true, lastSeen: now, used: "kv" };
 }
 

@@ -4627,27 +4627,17 @@ const HERO_EXPLODE_CONFIG = {
   fallbackVerticalStep: 0.35
 };
 
-// Group fallbacks. These apply if there is no exact per-part override below.
-// Each rule can define:
-// match: regex against the part name
-// direction: [x, y, z]
-// distance: how far it travels
-// rotationAmount: how much it twists
-// rotationAxis: optional custom twist axis [x, y, z]
-const HERO_EXPLODE_GROUP_RULES = [
-  { match: /BODY_REMODEL_LID|LID/i, direction: [0, 1.1, 0.15], distance: 0, rotationAmount: 0.0 },
-  { match: /NOSE/i, direction: [0.14, 0.2, 1], distance: 0.82, rotationAmount: 0.00 },
-  { match: /RH_LEG|RIGHT.*LEG/i, direction: [1, 0.12, 0.2], distance: 1.02, rotationAmount: 0.0 },
-  { match: /LH_LEG|LEFT.*LEG/i, direction: [-1, 0.12, 0.2], distance: 1.02, rotationAmount: 0.0 },
-  { match: /SHOULDER|THIGH|WRIST|FOOT/i, direction: [0, -0.18, 0.55], distance: 0.72, rotationAmount: 0.0 },
-  { match: /GUARD_SHELL|SHELL/i, direction: [0, 0.34, -1], distance: 0.62, rotationAmount: 0.09 },
-  { match: /CONTAINER_AXEL|CONTAINER/i, direction: [0, -0.28, 0.95], distance: 0.56, rotationAmount: 0.00 },
-  { match: /SCREW|NUT/i, direction: [0, 0.85, 0], distance: 0.42, rotationAmount: 0.2 }
-];
+// Group rules are intentionally empty now.
+// Every editable explode rule lives in HERO_EXPLODE_PART_RULES below so each
+// part can be tuned individually without sharing a regex-based fallback.
+const HERO_EXPLODE_GROUP_RULES = [];
 
-// Exact per-part overrides.
-// Use the console output from HERO_MODEL_DEBUG.logExplodePartIdsOnLoad to copy exact IDs here.
-// These rules override the group rules above.
+// Exact per-part explode settings.
+// Each part ID below can be edited individually.
+// Entries with a full object keep the current hand-tuned behavior.
+// Entries left as {} fall back to the automatic "fly away from the assembly center" behavior.
+// Setting direction to [0, 0, 0] also uses that automatic assembly-center direction,
+// which is useful when you want to test positive vs. negative distance on the same path.
 // Example:
 // "NOSE_REMODEL-1__1": {
 //   direction: [0.2, 0, 1],
@@ -4655,7 +4645,274 @@ const HERO_EXPLODE_GROUP_RULES = [
 //   rotationAmount: 0.04,
 //   rotationAxis: [0, 1, 0]
 // }
-const HERO_EXPLODE_PART_RULES = {};
+const HERO_EXPLODE_PART_RULES = {
+  "FOOT_GRIP-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "THIGH_RH-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LEG_KNEE_RH-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_PIN-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_COVER-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "WRIST_RH_1-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_COVER-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_PIN-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "THIGH_RH-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LEG_KNEE_RH-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "FOOT_GRIP-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "WRIST_RH_1-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "WRIST_RH_1_MIR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LEG_KNEE_RH_MIR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "THIGH_RH_MIR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_COVER_MIR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_PIN_MIR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "FOOT_GRIP-1__3": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_1_2_MIR_ASM__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_1_2_MIR_ASM__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "BATTERY_CONTACT_NEG-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "BATTERY_HOLDER-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "BATTERY_CONTACT_POS-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__3": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/ACTUATOR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PINS-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/BODY1-140-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PCB_1_ASM-1/PINS-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PCB_1_ASM-1/BODY1-137-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PCB_1_ASM-1/PINS-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__4": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/CERAMIC_BASE_LDR_CELL_THRU-HOLE-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET2-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET1-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/ELECTRODES_LDR_CELL_THRU-HOLE_L_ASM-1/BOSS-EXTRUDE1_1_-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/ELECTRODES_LDR_CELL_THRU-HOLE_L_ASM-1/BOSS-EXTRUDE1_2_-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-5__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1164-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1166-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1159-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1160-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PCB-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1158-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1161-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1162-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1157-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1163-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1165-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1172-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1176-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1167-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1170-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1175-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1181-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1183-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1171-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1168-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1169-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1173-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1174-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1177-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1178-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1179-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1180-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1182-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1188-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1193-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1189-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1190-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1192-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1187-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1200-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1194-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1186-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1184-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1185-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1191-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1195-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1197-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1198-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1196-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1199-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1204-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1211-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1212-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1203-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1202-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1201-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1205-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1206-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1209-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1207-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1208-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1210-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1214-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1216-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1213-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1217-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1215-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1218-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1224-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1221-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1226-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1225-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1219-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1220-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1223-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1228-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1222-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1227-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROUSB_BEST_ASM-1/S_X_F3LIDO2-1229-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROUSB_BEST_ASM-1/S_X_F3LIDO4-1231-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MICROUSB_BEST_ASM-1/S_X_F3LIDO3-1230-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SOT23_ASM-1/PIN-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SOT23_ASM-1/COMPONENT1-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SOT23_ASM-1/PIN-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SOT23_ASM-1/PIN-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO3-1236-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO5-1238-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO1-1234-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO2-1235-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO4-1237-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1244-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1243-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1245-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1246-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1248-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1247-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO5-1263-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1259-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1260-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1261-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO4-1262-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO6-1264-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO7-1265-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO9-1267-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO13-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO16-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO18-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO19-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO12-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO24-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO23-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO14-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO10-1268-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO8-1266-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO11-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO15-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO17-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO20-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO21-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO22-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO30-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO27-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO29-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO26-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO25-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO28-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO2-1250-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO1-1249-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO7-1255-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO10-1258-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO5-1253-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO6-1254-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO4-1252-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO3-1251-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO9-1257-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO8-1256-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__5": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__6": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "THIGH_RH_MIR-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "WRIST_RH_1_MIR-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "FOOT_GRIP-1__4": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LEG_KNEE_RH_MIR-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_COVER_MIR-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "SHOULDER_PIN_MIR-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__7": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NUT_M3_1_ASM__8": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "ARDUINOUNODETAILED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LED_5MM_RED-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "BODY_REMODEL-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "HC-SR04-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "BODY_REMODEL_LID-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "STRIPBOARD-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "HC-SR04-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "LED_5MM_RED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NOSE_REMODEL-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "Container_axel-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-7__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "Guard_Shell-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-5__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "Container-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-6__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-8__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+};
 
 let heroModelScene = null;
 let heroModelCamera = null;
@@ -4831,11 +5088,21 @@ function getHeroExplodePartId(nodeName, nameCounts) {
 }
 
 function getHeroExplodeRule(nodeName, partId) {
-  // Exact per-part rules win first, then group rules if no exact rule exists.
+  // Exact per-part rules are the source of truth now.
   const exactRule = HERO_EXPLODE_PART_RULES[partId] || HERO_EXPLODE_PART_RULES[nodeName];
-  if (exactRule) return exactRule;
-  if (!nodeName) return null;
-  return HERO_EXPLODE_GROUP_RULES.find((rule) => rule.match.test(nodeName)) || null;
+  if (exactRule && Object.keys(exactRule).length) return exactRule;
+  return null;
+}
+
+function isHeroExplodeRuleNeutral(rule) {
+  if (!rule) return false;
+
+  const direction = Array.isArray(rule.direction) ? rule.direction : [0, 0, 0];
+  const directionMagnitude = Math.abs(direction[0] || 0) + Math.abs(direction[1] || 0) + Math.abs(direction[2] || 0);
+  const distance = Math.abs(rule.distance || 0);
+  const rotationAmount = Math.abs(rule.rotationAmount || 0);
+
+  return directionMagnitude < 1e-6 && distance < 1e-6 && rotationAmount < 1e-6;
 }
 
 function buildHeroExplodeParts(root) {
@@ -4867,11 +5134,39 @@ function buildHeroExplodeParts(root) {
     const partCenterWorld = box.getCenter(new THREE.Vector3());
     const partSize = box.getSize(new THREE.Vector3());
 
-    // If a rule defines a direction, use it.
-    // Otherwise the part automatically flies away from the assembly center.
-    const directionWorld = rule
-      ? new THREE.Vector3(rule.direction[0], rule.direction[1], rule.direction[2])
-      : partCenterWorld.clone().sub(assemblyCenterWorld);
+    // Exact zeroed rules are treated as a hard lock for that part.
+    // This makes "direction: [0,0,0], distance: 0, rotationAmount: 0"
+    // a reliable neutral starting point while you tune parts individually.
+    if (isHeroExplodeRuleNeutral(rule)) {
+      heroModelExplodeParts.push({
+        node,
+        partId,
+        partName: node.name || "Unnamed Part",
+        restPosition: node.position.clone(),
+        restQuaternion: node.quaternion.clone(),
+        explodeOffset: new THREE.Vector3(0, 0, 0),
+        rotationAxis: new THREE.Vector3(0, 1, 0),
+        rotationAmount: 0
+      });
+      return;
+    }
+
+    // A non-zero custom direction wins.
+    // Missing direction, or [0, 0, 0], means "use the automatic assembly-center direction".
+    const autoDirectionWorld = partCenterWorld.clone().sub(assemblyCenterWorld);
+    const directionWorld = autoDirectionWorld.clone();
+
+    if (rule?.direction) {
+      const customDirection = new THREE.Vector3(
+        rule.direction[0] || 0,
+        rule.direction[1] || 0,
+        rule.direction[2] || 0
+      );
+
+      if (customDirection.lengthSq() >= 1e-6) {
+        directionWorld.copy(customDirection);
+      }
+    }
 
     if (directionWorld.lengthSq() < 1e-6) {
       const angle = (index / Math.max(candidates.length, 1)) * Math.PI * 2;
@@ -4944,7 +5239,9 @@ function applyHeroModelExplosion(progress) {
   const explodeProgress = explodePhase;
 
   heroModelExplodeParts.forEach((part) => {
-    const offset = part.explodeOffset.clone();
+    const liveRule = getHeroExplodeRule(part.partName, part.partId);
+    const ruleIsNeutral = isHeroExplodeRuleNeutral(liveRule);
+    const offset = ruleIsNeutral ? new THREE.Vector3(0, 0, 0) : part.explodeOffset.clone();
 
     // Global axis multipliers let you flip or exaggerate the entire explosion.
     // x: right/left, y: up/down, z: forward/backward
@@ -4960,7 +5257,7 @@ function applyHeroModelExplosion(progress) {
 
     heroModelTempQuat.setFromAxisAngle(
       part.rotationAxis,
-      part.rotationAmount * explodeProgress
+      (ruleIsNeutral ? 0 : part.rotationAmount) * explodeProgress
     );
 
     part.node.quaternion

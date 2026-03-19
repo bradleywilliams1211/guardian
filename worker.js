@@ -442,7 +442,19 @@ async function setSettings(env, low, high) {
 async function readMailbox(env) {
   const raw = await env.ESP32_KV.get(MAILBOX_KEY);
   const mailbox = safeJsonParse(raw, {});
-  return mailbox && typeof mailbox === "object" && !Array.isArray(mailbox) ? mailbox : {};
+  const cleanMailbox =
+    mailbox && typeof mailbox === "object" && !Array.isArray(mailbox) ? mailbox : {};
+
+  // low/high now live in mailbox too. If they are missing there, fall back to
+  // the older settings storage so existing thresholds keep showing up until the
+  // website saves them into mailbox.
+  const settings = await getSettings(env);
+
+  return {
+    glucose_low: Number(cleanMailbox.glucose_low ?? settings.low ?? 80) || 80,
+    glucose_high: Number(cleanMailbox.glucose_high ?? settings.high ?? 180) || 180,
+    ...cleanMailbox,
+  };
 }
 
 async function saveMailboxPatch(env, patch) {

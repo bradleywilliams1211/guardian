@@ -19,7 +19,7 @@ import ujson
 # - The ESP32 can connect to known Wi-Fi credentials first.
 # - If that fails, it opens a local setup portal so a user can enter Wi-Fi.
 # - After Wi-Fi is connected, it talks to the Cloudflare Worker.
-# - It syncs threshold settings and the shared mailbox object.
+# - It syncs thresholds and all other custom values from the mailbox.
 #
 # The mailbox is the flexible part:
 # your website can write any keys into /mailbox, and the ESP32 can read them.
@@ -29,7 +29,6 @@ import ujson
 # WORKER ENDPOINTS
 # ============================================================
 WORKER_BASE = "https://getguardian.org"
-SETTINGS_URL = WORKER_BASE + "/get-settings"
 HEARTBEAT_URL = WORKER_BASE + "/heartbeat"
 MAILBOX_URL = WORKER_BASE + "/mailbox"
 
@@ -197,23 +196,13 @@ def get_json(url, timeout=8):
             except:
                 pass
 
-# The Worker uses /get-settings for long-term threshold values.
-# These are not the flexible "send anything" values. Those live in /mailbox.
-def get_settings():
-    data, err = get_json(SETTINGS_URL, timeout=8)
-    if err:
-        return None, err
-
-    if not data or not data.get("ok"):
-        return None, "Bad settings response"
-
-    return data, None
-
 # MAILBOX OVERVIEW
 # The mailbox is one shared JSON object on the Worker.
 #
 # Website example:
 #   await setMailbox({
+#       glucose_low: 80,
+#       glucose_high: 180,
 #       current_glucose: 142,
 #       predicted_far: 185,
 #       message: "Drink water",
@@ -221,10 +210,13 @@ def get_settings():
 #   });
 #
 # ESP32 example:
+#   glucose_low = current_mailbox.get("glucose_low")
+#   glucose_high = current_mailbox.get("glucose_high")
 #   current_glucose = current_mailbox.get("current_glucose")
 #   robot_mode = current_mailbox.get("robot_mode")
 #
-# This is the easiest way to send new values to the board because you usually
+# This is now the only place this ESP32 reads low/high thresholds from.
+# It is also the easiest way to send new values to the board because you usually
 # only add a new key instead of building a whole new endpoint.
 def get_mailbox():
     data, err = get_json(MAILBOX_URL, timeout=8)
@@ -245,8 +237,8 @@ def send_heartbeat():
     return not err and bool(data and data.get("ok"))
 
 def worker_reachable():
-    settings, err = get_settings()
-    return not err and bool(settings)
+    mailbox, err = get_mailbox()
+    return not err and bool(mailbox is not None)
 
 # ============================================================
 # URL DECODE + FORM PARSE
@@ -533,7 +525,6 @@ def run_captive_portal():
 # ============================================================
 # Once Wi-Fi is connected, this loop:
 # - sends heartbeat updates
-# - reads threshold settings
 # - reads the shared mailbox
 # - saves the latest values locally
 #
@@ -571,12 +562,12 @@ def cloudflare_loop():
             if now - last_worker_check >= WORKER_CHECK_INTERVAL:
                 last_worker_check = now
 
-                settings, settings_err = get_settings()
-                if settings_err:
-                    print("Settings error:", settings_err)
+                new_mailbox, mailbox_err = get_mailbox()
+                if mailbox_err:
+                    print("Mailbox error:", mailbox_err)
                 else:
-                    new_low = int(settings.get("glucose_low", current_low))
-                    new_high = int(settings.get("glucose_high", current_high))
+                    new_low = int(new_mailbox.get("glucose_low", current_low))
+                    new_high = int(new_mailbox.get("glucose_high", current_high))
 
                     if new_low != current_low:
                         current_low = new_low
@@ -588,23 +579,22 @@ def cloudflare_loop():
                         save_value(HIGH_VALUE_FILE, current_high)
                         print("Updated high:", current_high)
 
-                new_mailbox, mailbox_err = get_mailbox()
-                if mailbox_err:
-                    print("Mailbox error:", mailbox_err)
-                elif new_mailbox != current_mailbox:
-                    current_mailbox = new_mailbox
-                    save_json_file(MAILBOX_FILE, current_mailbox)
-                    print("Updated mailbox:", current_mailbox)
+                    if new_mailbox != current_mailbox:
+                        current_mailbox = new_mailbox
+                        save_json_file(MAILBOX_FILE, current_mailbox)
+                        print("Updated mailbox:", current_mailbox)
 
-                    # Example reads:
-                    # Copy this pattern whenever you add a new mailbox key.
-                    #
-                    # Example:
-                    # robot_mode = current_mailbox.get("robot_mode")
-                    # print("robot_mode =", robot_mode)
-                    print("current_glucose =", current_mailbox.get("current_glucose"))
-                    print("predicted_far =", current_mailbox.get("predicted_far"))
-                    print("message =", current_mailbox.get("message"))
+                        # Example reads:
+                        # Copy this pattern whenever you add a new mailbox key.
+                        #
+                        # Example:
+                        # robot_mode = current_mailbox.get("robot_mode")
+                        # print("robot_mode =", robot_mode)
+                        print("glucose_low =", current_mailbox.get("glucose_low"))
+                        print("glucose_high =", current_mailbox.get("glucose_high"))
+                        print("current_glucose =", current_mailbox.get("current_glucose"))
+                        print("predicted_far =", current_mailbox.get("predicted_far"))
+                        print("message =", current_mailbox.get("message"))
 
         except Exception as e:
             print("Cloud loop error:", e)

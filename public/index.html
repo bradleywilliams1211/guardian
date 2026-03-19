@@ -6560,11 +6560,10 @@ function setAnalysisState(state, extra = "") {
    ============================================================ */
 async function loadSettingsIntoForm() {
   try {
-    const res = await fetch("/get-settings", { cache: "no-store" });
-    const s = await res.json();
+    const mailbox = await getMailbox();
 
-    RANGE_LOW = Number(s.glucose_low ?? 80) || 80;
-    RANGE_HIGH = Number(s.glucose_high ?? 180) || 180;
+    RANGE_LOW = Number(mailbox.glucose_low ?? 80) || 80;
+    RANGE_HIGH = Number(mailbox.glucose_high ?? 180) || 180;
 
     document.getElementById("lowInput").value = RANGE_LOW;
     document.getElementById("highInput").value = RANGE_HIGH;
@@ -6584,33 +6583,29 @@ document.getElementById("settingsForm").addEventListener("submit", async (e) => 
   statusEl.textContent = "Saving…";
 
   try {
-    const res = await fetch("/set-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ glucose_low: low, glucose_high: high })
+    const mailbox = await setMailbox({
+      glucose_low: low,
+      glucose_high: high
     });
 
-    const out = await res.json().catch(() => ({}));
-    statusEl.textContent = out.ok ? "Saved ✅" : "Save failed ❌";
+    statusEl.textContent = "Saved ✅";
 
-    if (out.ok) {
-      RANGE_LOW = Number(out.settings?.glucose_low ?? low) || RANGE_LOW;
-      RANGE_HIGH = Number(out.settings?.glucose_high ?? high) || RANGE_HIGH;
+    RANGE_LOW = Number(mailbox.glucose_low ?? low) || RANGE_LOW;
+    RANGE_HIGH = Number(mailbox.glucose_high ?? high) || RANGE_HIGH;
 
-      NORMAL_MIN_Y = null;
-      NORMAL_MAX_Y = null;
+    NORMAL_MIN_Y = null;
+    NORMAL_MAX_Y = null;
 
-      setThresholdLabels();
+    setThresholdLabels();
 
-      const recent = await loadDexcomRecent();
-      if (!recent) return;
+    const recent = await loadDexcomRecent();
+    if (!recent) return;
 
-      if (recent.status === "no_active_sensor") {
-        showNoActiveSensorUI()
-      } else {
-        renderLastHour(recent.points);
-        await refreshLatestCardFromRecent(recent);
-      }
+    if (recent.status === "no_active_sensor") {
+      showNoActiveSensorUI()
+    } else {
+      renderLastHour(recent.points);
+      await refreshLatestCardFromRecent(recent);
     }
   } catch {
     statusEl.textContent = "Save failed ❌";

@@ -3648,7 +3648,10 @@ contactguardiansupport@gmail.com
 async function getMailbox() {
   // Returns the whole mailbox object.
   // This is useful for debugging or for updating UI with the current shared state.
-  const res = await fetch(API_BASE + "/mailbox", { cache: "no-store" });
+  const res = await fetch(API_BASE + "/mailbox", {
+    cache: "no-store",
+    credentials: "same-origin"
+  });
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok || !data.ok) {
@@ -3666,6 +3669,7 @@ async function setMailbox(patch) {
   // That updates just "message" and leaves the other mailbox keys alone.
   const res = await fetch(API_BASE + "/mailbox", {
     method: "POST",
+    credentials: "same-origin",
     headers: {
       "Content-Type": "application/json",
       ...authHeaders(),
@@ -3733,10 +3737,11 @@ function setTrustedUsersCount(count, options = {}) {
 
 void loadTrustedUsersCount();
 
-const SESSION_KEY = "guard_dex_session_token";
+const DEMO_MODE_KEY = "guard_demo_mode";
 const DEMO_USER = "dev";
 const DEMO_PASS = "123";
 const DEMO_TOKEN_PREFIX = "demo:";
+let hasServerSession = false;
 
 let previousView = "landing";
 const year = new Date().getFullYear();
@@ -5682,22 +5687,77 @@ window.addEventListener("error", (e) => dbg("JS error: " + (e.message || "unknow
 window.addEventListener("unhandledrejection", (e) => dbg("Promise error: " + (e.reason?.message || e.reason || "unknown")));
 
 /* ============================================================
-   SESSION TOKEN MANAGEMENT
+   SESSION MANAGEMENT
    ============================================================ */
 /* ============================================================
-   get storage log in, set it, and alter it so it can communicate with API
+   Real Dexcom sessions are stored safely on the Worker.
+   The browser only keeps:
+   - a tiny demo-mode flag in sessionStorage for local developer mode
+   - an in-memory boolean that says whether a secure server session exists
+   The real authenticated session is an HttpOnly cookie, which page JavaScript
+   cannot read back out.
    ============================================================ */
+function isDemoMode() {
+  try {
+    return sessionStorage.getItem(DEMO_MODE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setDemoMode(enabled) {
+  try {
+    if (enabled) {
+      sessionStorage.setItem(DEMO_MODE_KEY, "1");
+    } else {
+      sessionStorage.removeItem(DEMO_MODE_KEY);
+    }
+  } catch {}
+}
+
 function getSessionToken() {
-  return localStorage.getItem(SESSION_KEY) || "";
+  if (isDemoMode()) {
+    return DEMO_TOKEN_PREFIX + "local-demo";
+  }
+
+  return hasServerSession ? "server-session" : "";
 }
 
 function setSessionToken(t) {
-  t ? localStorage.setItem(SESSION_KEY, t) : localStorage.removeItem(SESSION_KEY);
+  const demo = !!t && t.startsWith(DEMO_TOKEN_PREFIX);
+  setDemoMode(demo);
+  hasServerSession = !!t && !demo;
 }
 
 function authHeaders() {
-  const t = getSessionToken();
-  return t ? { "Authorization": "Bearer " + t } : {};
+  // Real authenticated requests now use the secure session cookie automatically.
+  // This helper stays in place so older fetch code can keep calling it.
+  return {};
+}
+
+async function refreshSessionState() {
+  if (isDemoMode()) {
+    hasServerSession = false;
+    return { ok: true, logged_in: true, demo: true };
+  }
+
+  try {
+    const res = await fetch("/session", {
+      cache: "no-store",
+      credentials: "same-origin"
+    });
+    const data = await res.json().catch(() => ({}));
+    hasServerSession = !!data.logged_in;
+    return {
+      ok: !!data.ok,
+      logged_in: !!data.logged_in,
+      trusted_users_count: data.trusted_users_count,
+      demo: false
+    };
+  } catch {
+    hasServerSession = false;
+    return { ok: false, logged_in: false, demo: false };
+  }
 }
 
 function openRobotView() {
@@ -6428,6 +6488,7 @@ async function loadDexcomRecent() {
   try {
     const r = await fetch(API_BASE + "/dexcom-recent?minutes=180&maxCount=72", {
       cache: "no-store",
+      credentials: "same-origin",
       headers: authHeaders(),
     });
 
@@ -6636,6 +6697,7 @@ async function saveDexcomCreds() {
   try {
     const res = await fetch("/dexcom-login", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password, region })
     });
@@ -6659,7 +6721,14 @@ async function saveDexcomCreds() {
       return;
     }
 
-    setSessionToken(data.token);
+    const sessionState = await refreshSessionState();
+    if (!sessionState.logged_in) {
+      stateEl.textContent = "Login succeeded, but the secure session was not saved.";
+      dbg("Secure session cookie was missing after login.");
+      return;
+    }
+
+    setSessionToken("server-session");
     stateEl.textContent = "Logged in";
     if (Number.isFinite(Number(data?.trusted_users_count))) {
       setTrustedUsersCount(Number(data.trusted_users_count));
@@ -6676,67 +6745,27 @@ async function saveDexcomCreds() {
   }
 }
 
-async function enterDashboard() {
-  dbg("enterDashboard() called");
-
-  if (!getSessionToken()) {
-    dbg("No session token found");
-    return;
-  }
-
-  showPage("content");
-  dbg("Switched to content page");
-
-  await new Promise(requestAnimationFrame);
-
-  initChart();
-  dbg("Chart initialized");
-
-  await loadSettingsIntoForm();
-  dbg("Settings loaded");
-
-  const recent = await loadDexcomRecent();
-  dbg("Recent Dexcom response received");
-
-  if (!recent) {
-    dbg("No recent Dexcom data returned");
-    return;
-  }
-
-  if (recent.status === "no_active_sensor") {
-    dbg("No active sensor");
-    showNoActiveSensorUI();
-  } else {
-    renderLastHour(recent.points);
-    await refreshLatestCardFromRecent(recent);
-    dbg("Dashboard data rendered");
-  }
-
-  updateStatus();
-}
-
 /* ============================================================
    Logout
    ============================================================ */
 async function logout() {
-  const t = getSessionToken();
+  const wasDemo = getSessionToken().startsWith(DEMO_TOKEN_PREFIX);
   setSessionToken("");
   document.getElementById("dexcom-state").textContent = "Not logged in";
 
-  // ✅ Demo token: no server logout
-  if (t && t.startsWith(DEMO_TOKEN_PREFIX)) {
+  // Demo mode lives only in the browser, so there is no server session to clear.
+  if (wasDemo) {
     alert("Logged out");
     return;
   }
 
-  if (t) {
-    try {
-      await fetch("/dexcom-logout", {
-        method:"POST",
-        headers: { "Authorization":"Bearer " + t }
-      });
-    } catch {}
-  }
+  try {
+    await fetch("/dexcom-logout", {
+      method:"POST",
+      credentials: "same-origin"
+    });
+  } catch {}
+
   alert("Logged out");
 }
 
@@ -6809,6 +6838,24 @@ async function enterDashboard(){
 
     setInterval(updateStatus, 5000);
   }
+}
+
+async function bootstrapExistingSession() {
+  const session = await refreshSessionState();
+  if (!session.logged_in) {
+    return;
+  }
+
+  document.getElementById("dexcom-state").textContent =
+    session.demo ? "Logged in (Developer Mode)" : "Logged in";
+
+  if (Number.isFinite(Number(session?.trusted_users_count))) {
+    setTrustedUsersCount(Number(session.trusted_users_count));
+  } else {
+    await loadTrustedUsersCount();
+  }
+
+  await enterDashboard();
 }
 
 /* ============================================================
@@ -6920,6 +6967,7 @@ document.getElementById("dexcom-state").textContent = "Not logged in";
    ============================================================ */
 initHeroModelViewer();
 setStep(0);
+void bootstrapExistingSession();
 
   </script>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>

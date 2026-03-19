@@ -20,13 +20,15 @@ const SETTINGS_KEY = "settings";
 const LAST_SEEN_KEY = "lastSeen";
 const MAILBOX_KEY = "mailbox";
 const TRUSTED_USER_PREFIX = "trustedUser:v1:";
+const SESSION_PREFIX = "session:v1:";
+const SESSION_COOKIE_NAME = "__Host-guardian_session";
 
 /* ===== FREE TIER THROTTLES ===== */
 const HEARTBEAT_MIN_WRITE_MS = 5 * 60 * 1000;
 const ONLINE_WINDOW_MS = 60 * 1000;
 const LASTSEEN_CACHE_TTL_SECONDS = 2 * 60;
 
-/* ===== SIGNED SESSION TOKEN TTL ===== */
+/* ===== SERVER-SIDE SESSION TTL ===== */
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 /* Dexcom Share endpoints */
@@ -129,8 +131,15 @@ async function kvPutSafe(env, key, value, options = undefined) {
 }
 
 /* =========================
-   SIGNED SESSION TOKENS
-   ========================= */
+   SESSION HELPERS
+   =========================
+
+   Security note:
+   We no longer send Dexcom credentials back to the browser inside a token.
+   Instead, the Worker stores the sensitive Dexcom session server-side in KV and
+   gives the browser only a random opaque session id inside an HttpOnly cookie.
+   That means JavaScript in the page cannot read the Dexcom password.
+*/
 function b64urlEncodeBytes(bytes) {
   let bin = "";
   const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
@@ -140,76 +149,49 @@ function b64urlEncodeBytes(bytes) {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function b64urlEncodeString(str) {
-  return b64urlEncodeBytes(new TextEncoder().encode(str));
+function randomOpaqueId(byteLength = 32) {
+  const bytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  return b64urlEncodeBytes(bytes);
 }
 
-function b64urlDecodeToString(input) {
-  const normalized = String(input || "").replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized + "===".slice((normalized.length + 3) % 4);
-  return atob(padded);
+function buildSessionKey(sessionId) {
+  return `${SESSION_PREFIX}${sessionId}`;
 }
 
-async function hmacSha256(message, secret) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const sig = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(message)
-  );
-
-  return b64urlEncodeBytes(new Uint8Array(sig));
+function makeSessionCookie(sessionId, maxAgeSeconds = SESSION_TTL_SECONDS) {
+  return [
+    `${SESSION_COOKIE_NAME}=${sessionId}`,
+    "Path=/",
+    `Max-Age=${maxAgeSeconds}`,
+    "HttpOnly",
+    "Secure",
+    "SameSite=Lax",
+  ].join("; ");
 }
 
-async function createSessionToken(payload, secret) {
-  const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-
-  const fullPayload = {
-    ...payload,
-    iat: now,
-    exp: now + SESSION_TTL_SECONDS,
-  };
-
-  const encodedHeader = b64urlEncodeString(JSON.stringify(header));
-  const encodedPayload = b64urlEncodeString(JSON.stringify(fullPayload));
-  const signingInput = encodedHeader + "." + encodedPayload;
-  const signature = await hmacSha256(signingInput, secret);
-
-  return signingInput + "." + signature;
+function clearSessionCookie() {
+  return [
+    `${SESSION_COOKIE_NAME}=`,
+    "Path=/",
+    "Max-Age=0",
+    "HttpOnly",
+    "Secure",
+    "SameSite=Lax",
+  ].join("; ");
 }
 
-async function verifySessionToken(token, secret) {
-  if (!token || typeof token !== "string") return null;
-
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
-
-  const [encodedHeader, encodedPayload, signature] = parts;
-  const signingInput = encodedHeader + "." + encodedPayload;
-  const expectedSignature = await hmacSha256(signingInput, secret);
-
-  if (signature !== expectedSignature) return null;
-
-  try {
-    const header = JSON.parse(b64urlDecodeToString(encodedHeader));
-    const payload = JSON.parse(b64urlDecodeToString(encodedPayload));
-    const now = Math.floor(Date.now() / 1000);
-
-    if (header?.alg !== "HS256") return null;
-    if (!payload?.exp || now >= payload.exp) return null;
-
-    return payload;
-  } catch {
-    return null;
+function readCookie(request, name) {
+  const raw = request.headers.get("cookie") || "";
+  const parts = raw.split(";");
+  for (const part of parts) {
+    const eqIndex = part.indexOf("=");
+    if (eqIndex < 0) continue;
+    const key = part.slice(0, eqIndex).trim();
+    if (key !== name) continue;
+    return part.slice(eqIndex + 1).trim();
   }
+  return "";
 }
 
 function readBearer(request) {
@@ -218,11 +200,39 @@ function readBearer(request) {
   return m ? m[1] : "";
 }
 
+async function saveServerSession(env, sessionData) {
+  const sessionId = randomOpaqueId();
+  const key = buildSessionKey(sessionId);
+  const out = await kvPutSafe(
+    env,
+    key,
+    JSON.stringify(sessionData),
+    { expirationTtl: SESSION_TTL_SECONDS }
+  );
+
+  return {
+    ok: !!out.ok,
+    sessionId,
+    save: out,
+  };
+}
+
+async function loadServerSession(env, sessionId) {
+  if (!sessionId) return null;
+  const raw = await env.ESP32_KV.get(buildSessionKey(sessionId));
+  const session = safeJsonParse(raw, null);
+  return session && typeof session === "object" ? session : null;
+}
+
+async function deleteServerSession(env, sessionId) {
+  if (!sessionId) return;
+  await env.ESP32_KV.delete(buildSessionKey(sessionId));
+}
+
 async function requireSession(request, env) {
-  const token = readBearer(request);
-  if (!token) return null;
-  if (!env?.SESSION_SECRET) return null;
-  return await verifySessionToken(token, env.SESSION_SECRET);
+  const sessionId = readCookie(request, SESSION_COOKIE_NAME) || readBearer(request);
+  if (!sessionId) return null;
+  return await loadServerSession(env, sessionId);
 }
 
 /* =========================
@@ -487,10 +497,6 @@ async function handleTrustedUsersCount(env) {
    ROUTE HELPERS
    ========================= */
 async function handleDexcomLogin(request, env) {
-  if (!env?.SESSION_SECRET) {
-    return jsonResponse({ ok: false, error: "Server missing SESSION_SECRET" }, 500);
-  }
-
   const body = await readJson(request);
   if (!body.ok) {
     return jsonResponse({ ok: false, error: body.error }, 400);
@@ -543,7 +549,8 @@ async function handleDexcomLogin(request, env) {
       );
     }
 
-    const token = await createSessionToken(
+    const storedSession = await saveServerSession(
+      env,
       {
         username,
         password,
@@ -551,9 +558,19 @@ async function handleDexcomLogin(request, env) {
         accountId,
         sessionId,
         createdAt: Date.now(),
-      },
-      env.SESSION_SECRET
+      }
     );
+
+    if (!storedSession.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Could not save secure session",
+          kv_limited: !!storedSession.save?.kvLimited,
+        },
+        storedSession.save?.kvLimited ? 429 : 500
+      );
+    }
 
     try {
       await rememberTrustedDexcomUser(env, region, accountId);
@@ -561,13 +578,16 @@ async function handleDexcomLogin(request, env) {
 
     const trustedUsers = await getTrustedUsersCount(env, { bypassCache: true });
 
-    return jsonResponse({
-      ok: true,
-      token,
-      region,
-      trusted_users_count: trustedUsers.count,
-      debug_saved_session_id: sessionId,
-    });
+    return jsonResponse(
+      {
+        ok: true,
+        region,
+        trusted_users_count: trustedUsers.count,
+        debug_saved_session_id: sessionId,
+      },
+      200,
+      { "Set-Cookie": makeSessionCookie(storedSession.sessionId) }
+    );
   } catch (e) {
     const msg = String(e?.message || "");
     const bodyText = String(e?.body || "");
@@ -770,8 +790,15 @@ async function handleDexcomRecent(request, env) {
   }
 }
 
-async function handleDexcomLogout() {
-  return jsonResponse({ ok: true });
+async function handleDexcomLogout(request, env) {
+  const sessionId = readCookie(request, SESSION_COOKIE_NAME) || readBearer(request);
+  if (sessionId) {
+    try {
+      await deleteServerSession(env, sessionId);
+    } catch {}
+  }
+
+  return jsonResponse({ ok: true }, 200, { "Set-Cookie": clearSessionCookie() });
 }
 
 async function handleStatus(env) {
@@ -816,6 +843,22 @@ async function handleSetSettings(request, env) {
   });
 }
 
+async function handleSessionStatus(request, env) {
+  const session = await requireSession(request, env);
+  if (!session) {
+    return jsonResponse({ ok: true, logged_in: false });
+  }
+
+  const trustedUsers = await getTrustedUsersCount(env);
+
+  return jsonResponse({
+    ok: true,
+    logged_in: true,
+    region: session.region || "us",
+    trusted_users_count: trustedUsers.count,
+  });
+}
+
 async function handleMailboxGet(env) {
   // GET /mailbox is intentionally simple:
   // it just returns the full shared object so the ESP32 can read any keys it
@@ -828,7 +871,7 @@ async function handleMailboxGet(env) {
 }
 
 async function handleMailboxPost(request, env) {
-  // POST /mailbox is protected with the normal signed session token.
+  // POST /mailbox is protected with the normal authenticated website session.
   // This prevents random visitors from changing what the ESP32 receives.
   const session = await requireSession(request, env);
   if (!session) {
@@ -880,10 +923,6 @@ export default {
         return jsonResponse({ ok: false, error: "KV binding missing: ESP32_KV" }, 500);
       }
 
-      if (!env?.SESSION_SECRET) {
-        return jsonResponse({ ok: false, error: "Secret missing: SESSION_SECRET" }, 500);
-      }
-
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: JSON_HEADERS });
       }
@@ -895,6 +934,10 @@ export default {
 
       if (url.pathname === "/status" && request.method === "GET") {
         return await handleStatus(env);
+      }
+
+      if (url.pathname === "/session" && request.method === "GET") {
+        return await handleSessionStatus(request, env);
       }
 
       if (url.pathname === "/get-settings" && request.method === "GET") {
@@ -928,7 +971,7 @@ export default {
       }
 
       if (url.pathname === "/dexcom-logout" && request.method === "POST") {
-        return await handleDexcomLogout();
+        return await handleDexcomLogout(request, env);
       }
 
       if (env.ASSETS) {

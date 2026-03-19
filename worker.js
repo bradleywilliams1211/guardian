@@ -26,6 +26,9 @@ const DEVICE_PREFIX = "device:v1:";
 const DEVICE_SETTINGS_PREFIX = "deviceSettings:v1:";
 const DEVICE_LASTSEEN_PREFIX = "deviceLastSeen:v1:";
 const DEVICE_MAILBOX_PREFIX = "deviceMailbox:v1:";
+const DEVICE_BOOTSTRAP_PREFIX = "deviceBootstrap:v1:";
+const DEVICE_CLAIM_PREFIX = "deviceClaim:v1:";
+const OWNER_DEVICE_PREFIX = "ownerDevice:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
 const HEARTBEAT_MIN_WRITE_MS = 5 * 60 * 1000;
@@ -34,6 +37,7 @@ const LASTSEEN_CACHE_TTL_SECONDS = 2 * 60;
 
 /* ===== SERVER-SIDE SESSION TTL ===== */
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const CLAIM_CODE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
 /* Dexcom Share endpoints */
 const BASE_URLS = {
@@ -268,6 +272,29 @@ function normalizeDeviceId(value, fallback = "") {
   return cleaned || fallback;
 }
 
+function normalizeHardwareId(value) {
+  return normalizeDeviceId(value, "");
+}
+
+function normalizeClaimCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 12);
+}
+
+function randomClaimCode(length = 8) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let out = "";
+  for (let i = 0; i < bytes.length; i++) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
 async function buildDefaultDeviceId(session) {
   const ownerHash = await sha256B64Url(
     `${String(session?.region || "us").trim().toLowerCase()}:${String(session?.accountId || "").trim()}`
@@ -291,6 +318,14 @@ function buildDeviceKey(deviceId) {
   return `${DEVICE_PREFIX}${deviceId}`;
 }
 
+function buildBootstrapKey(hardwareId) {
+  return `${DEVICE_BOOTSTRAP_PREFIX}${hardwareId}`;
+}
+
+function buildClaimKey(claimCode) {
+  return `${DEVICE_CLAIM_PREFIX}${claimCode}`;
+}
+
 function buildSettingsKey(deviceId) {
   return `${DEVICE_SETTINGS_PREFIX}${deviceId}`;
 }
@@ -301,6 +336,13 @@ function buildLastSeenKey(deviceId) {
 
 function buildMailboxKey(deviceId) {
   return `${DEVICE_MAILBOX_PREFIX}${deviceId}`;
+}
+
+async function buildOwnerDeviceKey(region, accountId) {
+  const normalizedRegion = String(region || "us").trim().toLowerCase();
+  const normalizedAccountId = String(accountId || "").trim().toLowerCase();
+  const digest = await sha256B64Url(`${normalizedRegion}:${normalizedAccountId}`);
+  return `${OWNER_DEVICE_PREFIX}${digest}`;
 }
 
 function cacheLastSeenKey(deviceId) {
@@ -321,6 +363,49 @@ async function saveDeviceRecord(env, deviceId, record) {
   return { record, save: out };
 }
 
+async function loadBootstrapRecord(env, hardwareId) {
+  if (!hardwareId) return null;
+  const raw = await env.ESP32_KV.get(buildBootstrapKey(hardwareId));
+  const record = safeJsonParse(raw, null);
+  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+}
+
+async function saveBootstrapRecord(env, hardwareId, record) {
+  const out = await kvPutSafe(env, buildBootstrapKey(hardwareId), JSON.stringify(record));
+  return { record, save: out };
+}
+
+async function saveClaimLookup(env, claimCode, hardwareId) {
+  return await kvPutSafe(
+    env,
+    buildClaimKey(claimCode),
+    JSON.stringify({ hardware_id: hardwareId, updated_at: Date.now() }),
+    { expirationTtl: CLAIM_CODE_TTL_SECONDS }
+  );
+}
+
+async function loadClaimLookup(env, claimCode) {
+  const raw = await env.ESP32_KV.get(buildClaimKey(claimCode));
+  const record = safeJsonParse(raw, null);
+  return record && typeof record === "object" ? record : null;
+}
+
+async function deleteClaimLookup(env, claimCode) {
+  if (!claimCode) return;
+  await env.ESP32_KV.delete(buildClaimKey(claimCode));
+}
+
+async function setOwnerDeviceMapping(env, region, accountId, deviceId) {
+  const key = await buildOwnerDeviceKey(region, accountId);
+  return await kvPutSafe(env, key, deviceId);
+}
+
+async function getOwnerDeviceId(env, region, accountId) {
+  const key = await buildOwnerDeviceKey(region, accountId);
+  const value = await env.ESP32_KV.get(key);
+  return String(value || "").trim();
+}
+
 function sessionOwnsDevice(session, record) {
   if (!session || !record) return false;
 
@@ -329,6 +414,27 @@ function sessionOwnsDevice(session, record) {
     String(session.region || "us").trim().toLowerCase() ===
       String(record.owner_region || "us").trim().toLowerCase()
   );
+}
+
+async function findOwnedDeviceId(env, session) {
+  const mapped = await getOwnerDeviceId(env, session?.region, session?.accountId);
+  if (mapped) {
+    return mapped;
+  }
+
+  // Backward compatibility:
+  // older local/dev flows derived a deterministic device id from the Dexcom
+  // account before we added claim-code onboarding. If that older device record
+  // exists and still belongs to this user, adopt it as the user's current
+  // claimed device.
+  const legacyDeviceId = await buildDefaultDeviceId(session);
+  const legacyRecord = await loadDeviceRecord(env, legacyDeviceId);
+  if (!legacyRecord || !sessionOwnsDevice(session, legacyRecord)) {
+    return "";
+  }
+
+  await setOwnerDeviceMapping(env, session.region, session.accountId, legacyDeviceId);
+  return legacyDeviceId;
 }
 
 async function ensureOwnedDevice(env, session) {
@@ -390,6 +496,270 @@ async function rotateOwnedDeviceToken(env, session) {
   };
 }
 
+async function createPendingBootstrap(env, hardwareId, bootstrapSecretHash) {
+  let claimCode = "";
+  let claimSave = null;
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    claimCode = randomClaimCode(8);
+    const existingClaim = await loadClaimLookup(env, claimCode);
+    if (existingClaim) {
+      continue;
+    }
+
+    claimSave = await saveClaimLookup(env, claimCode, hardwareId);
+    if (claimSave.ok) {
+      break;
+    }
+  }
+
+  if (!claimCode || !claimSave?.ok) {
+    return {
+      ok: false,
+      error: "Could not reserve a claim code",
+      save: claimSave,
+    };
+  }
+
+  const record = {
+    hardware_id: hardwareId,
+    bootstrap_secret_hash: bootstrapSecretHash,
+    claim_code: claimCode,
+    state: "pending",
+    claim_expires_at: Date.now() + (CLAIM_CODE_TTL_SECONDS * 1000),
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  };
+
+  const save = await saveBootstrapRecord(env, hardwareId, record);
+  return {
+    ok: !!save.save.ok,
+    record,
+    save: save.save,
+  };
+}
+
+async function handleDeviceBootstrap(request, env) {
+  const body = await readJson(request);
+  if (!body.ok) {
+    return jsonResponse({ ok: false, error: body.error }, 400);
+  }
+
+  const hardwareId = normalizeHardwareId(body.data?.hardware_id);
+  const bootstrapSecret = String(body.data?.bootstrap_secret || "").trim();
+
+  if (!hardwareId || !bootstrapSecret) {
+    return jsonResponse(
+      { ok: false, error: "Missing hardware_id or bootstrap_secret" },
+      400
+    );
+  }
+
+  const bootstrapSecretHash = await sha256B64Url(bootstrapSecret);
+  let record = await loadBootstrapRecord(env, hardwareId);
+
+  if (!record) {
+    const created = await createPendingBootstrap(env, hardwareId, bootstrapSecretHash);
+    if (!created.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: created.error || "Could not create device bootstrap record",
+          kv_limited: !!created.save?.kvLimited,
+        },
+        created.save?.kvLimited ? 429 : 500
+      );
+    }
+
+    record = created.record;
+  }
+
+  if (record.bootstrap_secret_hash !== bootstrapSecretHash) {
+    return jsonResponse({ ok: false, error: "Bootstrap secret mismatch" }, 401);
+  }
+
+  if (record.state === "claimed" && record.device_id) {
+    const deviceRecord = await loadDeviceRecord(env, record.device_id);
+    if (!deviceRecord) {
+      return jsonResponse({ ok: false, error: "Claimed device record was missing" }, 500);
+    }
+
+    const deviceToken = randomOpaqueId(24);
+    const updatedRecord = {
+      ...deviceRecord,
+      token_hash: await sha256B64Url(deviceToken),
+      token_hint: deviceToken.slice(-4),
+      updated_at: Date.now(),
+    };
+
+    const save = await saveDeviceRecord(env, record.device_id, updatedRecord);
+    if (!save.save.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Could not refresh device token",
+          kv_limited: !!save.save?.kvLimited,
+        },
+        save.save?.kvLimited ? 429 : 500
+      );
+    }
+
+    return jsonResponse({
+      ok: true,
+      claimed: true,
+      device_id: record.device_id,
+      device_token: deviceToken,
+      token_hint: updatedRecord.token_hint || null,
+    });
+  }
+
+  if (record.state !== "pending") {
+    return jsonResponse({ ok: false, error: "Unknown bootstrap state" }, 500);
+  }
+
+  if (Number(record.claim_expires_at || 0) && Date.now() > Number(record.claim_expires_at)) {
+    await deleteClaimLookup(env, record.claim_code);
+    const refreshed = await createPendingBootstrap(env, hardwareId, bootstrapSecretHash);
+    if (!refreshed.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: refreshed.error || "Could not refresh claim code",
+          kv_limited: !!refreshed.save?.kvLimited,
+        },
+        refreshed.save?.kvLimited ? 429 : 500
+      );
+    }
+    record = refreshed.record;
+  }
+
+  return jsonResponse({
+    ok: true,
+    claimed: false,
+    claim_code: record.claim_code,
+    claim_expires_at: record.claim_expires_at,
+    claim_url: "https://getguardian.org",
+  });
+}
+
+async function handleClaimDevice(request, env) {
+  const session = await requireSession(request, env);
+  if (!session) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const body = await readJson(request);
+  if (!body.ok) {
+    return jsonResponse({ ok: false, error: body.error }, 400);
+  }
+
+  const claimCode = normalizeClaimCode(body.data?.claim_code);
+  if (!claimCode) {
+    return jsonResponse({ ok: false, error: "Missing claim code" }, 400);
+  }
+
+  const currentOwnerDeviceId = await findOwnedDeviceId(env, session);
+  if (currentOwnerDeviceId) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "This account already has a claimed device",
+        device_id: currentOwnerDeviceId,
+      },
+      409
+    );
+  }
+
+  const lookup = await loadClaimLookup(env, claimCode);
+  if (!lookup?.hardware_id) {
+    return jsonResponse({ ok: false, error: "Claim code not found or expired" }, 404);
+  }
+
+  const bootstrap = await loadBootstrapRecord(env, normalizeHardwareId(lookup.hardware_id));
+  if (!bootstrap) {
+    return jsonResponse({ ok: false, error: "Device onboarding record missing" }, 404);
+  }
+
+  if (bootstrap.state !== "pending") {
+    return jsonResponse({ ok: false, error: "That device has already been claimed" }, 409);
+  }
+
+  if (bootstrap.claim_code !== claimCode) {
+    return jsonResponse({ ok: false, error: "Claim code mismatch" }, 409);
+  }
+
+  const deviceId = `guard-${(await sha256B64Url(bootstrap.hardware_id)).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12)}`;
+  const deviceToken = randomOpaqueId(24);
+  const now = Date.now();
+
+  const deviceRecord = {
+    device_id: deviceId,
+    hardware_id: bootstrap.hardware_id,
+    owner_account_id: String(session.accountId || "").trim(),
+    owner_region: String(session.region || "us").trim().toLowerCase(),
+    token_hash: await sha256B64Url(deviceToken),
+    token_hint: deviceToken.slice(-4),
+    created_at: now,
+    updated_at: now,
+  };
+
+  const deviceSave = await saveDeviceRecord(env, deviceId, deviceRecord);
+  if (!deviceSave.save.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Could not save claimed device",
+        kv_limited: !!deviceSave.save?.kvLimited,
+      },
+      deviceSave.save?.kvLimited ? 429 : 500
+    );
+  }
+
+  const ownerSave = await setOwnerDeviceMapping(env, session.region, session.accountId, deviceId);
+  if (!ownerSave.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Could not link device to account",
+        kv_limited: !!ownerSave.kvLimited,
+      },
+      ownerSave.kvLimited ? 429 : 500
+    );
+  }
+
+  const updatedBootstrap = {
+    ...bootstrap,
+    state: "claimed",
+    device_id: deviceId,
+    owner_account_id: String(session.accountId || "").trim(),
+    owner_region: String(session.region || "us").trim().toLowerCase(),
+    claimed_at: now,
+    updated_at: now,
+  };
+
+  const bootstrapSave = await saveBootstrapRecord(env, bootstrap.hardware_id, updatedBootstrap);
+  if (!bootstrapSave.save.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Device was claimed, but bootstrap state could not be updated",
+        device_id: deviceId,
+        kv_limited: !!bootstrapSave.save?.kvLimited,
+      },
+      bootstrapSave.save?.kvLimited ? 429 : 500
+    );
+  }
+
+  await deleteClaimLookup(env, claimCode);
+
+  return jsonResponse({
+    ok: true,
+    claimed: true,
+    device_id: deviceId,
+    message: "Device claimed. The robot will pick up its secure token automatically.",
+  });
+}
+
 async function requireOwnedDevice(request, env, options = {}) {
   const session = await requireSession(request, env);
   if (!session) {
@@ -412,6 +782,24 @@ async function requireOwnedDevice(request, env, options = {}) {
       auth: "session",
       session,
       deviceId: requestedDeviceId,
+      device: record,
+      created: false,
+      deviceToken: null,
+    };
+  }
+
+  const ownedDeviceId = await findOwnedDeviceId(env, session);
+  if (ownedDeviceId) {
+    const record = await loadDeviceRecord(env, ownedDeviceId);
+    if (!record) {
+      return { ok: false, status: 404, error: "That device is missing from storage" };
+    }
+
+    return {
+      ok: true,
+      auth: "session",
+      session,
+      deviceId: ownedDeviceId,
       device: record,
       created: false,
       deviceToken: null,
@@ -852,32 +1240,20 @@ async function handleDexcomLogin(request, env) {
       );
     }
 
-    const deviceInfo = await ensureOwnedDevice(env, ownerSession);
-    if (!deviceInfo.ok) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: "Logged in, but could not prepare a device for this account",
-          kv_limited: !!deviceInfo.save?.kvLimited,
-        },
-        deviceInfo.save?.kvLimited ? 429 : 500
-      );
-    }
-
     try {
       await rememberTrustedDexcomUser(env, region, accountId);
     } catch {}
 
     const trustedUsers = await getTrustedUsersCount(env, { bypassCache: true });
+    const ownedDeviceId = await findOwnedDeviceId(env, ownerSession);
 
     return jsonResponse(
       {
         ok: true,
         region,
         trusted_users_count: trustedUsers.count,
-        device_id: deviceInfo.deviceId,
-        device_created: deviceInfo.created,
-        device_token: deviceInfo.created ? deviceInfo.deviceToken : null,
+        device_id: ownedDeviceId || "",
+        device_claim_required: !ownedDeviceId,
         debug_saved_session_id: sessionId,
       },
       200,
@@ -1100,7 +1476,7 @@ async function handleStatus(request, env) {
   const context = await resolveDeviceContext(request, env, {
     allowSession: true,
     allowDeviceToken: true,
-    createIfMissing: true,
+    createIfMissing: false,
   });
 
   if (!context.ok) {
@@ -1124,7 +1500,7 @@ async function handleStatus(request, env) {
 }
 
 async function handleGetSettings(request, env) {
-  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  const context = await requireOwnedDevice(request, env, { createIfMissing: false });
   if (!context.ok) {
     return jsonResponse({ ok: false, error: context.error }, context.status || 401);
   }
@@ -1139,7 +1515,7 @@ async function handleGetSettings(request, env) {
 }
 
 async function handleSetSettings(request, env) {
-  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  const context = await requireOwnedDevice(request, env, { createIfMissing: false });
   if (!context.ok) {
     return jsonResponse({ ok: false, error: context.error }, context.status || 401);
   }
@@ -1162,35 +1538,54 @@ async function handleSetSettings(request, env) {
 }
 
 async function handleSessionStatus(request, env) {
-  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
-  if (!context.ok) {
+  const session = await requireSession(request, env);
+  if (!session) {
     return jsonResponse({ ok: true, logged_in: false });
   }
 
+  const ownedDeviceId = await findOwnedDeviceId(env, session);
   const trustedUsers = await getTrustedUsersCount(env);
 
   return jsonResponse({
     ok: true,
     logged_in: true,
-    region: context.session.region || "us",
-    device_id: context.deviceId,
-    device_created: context.created,
+    region: session.region || "us",
+    device_id: ownedDeviceId || "",
+    device_claim_required: !ownedDeviceId,
     trusted_users_count: trustedUsers.count,
   });
 }
 
 async function handleDeviceInfo(request, env) {
-  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
-  if (!context.ok) {
-    return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  const session = await requireSession(request, env);
+  if (!session) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const deviceId = await findOwnedDeviceId(env, session);
+  if (!deviceId) {
+    return jsonResponse({
+      ok: true,
+      claimed: false,
+      device_id: "",
+      token_hint: null,
+      created_at: null,
+      updated_at: null,
+    });
+  }
+
+  const record = await loadDeviceRecord(env, deviceId);
+  if (!record) {
+    return jsonResponse({ ok: false, error: "Claimed device record missing" }, 404);
   }
 
   return jsonResponse({
     ok: true,
-    device_id: context.deviceId,
-    token_hint: context.device?.token_hint || null,
-    created_at: context.device?.created_at || null,
-    updated_at: context.device?.updated_at || null,
+    claimed: true,
+    device_id: deviceId,
+    token_hint: record.token_hint || null,
+    created_at: record.created_at || null,
+    updated_at: record.updated_at || null,
   });
 }
 
@@ -1200,23 +1595,41 @@ async function handleRotateDeviceToken(request, env) {
     return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
   }
 
-  const rotated = await rotateOwnedDeviceToken(env, session);
-  if (!rotated.ok) {
+  const deviceId = await findOwnedDeviceId(env, session);
+  if (!deviceId) {
+    return jsonResponse({ ok: false, error: "No claimed device for this account yet" }, 404);
+  }
+
+  const existing = await loadDeviceRecord(env, deviceId);
+  if (!existing || !sessionOwnsDevice(session, existing)) {
+    return jsonResponse({ ok: false, error: "Claimed device record missing" }, 404);
+  }
+
+  const deviceToken = randomOpaqueId(24);
+  const record = {
+    ...existing,
+    token_hash: await sha256B64Url(deviceToken),
+    token_hint: deviceToken.slice(-4),
+    updated_at: Date.now(),
+  };
+
+  const save = await saveDeviceRecord(env, deviceId, record);
+  if (!save.save.ok) {
     return jsonResponse(
       {
         ok: false,
         error: "Could not rotate device token",
-        kv_limited: !!rotated.save?.kvLimited,
+        kv_limited: !!save.save?.kvLimited,
       },
-      rotated.save?.kvLimited ? 429 : 500
+      save.save?.kvLimited ? 429 : 500
     );
   }
 
   return jsonResponse({
     ok: true,
-    device_id: rotated.deviceId,
-    device_token: rotated.deviceToken,
-    token_hint: rotated.record?.token_hint || null,
+    device_id: deviceId,
+    device_token: deviceToken,
+    token_hint: record.token_hint || null,
   });
 }
 
@@ -1227,7 +1640,7 @@ async function handleMailboxGet(request, env) {
   const context = await resolveDeviceContext(request, env, {
     allowSession: true,
     allowDeviceToken: true,
-    createIfMissing: true,
+    createIfMissing: false,
   });
 
   if (!context.ok) {
@@ -1245,7 +1658,7 @@ async function handleMailboxGet(request, env) {
 async function handleMailboxPost(request, env) {
   // POST /mailbox is protected with the normal authenticated website session.
   // This prevents random visitors from changing what the ESP32 receives.
-  const context = await requireOwnedDevice(request, env, { createIfMissing: true });
+  const context = await requireOwnedDevice(request, env, { createIfMissing: false });
   if (!context.ok) {
     return jsonResponse({ ok: false, error: context.error }, context.status || 401);
   }
@@ -1316,6 +1729,14 @@ export default {
 
       if (url.pathname === "/session" && request.method === "GET") {
         return await handleSessionStatus(request, env);
+      }
+
+      if (url.pathname === "/device/bootstrap" && request.method === "POST") {
+        return await handleDeviceBootstrap(request, env);
+      }
+
+      if (url.pathname === "/device/claim" && request.method === "POST") {
+        return await handleClaimDevice(request, env);
       }
 
       if (url.pathname === "/device" && request.method === "GET") {

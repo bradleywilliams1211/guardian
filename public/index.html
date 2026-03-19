@@ -2808,6 +2808,19 @@
         </p>
       </div>
 
+      <div id="deviceClaimCard" class="card login-card" style="display:none;">
+        <strong>Claim Your GUARD</strong>
+        <p id="device-claim-help" style="opacity:.75;">
+          Power on your GUARD, connect it to Wi-Fi, and enter the pairing code shown during setup.
+        </p>
+        <form onsubmit="claimDeviceFromCode(); return false;"
+              style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+          <input id="claimCodeInput" placeholder="Pairing code" autocomplete="one-time-code">
+          <button type="submit">Claim Device</button>
+        </form>
+        <p id="device-claim-state" style="margin-top:10px; opacity:.75;"></p>
+      </div>
+
     </div>
   </div>
 
@@ -3753,7 +3766,8 @@ window.setDeviceState = setMailbox;
 /*
   DEVICE HELPERS
 
-  These are the pairing helpers you can use from the browser console.
+  These are developer/support helpers.
+  Regular customers should use the claim-code card on the login screen instead.
 
   Example:
     const info = await getDeviceInfo();
@@ -3800,6 +3814,68 @@ async function rotateDeviceToken() {
 
 window.getDeviceInfo = getDeviceInfo;
 window.rotateDeviceToken = rotateDeviceToken;
+
+function setClaimCardVisible(visible, options = {}) {
+  const card = document.getElementById("deviceClaimCard");
+  const helpEl = document.getElementById("device-claim-help");
+  const stateEl = document.getElementById("device-claim-state");
+
+  if (card) {
+    card.style.display = visible ? "block" : "none";
+  }
+
+  if (helpEl && typeof options.help === "string") {
+    helpEl.textContent = options.help;
+  }
+
+  if (stateEl && typeof options.state === "string") {
+    stateEl.textContent = options.state;
+  }
+}
+
+async function claimDeviceFromCode() {
+  const input = document.getElementById("claimCodeInput");
+  const stateEl = document.getElementById("device-claim-state");
+  const rawCode = (input?.value || "").trim();
+  const claimCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  if (!claimCode) {
+    if (stateEl) stateEl.textContent = "Enter the pairing code shown during GUARD setup.";
+    return;
+  }
+
+  if (stateEl) stateEl.textContent = "Claiming device…";
+
+  try {
+    const res = await fetch("/device/claim", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ claim_code: claimCode })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Could not claim device");
+    }
+
+    if (data.device_id) {
+      setCurrentDeviceId(data.device_id);
+    }
+
+    if (input) input.value = "";
+    if (stateEl) stateEl.textContent = "Device claimed. Finishing setup…";
+    setClaimCardVisible(false, { state: "" });
+    await refreshSessionState();
+    await enterDashboard();
+  } catch (err) {
+    if (stateEl) {
+      stateEl.textContent = err?.message || "Could not claim device";
+    }
+  }
+}
+
+window.claimDeviceFromCode = claimDeviceFromCode;
 
 async function loadTrustedUsersCount() {
   const el = document.getElementById("trusted-users-count");
@@ -5846,6 +5922,7 @@ async function refreshSessionState() {
   if (isDemoMode()) {
     hasServerSession = false;
     setCurrentDeviceId("demo-device");
+    setClaimCardVisible(false, { state: "" });
     return { ok: true, logged_in: true, demo: true };
   }
 
@@ -5858,16 +5935,27 @@ async function refreshSessionState() {
     hasServerSession = !!data.logged_in;
     if (data.device_id) {
       setCurrentDeviceId(data.device_id);
+      setClaimCardVisible(false, { state: "" });
+    } else {
+      setCurrentDeviceId("");
+      if (data.logged_in) {
+        setClaimCardVisible(true, {
+          help: "Guardian is ready for pairing. Enter the claim code shown by your GUARD after Wi-Fi setup.",
+          state: ""
+        });
+      }
     }
     return {
       ok: !!data.ok,
       logged_in: !!data.logged_in,
       device_id: data.device_id || "",
+      device_claim_required: !!data.device_claim_required,
       trusted_users_count: data.trusted_users_count,
       demo: false
     };
   } catch {
     hasServerSession = false;
+    setCurrentDeviceId("");
     return { ok: false, logged_in: false, demo: false };
   }
 }
@@ -6846,26 +6934,24 @@ async function saveDexcomCreds() {
     setSessionToken("server-session");
     stateEl.textContent = "Logged in";
 
-    if (data.device_id) {
-      setCurrentDeviceId(data.device_id);
-    }
-
-    if (data.device_created && data.device_token) {
-      dbg("A new device was created for this account.");
-      console.log("New GUARD device credentials:", {
-        device_id: data.device_id,
-        device_token: data.device_token
-      });
-      console.log("Copy these into ESP32-C3/website_setup.py.");
-    }
-
     if (Number.isFinite(Number(data?.trusted_users_count))) {
       setTrustedUsersCount(Number(data.trusted_users_count));
     } else {
       await loadTrustedUsersCount();
     }
-    dbg("Login success. Entering dashboard...");
-    await enterDashboard();
+
+    if (sessionState.device_id) {
+      dbg("Login success. Entering dashboard...");
+      await enterDashboard();
+      return;
+    }
+
+    showPage("user-screen");
+    setClaimCardVisible(true, {
+      help: "Your account is ready. Enter the claim code shown by your GUARD after Wi-Fi setup.",
+      state: "Logged in. Waiting for your GUARD pairing code."
+    });
+    stateEl.textContent = "Logged in. Pair your GUARD to continue.";
 
   } catch (err) {
     const loginError = err?.message || String(err) || "Login failed";
@@ -6880,6 +6966,8 @@ async function saveDexcomCreds() {
 async function logout() {
   const wasDemo = getSessionToken().startsWith(DEMO_TOKEN_PREFIX);
   setSessionToken("");
+  setCurrentDeviceId("");
+  setClaimCardVisible(false, { state: "" });
   document.getElementById("dexcom-state").textContent = "Not logged in";
 
   // Demo mode lives only in the browser, so there is no server session to clear.
@@ -6914,6 +7002,16 @@ async function enterDashboard(){
     return;
   }
 
+  if (!isDemoMode() && !getCurrentDeviceId()) {
+    showPage("user-screen");
+    setClaimCardVisible(true, {
+      help: "Enter the claim code shown by your GUARD after Wi-Fi setup.",
+      state: "Pair your GUARD to continue."
+    });
+    return;
+  }
+
+  setClaimCardVisible(false, { state: "" });
   showPage("content");
 
   updateAnalysisUI([]);
@@ -6972,6 +7070,7 @@ async function enterDashboard(){
 async function bootstrapExistingSession() {
   const session = await refreshSessionState();
   if (!session.logged_in) {
+    setClaimCardVisible(false, { state: "" });
     return;
   }
 
@@ -6982,6 +7081,15 @@ async function bootstrapExistingSession() {
     setTrustedUsersCount(Number(session.trusted_users_count));
   } else {
     await loadTrustedUsersCount();
+  }
+
+  if (!session.demo && !session.device_id) {
+    showPage("user-screen");
+    setClaimCardVisible(true, {
+      help: "Power on your GUARD, connect it to Wi-Fi, and enter its pairing code below.",
+      state: "You're logged in. Claim your GUARD to finish setup."
+    });
+    return;
   }
 
   await enterDashboard();

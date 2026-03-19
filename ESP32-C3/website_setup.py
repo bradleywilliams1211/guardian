@@ -4,6 +4,9 @@ import time
 import ure
 import _thread
 import gc
+import machine
+import ubinascii
+import os
 import urequests
 import ujson
 
@@ -33,25 +36,16 @@ WORKER_BASE = "https://getguardian.org"
 # ============================================================
 # DEVICE PAIRING
 # ============================================================
-# Each ESP32 should have its own device id and its own device token.
+# Customer-friendly pairing flow:
+# - This ESP32 creates its own local hardware identity automatically.
+# - It sends that identity to the Worker.
+# - The Worker returns a temporary claim code.
+# - The user enters that claim code on the Guardian website.
+# - Once claimed, the Worker gives the ESP32 its secure device_id/device_token.
+# - The ESP32 saves those credentials locally and uses them from then on.
 #
-# device_id:
-# - public identifier for this robot
-# - okay to store in code
-#
-# device_token:
-# - secret password for this robot
-# - do not share it publicly
-#
-# How to get them from the website after logging in:
-# 1. Open the browser console on your dashboard
-# 2. Run:
-#      const info = await getDeviceInfo();
-#      const creds = await rotateDeviceToken();
-#      console.log(creds.device_id, creds.device_token);
-# 3. Copy those values here
-#
-# The Worker will reject heartbeat/mailbox requests if these are blank or wrong.
+# These override values are only for emergency developer testing.
+# A normal customer should leave both blank.
 DEVICE_ID = ""
 DEVICE_TOKEN = ""
 
@@ -74,6 +68,9 @@ DEFAULT_WIFI_PASS = ""
 VALUE_FILE = "value.txt"
 HIGH_VALUE_FILE = "glucose_high.txt"
 MAILBOX_FILE = "mailbox.json"
+BOOTSTRAP_FILE = "device_bootstrap.json"
+DEVICE_CREDS_FILE = "device_credentials.json"
+CLAIM_INFO_FILE = "device_claim.json"
 
 # ============================================================
 # TIMING
@@ -82,6 +79,7 @@ POLL_INTERVAL = 1
 HEARTBEAT_INTERVAL = 15
 WORKER_CHECK_INTERVAL = 5
 WIFI_TIMEOUT = 25
+BOOTSTRAP_RETRY_INTERVAL = 10
 
 # ============================================================
 # CAPTIVE PORTAL CONFIG
@@ -182,27 +180,113 @@ def save_json_file(path, value):
 # ============================================================
 # HTTP / WORKER HELPERS
 # ============================================================
-# In the safer multi-device setup, the ESP32 always talks to URLs that include
-# its own device_id, and it sends its secret device_token as a header.
+# In the product-friendly setup, the ESP32 stores two layers of identity:
 #
-# That gives each robot:
-# - its own heartbeat
-# - its own mailbox
-# - its own online/offline status
+# 1. Bootstrap identity:
+#    - hardware_id
+#    - bootstrap_secret
+#    These are used only during first-time onboarding and claiming.
 #
-# instead of every robot sharing one global Worker state.
-def device_credentials_ready():
-    return bool(DEVICE_ID and DEVICE_ID.strip() and DEVICE_TOKEN and DEVICE_TOKEN.strip())
+# 2. Claimed device credentials:
+#    - device_id
+#    - device_token
+#    These are the normal long-lived credentials used for heartbeat/mailbox.
+current_device_credentials = None
 
-def worker_url(path):
-    if DEVICE_ID and DEVICE_ID.strip():
-        return "{}{}?device_id={}".format(WORKER_BASE, path, DEVICE_ID.strip())
+def random_hex(byte_count=16):
+    try:
+        return ubinascii.hexlify(os.urandom(byte_count)).decode()
+    except:
+        seed = "{}-{}-{}".format(time.time(), time.ticks_ms(), ubinascii.hexlify(machine.unique_id()).decode())
+        return ubinascii.hexlify(seed.encode()).decode()[:byte_count * 2]
+
+def get_bootstrap_identity():
+    identity = load_json_file(BOOTSTRAP_FILE, {})
+    hardware_id = str(identity.get("hardware_id") or "").strip().lower()
+    bootstrap_secret = str(identity.get("bootstrap_secret") or "").strip()
+
+    if not hardware_id:
+        hardware_id = "guard-" + ubinascii.hexlify(machine.unique_id()).decode().lower()
+
+    if not bootstrap_secret:
+        bootstrap_secret = random_hex(16)
+
+    clean = {
+        "hardware_id": hardware_id,
+        "bootstrap_secret": bootstrap_secret,
+    }
+
+    if clean != identity:
+        save_json_file(BOOTSTRAP_FILE, clean)
+
+    return clean
+
+def load_device_credentials():
+    if DEVICE_ID and DEVICE_ID.strip() and DEVICE_TOKEN and DEVICE_TOKEN.strip():
+        return {
+            "device_id": DEVICE_ID.strip().lower(),
+            "device_token": DEVICE_TOKEN.strip(),
+            "manual_override": True,
+        }
+
+    saved = load_json_file(DEVICE_CREDS_FILE, {})
+    device_id = str(saved.get("device_id") or "").strip().lower()
+    device_token = str(saved.get("device_token") or "").strip()
+
+    if device_id and device_token:
+        return {
+            "device_id": device_id,
+            "device_token": device_token,
+            "manual_override": False,
+        }
+
+    return {}
+
+def get_active_device_credentials():
+    global current_device_credentials
+
+    if DEVICE_ID and DEVICE_ID.strip() and DEVICE_TOKEN and DEVICE_TOKEN.strip():
+        return {
+            "device_id": DEVICE_ID.strip().lower(),
+            "device_token": DEVICE_TOKEN.strip(),
+            "manual_override": True,
+        }
+
+    if not isinstance(current_device_credentials, dict) or not current_device_credentials:
+        current_device_credentials = load_device_credentials()
+
+    return current_device_credentials or {}
+
+def save_device_credentials(device_id, device_token):
+    global current_device_credentials
+
+    creds = {
+        "device_id": str(device_id or "").strip().lower(),
+        "device_token": str(device_token or "").strip(),
+        "saved_at": time.time(),
+    }
+
+    save_json_file(DEVICE_CREDS_FILE, creds)
+    current_device_credentials = creds
+
+def device_credentials_ready():
+    creds = get_active_device_credentials()
+    return bool(creds.get("device_id") and creds.get("device_token"))
+
+def worker_url(path, include_device=True):
+    if include_device:
+        creds = get_active_device_credentials()
+        device_id = str(creds.get("device_id") or "").strip()
+        if device_id:
+            return "{}{}?device_id={}".format(WORKER_BASE, path, device_id)
     return WORKER_BASE + path
 
 def device_headers():
+    creds = get_active_device_credentials()
     headers = {}
-    if DEVICE_TOKEN and DEVICE_TOKEN.strip():
-        headers["X-Device-Token"] = DEVICE_TOKEN.strip()
+    token = str(creds.get("device_token") or "").strip()
+    if token:
+        headers["X-Device-Token"] = token
     return headers
 
 # This is a safer JSON fetch helper than the original /get polling code.
@@ -241,6 +325,100 @@ def get_json(url, timeout=8, headers=None):
                 r.close()
             except:
                 pass
+
+def post_json(url, payload, timeout=8, headers=None):
+    r = None
+    try:
+        req_headers = {"Content-Type": "application/json"}
+        if headers:
+            req_headers.update(headers)
+
+        r = urequests.post(
+            url,
+            data=ujson.dumps(payload or {}),
+            timeout=timeout,
+            headers=req_headers
+        )
+        status = getattr(r, "status_code", None)
+        text = r.text or ""
+        trimmed = text.lstrip()
+
+        if status != 200:
+            return None, "HTTP {}".format(status)
+
+        if not trimmed:
+            return None, "Empty response"
+
+        if not (trimmed.startswith("{") or trimmed.startswith("[")):
+            return None, "Response was not JSON: {}".format(trimmed[:80])
+
+        return ujson.loads(text), None
+    except Exception as e:
+        return None, str(e)
+    finally:
+        if r:
+            try:
+                r.close()
+            except:
+                pass
+
+def bootstrap_device():
+    identity = get_bootstrap_identity()
+    payload = {
+        "hardware_id": identity.get("hardware_id"),
+        "bootstrap_secret": identity.get("bootstrap_secret"),
+    }
+
+    data, err = post_json(WORKER_BASE + "/device/bootstrap", payload, timeout=8)
+    if err:
+        return None, err
+
+    if not data or not data.get("ok"):
+        return None, "Bad bootstrap response"
+
+    if data.get("claimed") and data.get("device_id") and data.get("device_token"):
+        save_device_credentials(data.get("device_id"), data.get("device_token"))
+        save_json_file(CLAIM_INFO_FILE, {
+            "claimed": True,
+            "device_id": data.get("device_id"),
+            "updated_at": time.time(),
+        })
+        return {
+            "claimed": True,
+            "device_id": data.get("device_id"),
+            "device_token": data.get("device_token"),
+        }, None
+
+    claim_code = str(data.get("claim_code") or "").strip().upper()
+    if claim_code:
+        info = {
+            "claimed": False,
+            "claim_code": claim_code,
+            "claim_expires_at": data.get("claim_expires_at"),
+            "claim_url": data.get("claim_url") or WORKER_BASE,
+            "updated_at": time.time(),
+        }
+        save_json_file(CLAIM_INFO_FILE, info)
+        return info, None
+
+    return None, "Bootstrap response missing claim information"
+
+def ensure_device_claimed():
+    while not device_credentials_ready():
+        info, err = bootstrap_device()
+        if err:
+            print("Bootstrap error:", err)
+        elif info.get("claimed"):
+            print("Device claimed:", info.get("device_id"))
+            return True
+        else:
+            print("Waiting to be claimed.")
+            print("Pairing code:", info.get("claim_code"))
+            print("Claim at:", info.get("claim_url"))
+
+        time.sleep(BOOTSTRAP_RETRY_INTERVAL)
+
+    return True
 
 # MAILBOX OVERVIEW
 # The mailbox is one JSON object for this specific device on the Worker.
@@ -541,13 +719,54 @@ def run_captive_portal():
                     conn.close()
                     continue
 
-                done_page = (
-                    "<html><body style='font-family:system-ui;text-align:center;padding:24px;'>"
-                    "<h3>Connecting...</h3>"
-                    "<p>Joining <b>{}</b>...</p>"
-                    "<p>You can close this tab.</p>"
-                    "</body></html>"
-                ).format(ssid)
+                if not connect_sta(ssid, pw):
+                    http_response(
+                        conn,
+                        200,
+                        "text/html",
+                        (
+                            "<html><body style='font-family:system-ui;text-align:center;padding:24px;'>"
+                            "<h3>Could not connect</h3>"
+                            "<p>Guardian could not join <b>{}</b>.</p>"
+                            "<p>Please go back and check the Wi-Fi name and password.</p>"
+                            "<p><a href='/'>Try again</a></p>"
+                            "</body></html>"
+                        ).format(ssid)
+                    )
+                    conn.close()
+                    continue
+
+                bootstrap_info, bootstrap_err = bootstrap_device()
+
+                if bootstrap_err:
+                    done_page = (
+                        "<html><body style='font-family:system-ui;text-align:center;padding:24px;'>"
+                        "<h3>Wi-Fi Connected</h3>"
+                        "<p>Guardian joined <b>{}</b>.</p>"
+                        "<p>We could not reach Guardian cloud yet.</p>"
+                        "<p>Please keep the device powered on and try the website in a moment.</p>"
+                        "<p>You can close this tab.</p>"
+                        "</body></html>"
+                    ).format(ssid)
+                elif bootstrap_info.get("claimed"):
+                    done_page = (
+                        "<html><body style='font-family:system-ui;text-align:center;padding:24px;'>"
+                        "<h3>Guardian Ready</h3>"
+                        "<p>This device is already claimed and connected.</p>"
+                        "<p>You can close this tab and return to Guardian.</p>"
+                        "</body></html>"
+                    )
+                else:
+                    done_page = (
+                        "<html><body style='font-family:system-ui;text-align:center;padding:24px;'>"
+                        "<h3>Wi-Fi Connected</h3>"
+                        "<p>Guardian joined <b>{}</b>.</p>"
+                        "<p>Enter this pairing code on <b>getguardian.org</b>:</p>"
+                        "<h1 style='letter-spacing:4px;font-size:32px;'>{}</h1>"
+                        "<p>Keep the device powered on while you claim it.</p>"
+                        "<p>You can close this tab after entering the code.</p>"
+                        "</body></html>"
+                    ).format(ssid, bootstrap_info.get("claim_code") or "----")
 
                 http_response(conn, 200, "text/html", done_page)
                 conn.close()
@@ -680,12 +899,9 @@ def main():
 
     while True:
         if current_ssid:
-            if connect_sta(current_ssid, current_pass):
-                if not device_credentials_ready():
-                    print("Missing DEVICE_ID / DEVICE_TOKEN.")
-                    print("Get them from the website console with getDeviceInfo() and rotateDeviceToken().")
-                    time.sleep(10)
-                    continue
+            if sta.isconnected() or connect_sta(current_ssid, current_pass):
+                print("Checking onboarding status...")
+                ensure_device_claimed()
 
                 print("Checking Worker connectivity...")
                 while not worker_reachable():
@@ -708,12 +924,9 @@ def main():
         current_ssid = ssid
         current_pass = pw
 
-        if connect_sta(current_ssid, current_pass):
-            if not device_credentials_ready():
-                print("Missing DEVICE_ID / DEVICE_TOKEN.")
-                print("Get them from the website console with getDeviceInfo() and rotateDeviceToken().")
-                time.sleep(10)
-                continue
+        if sta.isconnected() or connect_sta(current_ssid, current_pass):
+            print("Checking onboarding status...")
+            ensure_device_claimed()
 
             print("Checking Worker connectivity...")
             while not worker_reachable():

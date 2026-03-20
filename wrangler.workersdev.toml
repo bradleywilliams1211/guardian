@@ -1,0 +1,11 @@
+name = "guardian"
+main = "worker.js"
+compatibility_date = "2026-03-06"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "ESP32_KV"
+id = "c278f712361a4e10bd966d77ef1a41ee"
+
+[assets]
+directory = "./public"

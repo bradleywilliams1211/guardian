@@ -103,6 +103,16 @@ AP_SSID = "GUARD-SETUP"
 PORTAL_PORT = 80
 BLE_DEVICE_PREFIX = "GUARD"
 BLE_ADVERTISING_INTERVAL_US = 250000
+# BLE_STARTUP_STAGE controls automatic BLE on boot:
+# - "off" keeps startup safe and uses GUARD-SETUP only
+# - "advertise" starts radio + advertising only
+# - "service" starts advertising + GATT without accepting Wi-Fi writes
+# - "provision" enables the full Bluetooth Wi-Fi setup flow
+#
+# For the ESP32-C3, keep startup at "off" until manual self-tests pass.
+BLE_STARTUP_STAGE = "off"
+# FORCE_BLE_SETUP bypasses the ESP32-C3 startup safety block.
+# Leave this False for now. Use run_ble_self_test(...) first.
 FORCE_BLE_SETUP = False
 
 # ============================================================
@@ -123,6 +133,16 @@ FORCE_BLE_SETUP = False
 #
 # We still keep the captive portal as a fallback because Web Bluetooth support
 # is not available in every browser.
+#
+# SAFE ROLLOUT PLAN
+# The ESP32-C3 firmware crashed when BLE came up automatically, so BLE is now
+# controlled in stages:
+# - "off": never start BLE automatically
+# - "advertise": start BLE radio + advertising only
+# - "service": start BLE advertising + GATT service, but do not accept Wi-Fi
+# - "provision": full Bluetooth Wi-Fi setup flow
+#
+# Startup should stay at "off" until a stage passes manual testing.
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
 _IRQ_GATTS_WRITE = const(3)
@@ -273,6 +293,7 @@ ble_setup_mode_active = False
 ble_device_name = ""
 ble_adv_payload = b""
 ble_disable_reason = ""
+ble_current_stage = "off"
 
 def random_hex(byte_count=16):
     try:
@@ -336,7 +357,21 @@ def advertising_payload(name=None, services=None):
 def ble_is_supported():
     return bluetooth is not None
 
-def ble_setup_allowed():
+def normalize_ble_stage(stage):
+    stage = str(stage or "off").strip().lower()
+    if stage in ("advertise", "service", "provision"):
+        return stage
+    return "off"
+
+def ble_stage_uses_gatt(stage=None):
+    stage = normalize_ble_stage(stage if stage is not None else ble_current_stage)
+    return stage in ("service", "provision")
+
+def ble_stage_allows_wifi_provisioning(stage=None):
+    stage = normalize_ble_stage(stage if stage is not None else ble_current_stage)
+    return stage == "provision"
+
+def ble_setup_allowed(stage=None, startup_guard=True):
     # Commercially, Bluetooth setup is still the right onboarding direction.
     # But right now the user's ESP32-C3 on MicroPython v1.27.0 is hitting a
     # native NimBLE crash as soon as BLE setup starts. Because that is a
@@ -346,10 +381,18 @@ def ble_setup_allowed():
     #
     # This keeps the device usable today by falling back to GUARD-SETUP instead
     # of reboot-looping the board.
+    stage = normalize_ble_stage(stage)
+
     if not ble_is_supported():
         return False, "Bluetooth is not available in this MicroPython build."
 
+    if stage == "off":
+        return False, "Bluetooth setup is turned off in this build."
+
     if FORCE_BLE_SETUP:
+        return True, ""
+
+    if not startup_guard:
         return True, ""
 
     try:
@@ -373,6 +416,7 @@ def ble_update_status(state, message="", extra=None):
         "message": str(message or ""),
         "device_name": get_ble_device_name(),
         "setup_fallback_ssid": AP_SSID,
+        "ble_stage": normalize_ble_stage(ble_current_stage),
         "updated_at": time.time(),
     }
 
@@ -435,6 +479,17 @@ def ble_take_pending_wifi_request():
         ble_update_status("error", "Wi-Fi name is required.")
         return None
 
+    if not ble_stage_allows_wifi_provisioning():
+        ble_update_status(
+            "error",
+            "Bluetooth Wi-Fi writes are disabled in the current BLE test stage.",
+            {
+                "requested_ssid": ssid,
+                "ble_stage": normalize_ble_stage(ble_current_stage),
+            }
+        )
+        return None
+
     return {
         "ssid": ssid,
         "password": password,
@@ -456,12 +511,14 @@ def ble_irq(event, data):
         conn_handle, _, _ = data
         if conn_handle not in ble_connections:
             ble_connections.append(conn_handle)
+        print("BLE central connected:", conn_handle)
         return
 
     if event == _IRQ_CENTRAL_DISCONNECT:
         conn_handle, _, _ = data
         while conn_handle in ble_connections:
             ble_connections.remove(conn_handle)
+        print("BLE central disconnected:", conn_handle)
         ble_advertise()
         return
 
@@ -477,15 +534,19 @@ def ble_irq(event, data):
             ble_pending_command_text = ""
             print("BLE read error:", e, "conn_handle=", conn_handle)
 
-def ble_start_setup_mode():
+def ble_start_setup_mode(stage=None, startup_guard=True):
     global ble_radio
     global ble_rx_handle
     global ble_tx_handle
     global ble_setup_mode_active
     global ble_adv_payload
     global ble_disable_reason
+    global ble_current_stage
 
-    allowed, reason = ble_setup_allowed()
+    stage = normalize_ble_stage(stage)
+    ble_current_stage = stage
+
+    allowed, reason = ble_setup_allowed(stage=stage, startup_guard=startup_guard)
     ble_disable_reason = reason
 
     if not allowed:
@@ -493,9 +554,14 @@ def ble_start_setup_mode():
         return False
 
     try:
-        ble_service_uuid = bluetooth.UUID(BLE_SERVICE_UUID_STR)
-        ble_rx_uuid = bluetooth.UUID(BLE_RX_UUID_STR)
-        ble_tx_uuid = bluetooth.UUID(BLE_TX_UUID_STR)
+        ble_service_uuid = None
+        ble_rx_uuid = None
+        ble_tx_uuid = None
+
+        if ble_stage_uses_gatt(stage):
+            ble_service_uuid = bluetooth.UUID(BLE_SERVICE_UUID_STR)
+            ble_rx_uuid = bluetooth.UUID(BLE_RX_UUID_STR)
+            ble_tx_uuid = bluetooth.UUID(BLE_TX_UUID_STR)
 
         if ble_radio is None:
             ble_radio = bluetooth.BLE()
@@ -503,6 +569,7 @@ def ble_start_setup_mode():
             ble_radio.config(gap_name=get_ble_device_name())
             ble_radio.irq(ble_irq)
 
+        if ble_stage_uses_gatt(stage) and (ble_rx_handle is None or ble_tx_handle is None):
             service = (
                 ble_service_uuid,
                 (
@@ -523,20 +590,44 @@ def ble_start_setup_mode():
                 pass
 
         ble_setup_mode_active = True
-        ble_adv_payload = advertising_payload(
-            name=get_ble_device_name(),
-            services=[ble_service_uuid]
-        )
-        ble_update_status(
-            "ready_for_wifi",
-            "Guardian is ready for Bluetooth setup.",
-            {
-                "device_name": get_ble_device_name(),
-                "supports_bluetooth_setup": True,
-            }
-        )
+        if ble_stage_uses_gatt(stage) and ble_service_uuid is not None:
+            ble_adv_payload = advertising_payload(
+                name=get_ble_device_name(),
+                services=[ble_service_uuid]
+            )
+        else:
+            ble_adv_payload = advertising_payload(name=get_ble_device_name())
+
+        if stage == "advertise":
+            ble_update_status(
+                "advertise_ready",
+                "Guardian BLE advertise-only test is active.",
+                {
+                    "device_name": get_ble_device_name(),
+                    "supports_bluetooth_setup": False,
+                }
+            )
+        elif stage == "service":
+            ble_update_status(
+                "service_ready",
+                "Guardian BLE service test is active. Connection works, but Wi-Fi writes are disabled.",
+                {
+                    "device_name": get_ble_device_name(),
+                    "supports_bluetooth_setup": False,
+                }
+            )
+        else:
+            ble_update_status(
+                "ready_for_wifi",
+                "Guardian is ready for Bluetooth setup.",
+                {
+                    "device_name": get_ble_device_name(),
+                    "supports_bluetooth_setup": True,
+                }
+            )
+
         ble_advertise()
-        print("BLE setup ready as", get_ble_device_name())
+        print("BLE stage", stage, "ready as", get_ble_device_name())
         return True
     except Exception as e:
         print("BLE setup start failed:", e)
@@ -545,8 +636,10 @@ def ble_start_setup_mode():
 
 def ble_stop_setup_mode():
     global ble_setup_mode_active
+    global ble_current_stage
 
     ble_setup_mode_active = False
+    ble_current_stage = "off"
 
     if not ble_radio:
         return
@@ -555,6 +648,56 @@ def ble_stop_setup_mode():
         ble_radio.gap_advertise(None)
     except:
         pass
+
+def run_ble_self_test(stage="advertise", seconds=45):
+    # Manual REPL-only test entry point.
+    #
+    # This is safer than enabling BLE at boot on the ESP32-C3 because a crash
+    # here will reboot the board once, but it will not trap the device in a
+    # boot loop. Use it like:
+    #
+    #   run_ble_self_test("advertise", 30)
+    #   run_ble_self_test("service", 30)
+    #   run_ble_self_test("provision", 60)
+    #
+    # Staged meaning:
+    # - advertise: can the radio start and show up in the Bluetooth picker?
+    # - service: can GATT start without taking Wi-Fi writes?
+    # - provision: full Bluetooth Wi-Fi provisioning path
+    stage = normalize_ble_stage(stage)
+    seconds = max(1, int(seconds or 1))
+
+    print("Starting BLE self-test.")
+    print("Stage:", stage)
+    print("Duration:", seconds, "seconds")
+    print("Device name:", get_ble_device_name())
+
+    if stage == "off":
+        print("BLE self-test skipped because stage is off.")
+        return False
+
+    started = ble_start_setup_mode(stage=stage, startup_guard=False)
+    if not started:
+        print("BLE self-test could not start.")
+        return False
+
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if stage == "provision":
+            pending_ble_request = ble_take_pending_wifi_request()
+            if pending_ble_request:
+                print("BLE provision request received for:", pending_ble_request.get("ssid"))
+                ble_update_status(
+                    "provision_test_received",
+                    "Guardian received a Wi-Fi write during BLE self-test.",
+                    {"ssid": pending_ble_request.get("ssid")}
+                )
+
+        time.sleep(1)
+
+    ble_stop_setup_mode()
+    print("BLE self-test finished.")
+    return True
 
 def load_device_credentials():
     if DEVICE_ID and DEVICE_ID.strip() and DEVICE_TOKEN and DEVICE_TOKEN.strip():
@@ -1212,7 +1355,7 @@ def run_captive_portal():
     ap.active(True)
     ap.config(essid=AP_SSID, authmode=network.AUTH_OPEN)
 
-    ble_started = ble_start_setup_mode()
+    ble_started = ble_start_setup_mode(stage=BLE_STARTUP_STAGE, startup_guard=True)
     ble_update_status(
         "ready_for_wifi",
         "Guardian is ready for setup. Use Bluetooth from the website or connect to GUARD-SETUP.",
@@ -1220,6 +1363,7 @@ def run_captive_portal():
             "portal_ip": ap.ifconfig()[0],
             "portal_ssid": AP_SSID,
             "supports_bluetooth_setup": bool(ble_started),
+            "ble_stage": normalize_ble_stage(BLE_STARTUP_STAGE),
             "bluetooth_unavailable_reason": ble_disable_reason,
         }
     )
@@ -1516,4 +1660,5 @@ def main():
         print("Failed to connect. Restarting setup flow...")
         time.sleep(1)
 
-main()
+if __name__ == "__main__":
+    main()

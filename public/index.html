@@ -2344,7 +2344,7 @@
 
   <header class="topbar">
     <div class="wrap nav" id="nav">
-      <a class="brand" href="https://getguardian.org">
+      <a class="brand" href="/">
         <img class="footer-logo" src="/images/GUARDIAN.png" alt="GUARD Logo">
       </a>
 
@@ -2926,9 +2926,9 @@
             </div>
 
             <div class="card" style="margin-top:18px;">
-              <strong>Bluetooth Setup (When Available)</strong>
+              <strong>Bluetooth Setup</strong>
               <p style="opacity:.78; margin-top:8px;">
-                Guardian can send Wi-Fi to your robot over Bluetooth when the board firmware supports it. If your
+                Guardian can send Wi-Fi to your robot over Bluetooth with the native ESP-IDF firmware. If your
                 GUARD does not appear, use the fallback network <b>GUARD-SETUP</b>.
               </p>
               <form onsubmit="startGuardBluetoothSetup(); return false;"
@@ -2940,7 +2940,7 @@
               <p id="bleSetupState" style="margin-top:12px; opacity:.8;">Guardian will look for a nearby GUARD over Bluetooth.</p>
               <p id="bleSetupClaim" style="margin-top:8px; font-weight:700;"></p>
               <p id="bleSetupFallback" style="margin-top:10px; opacity:.72;">
-                Current ESP32-C3 firmware may require the GUARD-SETUP fallback instead of Bluetooth.
+                Fallback: if Bluetooth is unavailable on this browser or board, use GUARD-SETUP instead.
               </p>
               <p style="margin-top:12px; opacity:.68;">
                 Best support: Chrome or Edge on Android, Windows, macOS, or Chromebook. Safari/iPhone users may need the GUARD-SETUP fallback.
@@ -3554,7 +3554,7 @@ contactguardiansupport@gmail.com
             <div class="footer-brand-top">
               <img class="footer-logo" src="/images/GUARDIAN.png" alt="GUARD Logo">
 
-              <a href="https://getguardian.org/" class="footer-qr">
+                <a href="/" class="footer-qr">
                 <img src="/images/qr-code.png" alt="qr code for site"></a>
               
             </div>
@@ -3666,10 +3666,12 @@ contactguardiansupport@gmail.com
     const API_BASE = ""; // set to your worker domain if needed, e.g. "https://YOUR_WORKER.workers.dev"
     const DEVICE_ID_KEY = "guard_current_device_id";
     const LOCAL_MAILBOX_KEY = "guard_local_mailbox";
-    const GUARD_BLE_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-    const GUARD_BLE_RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-    const GUARD_BLE_TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+    const GUARD_BLE_SERVICE_UUID = "021a9004-0382-4aea-bff4-6b3f1c5adfb4";
+    const GUARD_BLE_USER_DESC_UUID = 0x2901;
+    const GUARD_BLE_POP = "guardian-setup";
+    const GUARD_BLE_PROTO_VER = "v1.0";
     const BLE_PENDING_CLAIM_CODE_KEY = "guard_pending_claim_code";
+    const BLE_PENDING_HARDWARE_ID_KEY = "guard_pending_hardware_id";
 
     /*
       DEVICE OVERVIEW
@@ -3686,8 +3688,10 @@ contactguardiansupport@gmail.com
     let guardBleSession = {
       device: null,
       server: null,
-      rx: null,
-      tx: null,
+      service: null,
+      endpoints: {},
+      security: null,
+      hardwareId: "",
     };
 
     function getCurrentDeviceId() {
@@ -3903,7 +3907,7 @@ function setBleSetupBusy(busy) {
   if (!btn) return;
 
   btn.disabled = !!busy;
-  btn.textContent = busy ? "Connecting..." : "Connect with Bluetooth";
+  btn.textContent = busy ? "Provisioning..." : "Connect with Bluetooth";
 }
 
 function getPendingClaimCode() {
@@ -3953,6 +3957,36 @@ function clearPendingClaimCode() {
   rememberPendingClaimCode("");
 }
 
+function getPendingHardwareId() {
+  try {
+    return (localStorage.getItem(BLE_PENDING_HARDWARE_ID_KEY) || "")
+      .trim()
+      .toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function rememberPendingHardwareId(hardwareId) {
+  const cleanId = String(hardwareId || "")
+    .trim()
+    .toLowerCase();
+
+  try {
+    if (cleanId) {
+      localStorage.setItem(BLE_PENDING_HARDWARE_ID_KEY, cleanId);
+    } else {
+      localStorage.removeItem(BLE_PENDING_HARDWARE_ID_KEY);
+    }
+  } catch {}
+
+  return cleanId;
+}
+
+function clearPendingHardwareId() {
+  rememberPendingHardwareId("");
+}
+
 function decodeBleValue(value) {
   const bytes = value instanceof DataView
     ? new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
@@ -3961,89 +3995,181 @@ function decodeBleValue(value) {
   return new TextDecoder().decode(bytes).replace(/\0+$/g, "").trim();
 }
 
-function parseBleStatus(value) {
-  const text = decodeBleValue(value);
-  if (!text) return null;
-
-  try {
-    const parsed = JSON.parse(text);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
-    return null;
-  }
+function bleBytes(value) {
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (value instanceof DataView) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  return new Uint8Array(value || []);
 }
 
-function applyGuardBleStatus(status) {
-  if (!status) return;
-
-  const claimCode = rememberPendingClaimCode(status.claim_code || "");
-  const helpText = status.message || "Guardian sent a Bluetooth status update.";
-  const hint = status.network_hint ? (" " + status.network_hint) : "";
-  const unavailableReason = status.bluetooth_unavailable_reason
-    ? (" " + status.bluetooth_unavailable_reason)
-    : "";
-  const state = String(status.state || "").trim().toLowerCase();
-
-  if (state === "ready_for_wifi") {
-    if (status.supports_bluetooth_setup === false) {
-      showBleFallbackGuidance((status.bluetooth_unavailable_reason || "").trim());
-      return;
-    }
-    setBleSetupState(helpText, "neutral");
-    return;
+function concatBleBytes(parts) {
+  const arrays = (parts || []).filter(Boolean).map(bleBytes);
+  const total = arrays.reduce((sum, item) => sum + item.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const item of arrays) {
+    out.set(item, offset);
+    offset += item.length;
   }
-
-  if (state === "connecting_wifi" || state === "wifi_connected") {
-    setBleSetupState(helpText, "neutral");
-    return;
-  }
-
-  if (state === "claim_required") {
-    setBleSetupState(helpText, "success");
-    if (claimCode) {
-      const stateEl = document.getElementById("device-claim-state");
-      if (stateEl && !stateEl.textContent.trim()) {
-        stateEl.textContent = "Pairing code received. Log in and click Claim Device when ready.";
-      }
-    }
-    return;
-  }
-
-  if (state === "claimed") {
-    clearPendingClaimCode();
-    setBleSetupState(helpText, "success");
-    return;
-  }
-
-  if (state === "wifi_error" || state === "bootstrap_error" || state === "error") {
-    setBleSetupState(helpText + hint + unavailableReason, "error");
-    return;
-  }
-
-  setBleSetupState(helpText, "neutral");
+  return out;
 }
 
-function handleGuardBleNotification(event) {
-  const status = parseBleStatus(event.target.value);
-  applyGuardBleStatus(status);
+function xorBleBytes(a, b) {
+  const aa = bleBytes(a);
+  const bb = bleBytes(b);
+  const out = new Uint8Array(Math.min(aa.length, bb.length));
+  for (let i = 0; i < out.length; i++) {
+    out[i] = aa[i] ^ bb[i];
+  }
+  return out;
+}
+
+function encodeBleVarint(value) {
+  let v = Number(value || 0) >>> 0;
+  const bytes = [];
+  while (v > 0x7f) {
+    bytes.push((v & 0x7f) | 0x80);
+    v >>>= 7;
+  }
+  bytes.push(v);
+  return new Uint8Array(bytes);
+}
+
+function encodeBleKey(fieldNumber, wireType) {
+  return encodeBleVarint((fieldNumber << 3) | wireType);
+}
+
+function encodeBleBytesField(fieldNumber, payloadBytes) {
+  const payload = bleBytes(payloadBytes);
+  return concatBleBytes([
+    encodeBleKey(fieldNumber, 2),
+    encodeBleVarint(payload.length),
+    payload,
+  ]);
+}
+
+function encodeBleEnumField(fieldNumber, value) {
+  return concatBleBytes([
+    encodeBleKey(fieldNumber, 0),
+    encodeBleVarint(value),
+  ]);
+}
+
+function encodeBleMessageField(fieldNumber, nestedBytes) {
+  return encodeBleBytesField(fieldNumber, nestedBytes);
+}
+
+function readBleVarint(bytes, startOffset = 0) {
+  const input = bleBytes(bytes);
+  let result = 0;
+  let shift = 0;
+  let offset = startOffset;
+
+  while (offset < input.length) {
+    const byte = input[offset++];
+    result |= (byte & 0x7f) << shift;
+    if ((byte & 0x80) === 0) {
+      return { value: result, offset };
+    }
+    shift += 7;
+  }
+
+  throw new Error("Invalid BLE varint");
+}
+
+function decodeBleProto(bytes) {
+  const input = bleBytes(bytes);
+  const fields = new Map();
+  let offset = 0;
+
+  while (offset < input.length) {
+    const key = readBleVarint(input, offset);
+    offset = key.offset;
+    const fieldNumber = key.value >> 3;
+    const wireType = key.value & 0x07;
+    let value;
+
+    if (wireType === 0) {
+      const parsed = readBleVarint(input, offset);
+      offset = parsed.offset;
+      value = parsed.value;
+    } else if (wireType === 2) {
+      const length = readBleVarint(input, offset);
+      offset = length.offset;
+      value = input.slice(offset, offset + length.value);
+      offset += length.value;
+    } else {
+      throw new Error("Unsupported BLE protobuf wire type: " + wireType);
+    }
+
+    if (!fields.has(fieldNumber)) fields.set(fieldNumber, []);
+    fields.get(fieldNumber).push({ wireType, value });
+  }
+
+  return fields;
+}
+
+function getBleProtoField(fields, fieldNumber) {
+  return fields.get(fieldNumber)?.[0] || null;
+}
+
+function incrementBleCounter(counterBytes, blockOffset) {
+  const out = new Uint8Array(bleBytes(counterBytes));
+  let carry = Number(blockOffset || 0);
+
+  for (let i = out.length - 1; i >= 0 && carry > 0; i--) {
+    const sum = out[i] + (carry & 0xff);
+    out[i] = sum & 0xff;
+    carry = (carry >>> 8) + (sum > 0xff ? 1 : 0);
+  }
+
+  return out;
+}
+
+class GuardBleCtrStream {
+  constructor(cryptoKey, counterBytes) {
+    this.key = cryptoKey;
+    this.counterBytes = new Uint8Array(counterBytes);
+    this.position = 0;
+  }
+
+  async process(inputBytes) {
+    const input = bleBytes(inputBytes);
+    const blockIndex = Math.floor(this.position / 16);
+    const blockOffset = this.position % 16;
+    const blockCount = Math.ceil((blockOffset + input.length) / 16);
+    const counter = incrementBleCounter(this.counterBytes, blockIndex);
+    const zeroBytes = new Uint8Array(blockCount * 16);
+    const encrypted = await crypto.subtle.encrypt(
+      { name: "AES-CTR", counter, length: 128 },
+      this.key,
+      zeroBytes
+    );
+    const stream = new Uint8Array(encrypted).slice(blockOffset, blockOffset + input.length);
+    const output = xorBleBytes(input, stream);
+    this.position += input.length;
+    return output;
+  }
 }
 
 function handleGuardBleDisconnect() {
   guardBleSession = {
     device: null,
     server: null,
-    rx: null,
-    tx: null,
+    service: null,
+    endpoints: {},
+    security: null,
+    hardwareId: "",
   };
 
   setBleSetupState(
-    "Bluetooth connection closed. Reconnect if you want to send Wi-Fi again.",
+    "Bluetooth connection closed. Reconnect if you want to provision Wi-Fi again.",
     "muted"
   );
 }
 
-async function writeBleValue(characteristic, text) {
-  const bytes = new TextEncoder().encode(text);
+async function writeBleValue(characteristic, payloadBytes) {
+  const bytes = bleBytes(payloadBytes);
 
   if (typeof characteristic.writeValueWithResponse === "function") {
     return characteristic.writeValueWithResponse(bytes);
@@ -4056,8 +4182,410 @@ async function writeBleValue(characteristic, text) {
   throw new Error("This browser could not write to the GUARD Bluetooth service.");
 }
 
+function guardBleEncoder() {
+  return new TextEncoder();
+}
+
+function guardBleDecoder() {
+  return new TextDecoder();
+}
+
+async function readBleUserDescription(characteristic) {
+  try {
+    if (typeof characteristic.getDescriptor === "function") {
+      const descriptor = await characteristic.getDescriptor(GUARD_BLE_USER_DESC_UUID);
+      const value = await descriptor.readValue();
+      return decodeBleValue(value).toLowerCase();
+    }
+
+    if (typeof characteristic.getDescriptors === "function") {
+      const descriptors = await characteristic.getDescriptors();
+      for (const descriptor of descriptors) {
+        if (descriptor.uuid === "00002901-0000-1000-8000-00805f9b34fb") {
+          const value = await descriptor.readValue();
+          return decodeBleValue(value).toLowerCase();
+        }
+      }
+    }
+  } catch {}
+
+  return "";
+}
+
+async function discoverGuardBleEndpoints(service) {
+  const endpoints = {};
+  const characteristics = await service.getCharacteristics();
+
+  for (const characteristic of characteristics) {
+    const name = await readBleUserDescription(characteristic);
+    if (name) {
+      endpoints[name] = characteristic;
+    }
+  }
+
+  return endpoints;
+}
+
+async function readBleEndpoint(session, endpointName, payloadBytes) {
+  const endpoint = session.endpoints[String(endpointName || "").toLowerCase()];
+  if (!endpoint) {
+    throw new Error("GUARD is missing the BLE endpoint " + endpointName + ".");
+  }
+
+  await writeBleValue(endpoint, payloadBytes);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+
+  let value = await endpoint.readValue();
+  let bytes = bleBytes(value);
+
+  if (!bytes.length) {
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    value = await endpoint.readValue();
+    bytes = bleBytes(value);
+  }
+
+  return bytes;
+}
+
+async function ensureGuardBleSession(session) {
+  if (session.security?.ready) return session;
+
+  if (!window.crypto?.subtle) {
+    throw new Error("This browser does not expose Web Crypto, so native GUARD Bluetooth setup cannot run here.");
+  }
+
+  let keyPair;
+  try {
+    keyPair = await crypto.subtle.generateKey({ name: "X25519" }, true, ["deriveBits"]);
+  } catch {
+    throw new Error("This browser does not support X25519 yet. Use a current Chrome or Edge build, or fall back to GUARD-SETUP.");
+  }
+
+  const clientPublicKey = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+  const sessionCmd0 = concatBleBytes([
+    encodeBleEnumField(2, 1),
+    encodeBleMessageField(11, encodeBleMessageField(20, encodeBleBytesField(1, clientPublicKey))),
+  ]);
+
+  const response0Bytes = await readBleEndpoint(session, "prov-session", sessionCmd0);
+  const response0 = decodeBleProto(response0Bytes);
+  const sec1Payload0 = decodeBleProto(getBleProtoField(response0, 11)?.value || []);
+  const sessionResp0 = decodeBleProto(getBleProtoField(sec1Payload0, 21)?.value || []);
+  const devicePublicKey = getBleProtoField(sessionResp0, 2)?.value;
+  const deviceRandom = getBleProtoField(sessionResp0, 3)?.value;
+
+  if (!devicePublicKey || !deviceRandom) {
+    throw new Error("GUARD did not return the expected BLE security handshake.");
+  }
+
+  const importedDeviceKey = await crypto.subtle.importKey("raw", devicePublicKey, { name: "X25519" }, false, []);
+  let sharedKey = new Uint8Array(
+    await crypto.subtle.deriveBits({ name: "X25519", public: importedDeviceKey }, keyPair.privateKey, 256)
+  );
+
+  if (GUARD_BLE_POP) {
+    const popDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", guardBleEncoder().encode(GUARD_BLE_POP)));
+    sharedKey = xorBleBytes(sharedKey, popDigest);
+  }
+
+  const aesKey = await crypto.subtle.importKey("raw", sharedKey, "AES-CTR", false, ["encrypt"]);
+  const stream = new GuardBleCtrStream(aesKey, deviceRandom);
+  const clientProof = await stream.process(devicePublicKey);
+  const sessionCmd1 = concatBleBytes([
+    encodeBleEnumField(2, 1),
+    encodeBleMessageField(
+      11,
+      concatBleBytes([
+        encodeBleEnumField(1, 2),
+        encodeBleMessageField(22, encodeBleBytesField(2, clientProof)),
+      ])
+    ),
+  ]);
+
+  const response1Bytes = await readBleEndpoint(session, "prov-session", sessionCmd1);
+  const response1 = decodeBleProto(response1Bytes);
+  const sec1Payload1 = decodeBleProto(getBleProtoField(response1, 11)?.value || []);
+  const sessionResp1 = decodeBleProto(getBleProtoField(sec1Payload1, 23)?.value || []);
+  const encryptedDeviceProof = getBleProtoField(sessionResp1, 3)?.value;
+
+  if (!encryptedDeviceProof) {
+    throw new Error("GUARD did not finish the secure BLE session.");
+  }
+
+  const deviceProof = await stream.process(encryptedDeviceProof);
+  if (
+    deviceProof.length !== clientPublicKey.length ||
+    deviceProof.some((byte, index) => byte !== clientPublicKey[index])
+  ) {
+    throw new Error("Guardian could not verify the device's BLE proof.");
+  }
+
+  session.security = { ready: true, stream };
+  return session;
+}
+
+async function guardBleEncrypt(session, inputBytes) {
+  await ensureGuardBleSession(session);
+  return session.security.stream.process(inputBytes);
+}
+
+async function readGuardBleDeviceInfo(session) {
+  if (!session.endpoints["custom-data"]) {
+    return null;
+  }
+
+  const encryptedRequest = await guardBleEncrypt(session, guardBleEncoder().encode("device-info"));
+  const encryptedResponse = await readBleEndpoint(session, "custom-data", encryptedRequest);
+  const responseBytes = await guardBleEncrypt(session, encryptedResponse);
+  const text = guardBleDecoder().decode(responseBytes).trim();
+
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed?.hardware_id) {
+      session.hardwareId = rememberPendingHardwareId(parsed.hardware_id);
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function buildBleWifiSetConfig(ssid, password) {
+  return concatBleBytes([
+    encodeBleEnumField(1, 2),
+    encodeBleMessageField(
+      12,
+      concatBleBytes([
+        encodeBleBytesField(1, guardBleEncoder().encode(ssid)),
+        encodeBleBytesField(2, guardBleEncoder().encode(password || "")),
+      ])
+    ),
+  ]);
+}
+
+function buildBleWifiApplyConfig() {
+  return concatBleBytes([
+    encodeBleEnumField(1, 4),
+    encodeBleMessageField(14, new Uint8Array([])),
+  ]);
+}
+
+function buildBleWifiGetStatus() {
+  return concatBleBytes([
+    encodeBleEnumField(1, 0),
+    encodeBleMessageField(10, new Uint8Array([])),
+  ]);
+}
+
+function parseBleWifiStatus(bytes) {
+  const outer = decodeBleProto(bytes);
+  const payload = decodeBleProto(getBleProtoField(outer, 11)?.value || []);
+  return {
+    status: getBleProtoField(payload, 1)?.value ?? -1,
+    staState: getBleProtoField(payload, 2)?.value ?? -1,
+    failReason: getBleProtoField(payload, 10)?.value ?? -1,
+  };
+}
+
+function describeGuardBleStatus(status) {
+  switch (Number(status)) {
+    case 0:
+      return "success";
+    case 1:
+      return "invalid security scheme";
+    case 2:
+      return "invalid protocol";
+    case 3:
+      return "too many active sessions";
+    case 4:
+      return "invalid argument";
+    case 5:
+      return "internal error";
+    case 6:
+      return "crypto error";
+    case 7:
+      return "invalid session";
+    default:
+      return "unknown status";
+  }
+}
+
+async function getGuardBleWifiStatus(session) {
+  const encryptedRequest = await guardBleEncrypt(session, buildBleWifiGetStatus());
+  const encryptedResponse = await readBleEndpoint(session, "prov-config", encryptedRequest);
+  const responseBytes = await guardBleEncrypt(session, encryptedResponse);
+  return parseBleWifiStatus(responseBytes);
+}
+
+async function provisionGuardWifiOverBle(session, ssid, password) {
+  const encryptedSet = await guardBleEncrypt(session, buildBleWifiSetConfig(ssid, password));
+  const setResponse = await readBleEndpoint(session, "prov-config", encryptedSet);
+  const setPayload = decodeBleProto(await guardBleEncrypt(session, setResponse));
+  const setStatus = decodeBleProto(getBleProtoField(setPayload, 13)?.value || []);
+  const setStatusCode = getBleProtoField(setStatus, 1)?.value ?? 1;
+  if (setStatusCode !== 0) {
+    const setStatusText = describeGuardBleStatus(setStatusCode);
+    if (setStatusCode === 4) {
+      throw new Error(
+        "GUARD rejected this Wi-Fi configuration (status 4: invalid argument). " +
+        "Try a normal home/hotspot network, make sure the SSID is correct, and use an 8-63 character password for secured Wi-Fi."
+      );
+    }
+    if (setStatusCode === 7) {
+      throw new Error("The Bluetooth setup session expired (status 7: invalid session). Reconnect to GUARD and try again.");
+    }
+    throw new Error("GUARD rejected the Wi-Fi configuration (status " + setStatusCode + ": " + setStatusText + ").");
+  }
+
+  const encryptedApply = await guardBleEncrypt(session, buildBleWifiApplyConfig());
+  const applyResponse = await readBleEndpoint(session, "prov-config", encryptedApply);
+  const applyPayload = decodeBleProto(await guardBleEncrypt(session, applyResponse));
+  const applyStatus = decodeBleProto(getBleProtoField(applyPayload, 15)?.value || []);
+  const applyStatusCode = getBleProtoField(applyStatus, 1)?.value ?? 1;
+  if (applyStatusCode !== 0) {
+    const applyStatusText = describeGuardBleStatus(applyStatusCode);
+    throw new Error("GUARD could not apply the Wi-Fi configuration (status " + applyStatusCode + ": " + applyStatusText + ").");
+  }
+
+  setBleSetupState("Wi-Fi sent. Waiting for GUARD to join your network…", "neutral");
+
+  const deadline = Date.now() + 45000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    const status = await getGuardBleWifiStatus(session);
+
+    if (status.staState === 0) {
+      setBleSetupState("GUARD joined Wi-Fi. Finishing pairing…", "success");
+      return;
+    }
+
+    if (status.staState === 3) {
+      if (status.failReason === 0) {
+        throw new Error("GUARD could not join Wi-Fi because the password was incorrect.");
+      }
+      if (status.failReason === 1) {
+        throw new Error("GUARD could not find that Wi-Fi network name.");
+      }
+      throw new Error("GUARD could not join Wi-Fi.");
+    }
+
+    setBleSetupState("GUARD is still connecting to Wi-Fi…", "neutral");
+  }
+
+  throw new Error("GUARD did not finish connecting to Wi-Fi in time.");
+}
+
+async function fetchPendingBootstrapStatus(hardwareId) {
+  const url = new URL("/device/bootstrap-status", window.location.origin);
+  url.searchParams.set("hardware_id", hardwareId);
+
+  const res = await fetch(url.pathname + url.search, {
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || "Could not load GUARD pairing status");
+  }
+  return data;
+}
+
+async function submitClaimCode(claimCode, options = {}) {
+  const res = await fetch("/device/claim", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ claim_code: claimCode }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || "Could not claim device");
+  }
+
+  if (data.device_id) {
+    setCurrentDeviceId(data.device_id);
+  }
+
+  clearPendingClaimCode();
+  clearPendingHardwareId();
+
+  if (options.navigate !== false) {
+    await refreshSessionState();
+    await enterDashboard();
+  }
+
+  return data;
+}
+
+let guardBleAutoClaimPromise = null;
+
+async function tryFinishPendingBlePairing(hardwareId, options = {}) {
+  const cleanHardwareId = rememberPendingHardwareId(hardwareId || getPendingHardwareId());
+  if (!cleanHardwareId) return null;
+
+  if (!hasServerSession) {
+    setBleSetupState("Wi-Fi is saved. Log in to Guardian to finish pairing this robot.", "success");
+    setClaimCardVisible(true, {
+      help: "Log in, then Guardian can finish pairing the GUARD you just provisioned over Bluetooth.",
+      state: "",
+    });
+    return null;
+  }
+
+  if (guardBleAutoClaimPromise) {
+    return guardBleAutoClaimPromise;
+  }
+
+  guardBleAutoClaimPromise = (async () => {
+    const deadline = Date.now() + (options.timeoutMs || 60000);
+
+    while (Date.now() < deadline) {
+      const status = await fetchPendingBootstrapStatus(cleanHardwareId);
+
+      if (status.state === "waiting_for_device") {
+        setBleSetupState("GUARD joined Wi-Fi. Waiting for it to reach Guardian…", "neutral");
+      } else if (status.state === "pending" && status.claim_code) {
+        const claimCode = rememberPendingClaimCode(status.claim_code);
+        setBleSetupState("Pairing code received. Finishing claim…", "neutral");
+        await submitClaimCode(claimCode);
+        setBleSetupState("GUARD is paired and ready.", "success");
+        return status;
+      } else if (status.state === "claimed") {
+        if (status.device_id) {
+          setCurrentDeviceId(status.device_id);
+        }
+        clearPendingClaimCode();
+        clearPendingHardwareId();
+        await refreshSessionState();
+        setBleSetupState("GUARD is already linked to your account.", "success");
+        return status;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+
+    setBleSetupState(
+      "Wi-Fi is saved, but Guardian is still waiting for the robot to reach the cloud. You can finish pairing once the code appears.",
+      "muted"
+    );
+    return null;
+  })();
+
+  try {
+    return await guardBleAutoClaimPromise;
+  } finally {
+    guardBleAutoClaimPromise = null;
+  }
+}
+
 async function connectGuardBluetooth() {
-  if (guardBleSession.rx && guardBleSession.tx && guardBleSession.device?.gatt?.connected) {
+  if (
+    guardBleSession.device?.gatt?.connected &&
+    guardBleSession.service &&
+    guardBleSession.endpoints["prov-session"] &&
+    guardBleSession.endpoints["prov-config"]
+  ) {
     return guardBleSession;
   }
 
@@ -4075,9 +4603,7 @@ async function connectGuardBluetooth() {
     });
   } catch (err) {
     if (err?.name === "NotFoundError") {
-      throw new Error(
-        "No GUARD was found in Bluetooth. On the current ESP32-C3 firmware, Bluetooth setup may be disabled, so use GUARD-SETUP instead."
-      );
+      throw new Error("No GUARD was found in Bluetooth. Use GUARD-SETUP instead if the robot is not advertising right now.");
     }
     throw err;
   }
@@ -4088,18 +4614,30 @@ async function connectGuardBluetooth() {
 
   const server = await device.gatt.connect();
   const service = await server.getPrimaryService(GUARD_BLE_SERVICE_UUID);
-  const rx = await service.getCharacteristic(GUARD_BLE_RX_UUID);
-  const tx = await service.getCharacteristic(GUARD_BLE_TX_UUID);
+  const endpoints = await discoverGuardBleEndpoints(service);
+  if (!endpoints["prov-session"] || !endpoints["prov-config"] || !endpoints["proto-ver"]) {
+    throw new Error("This GUARD does not expose the native provisioning BLE endpoints yet.");
+  }
 
-  tx.addEventListener("characteristicvaluechanged", handleGuardBleNotification);
-  await tx.startNotifications();
-
-  guardBleSession = { device, server, rx, tx };
+  guardBleSession = {
+    device,
+    server,
+    service,
+    endpoints,
+    security: null,
+    hardwareId: "",
+  };
 
   try {
-    const currentStatus = await tx.readValue();
-    applyGuardBleStatus(parseBleStatus(currentStatus));
-  } catch {}
+    const versionBytes = await readBleEndpoint(guardBleSession, "proto-ver", guardBleEncoder().encode(GUARD_BLE_PROTO_VER));
+    const versionText = decodeBleValue(versionBytes);
+    setBleSetupState(
+      "Connected to " + (device.name || "GUARD") + ". " + (versionText || "Provisioning service ready."),
+      "neutral"
+    );
+  } catch {
+    setBleSetupState("Connected to " + (device.name || "GUARD") + ". Provisioning service ready.", "neutral");
+  }
 
   return guardBleSession;
 }
@@ -4118,20 +4656,23 @@ async function startGuardBluetoothSetup() {
 
   try {
     const session = await connectGuardBluetooth();
-    const payload = JSON.stringify({
-      action: "provision_wifi",
-      ssid,
-      password,
-    });
+    await ensureGuardBleSession(session);
+    await provisionGuardWifiOverBle(session, ssid, password);
 
-    await writeBleValue(session.rx, payload);
-    setBleSetupState("Wi-Fi sent to GUARD. Waiting for the robot to report back…", "neutral");
+    if (session.hardwareId || getPendingHardwareId()) {
+      await tryFinishPendingBlePairing(session.hardwareId || getPendingHardwareId());
+    } else {
+      setBleSetupState(
+        "Wi-Fi is saved. GUARD should print a claim code in the serial console once it reaches the cloud. Enter that code on the site to finish pairing.",
+        "success"
+      );
+    }
   } catch (err) {
     const message = err?.message || "Bluetooth setup failed.";
     setBleSetupState(message, "error");
     if (
       /GUARD-SETUP/i.test(message) ||
-      /Bluetooth setup may be disabled/i.test(message) ||
+      /endpoints yet/i.test(message) ||
       /Web Bluetooth is not available/i.test(message)
     ) {
       showBleFallbackGuidance();
@@ -4156,11 +4697,11 @@ function initGuardBluetoothSetup() {
   }
 
   setBleSetupState(
-    "Guardian can try Bluetooth here, but if no GUARD appears use GUARD-SETUP right away. Current ESP32-C3 firmware may prefer the fallback.",
+    "Guardian can send Wi-Fi to your robot over Bluetooth here. If no GUARD appears, use GUARD-SETUP as a fallback.",
     "muted"
   );
   setBleFallbackText(
-    "If your GUARD does not appear in the picker, switch to GUARD-SETUP. That is expected on the current ESP32-C3 firmware."
+    "Fallback: if Bluetooth is unavailable on this browser or board, use GUARD-SETUP to send Wi-Fi instead."
   );
 }
 
@@ -4254,24 +4795,8 @@ async function claimDeviceFromCode() {
   if (stateEl) stateEl.textContent = "Claiming device…";
 
   try {
-    const res = await fetch("/device/claim", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ claim_code: claimCode })
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) {
-      throw new Error(data.error || "Could not claim device");
-    }
-
-    if (data.device_id) {
-      setCurrentDeviceId(data.device_id);
-    }
-
+    await submitClaimCode(claimCode, { navigate: false });
     if (input) input.value = "";
-    clearPendingClaimCode();
     if (stateEl) stateEl.textContent = "Device claimed. Finishing setup…";
     setClaimCardVisible(false, { state: "" });
     await refreshSessionState();
@@ -6344,6 +6869,7 @@ async function refreshSessionState() {
     if (data.device_id) {
       setCurrentDeviceId(data.device_id);
       clearPendingClaimCode();
+      clearPendingHardwareId();
       setClaimCardVisible(false, { state: "" });
     } else {
       setCurrentDeviceId("");
@@ -6352,6 +6878,10 @@ async function refreshSessionState() {
           help: "Guardian is ready for pairing. Enter the claim code shown after Bluetooth or GUARD-SETUP setup.",
           state: ""
         });
+        const pendingHardwareId = getPendingHardwareId();
+        if (pendingHardwareId) {
+          void tryFinishPendingBlePairing(pendingHardwareId);
+        }
       }
     }
     return {

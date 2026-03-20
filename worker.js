@@ -638,7 +638,7 @@ async function handleDeviceBootstrap(request, env) {
     claimed: false,
     claim_code: record.claim_code,
     claim_expires_at: record.claim_expires_at,
-    claim_url: "https://getguardian.org",
+    claim_url: new URL(request.url).origin,
   });
 }
 
@@ -1589,6 +1589,53 @@ async function handleDeviceInfo(request, env) {
   });
 }
 
+async function handleBootstrapStatus(request, env) {
+  const session = await requireSession(request, env);
+  if (!session) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const url = new URL(request.url);
+  const hardwareId = normalizeHardwareId(url.searchParams.get("hardware_id"));
+  if (!hardwareId) {
+    return jsonResponse({ ok: false, error: "Missing hardware_id" }, 400);
+  }
+
+  const bootstrap = await loadBootstrapRecord(env, hardwareId);
+  if (!bootstrap) {
+    return jsonResponse({
+      ok: true,
+      state: "waiting_for_device",
+      hardware_id: hardwareId,
+    });
+  }
+
+  if (bootstrap.state === "pending") {
+    return jsonResponse({
+      ok: true,
+      state: "pending",
+      hardware_id: hardwareId,
+      claim_code: bootstrap.claim_code || "",
+      claim_expires_at: bootstrap.claim_expires_at || null,
+      claim_url: new URL(request.url).origin,
+    });
+  }
+
+  if (bootstrap.state === "claimed") {
+    return jsonResponse({
+      ok: true,
+      state: "claimed",
+      hardware_id: hardwareId,
+      device_id: bootstrap.device_id || "",
+      owner_account_id: bootstrap.owner_account_id || "",
+      owner_region: bootstrap.owner_region || "",
+      claimed_at: bootstrap.claimed_at || null,
+    });
+  }
+
+  return jsonResponse({ ok: false, error: "Unknown bootstrap state" }, 500);
+}
+
 async function handleRotateDeviceToken(request, env) {
   const session = await requireSession(request, env);
   if (!session) {
@@ -1741,6 +1788,10 @@ export default {
 
       if (url.pathname === "/device" && request.method === "GET") {
         return await handleDeviceInfo(request, env);
+      }
+
+      if (url.pathname === "/device/bootstrap-status" && request.method === "GET") {
+        return await handleBootstrapStatus(request, env);
       }
 
       if (url.pathname === "/device/rotate-token" && request.method === "POST") {

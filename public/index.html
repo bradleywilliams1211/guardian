@@ -2830,6 +2830,19 @@
 
         <div class="dashboard">
           <div class="column">
+            <div id="deviceClaimDashboardCard" class="card" style="display:none;">
+              <strong>Claim Your GUARD</strong>
+              <p id="dashboard-device-claim-help" style="opacity:.75; margin-top:8px;">
+                Enter the pairing code your GUARD showed after Wi-Fi setup to finish linking it to this account.
+              </p>
+              <form onsubmit="claimDeviceFromCode('dashboardClaimCodeInput', 'dashboard-device-claim-state'); return false;"
+                    style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+                <input id="dashboardClaimCodeInput" placeholder="Pairing code" autocomplete="one-time-code">
+                <button type="submit">Claim Device</button>
+              </form>
+              <p id="dashboard-device-claim-state" style="margin-top:10px; opacity:.75;"></p>
+            </div>
+
             <div class="card">
               <strong>Dexcom Poll</strong>
               <p id="poll-status" style="opacity:.75;">Not started</p>
@@ -3924,14 +3937,19 @@ function getPendingClaimCode() {
 function syncPendingClaimCodeUI() {
   const code = getPendingClaimCode();
   const claimEl = document.getElementById("bleSetupClaim");
-  const input = document.getElementById("claimCodeInput");
+  const inputs = [
+    document.getElementById("claimCodeInput"),
+    document.getElementById("dashboardClaimCodeInput"),
+  ];
 
   if (claimEl) {
     claimEl.textContent = code ? ("Pairing code: " + code) : "";
   }
 
-  if (input && code && !input.value.trim()) {
-    input.value = code;
+  for (const input of inputs) {
+    if (input && code && !input.value.trim()) {
+      input.value = code;
+    }
   }
 }
 
@@ -4760,20 +4778,39 @@ window.getDeviceInfo = getDeviceInfo;
 window.rotateDeviceToken = rotateDeviceToken;
 
 function setClaimCardVisible(visible, options = {}) {
-  const card = document.getElementById("deviceClaimCard");
-  const helpEl = document.getElementById("device-claim-help");
-  const stateEl = document.getElementById("device-claim-state");
+  const cards = [
+    document.getElementById("deviceClaimCard"),
+    document.getElementById("deviceClaimDashboardCard"),
+  ];
+  const helpEls = [
+    document.getElementById("device-claim-help"),
+    document.getElementById("dashboard-device-claim-help"),
+  ];
+  const stateEls = [
+    document.getElementById("device-claim-state"),
+    document.getElementById("dashboard-device-claim-state"),
+  ];
 
-  if (card) {
-    card.style.display = visible ? "block" : "none";
+  for (const card of cards) {
+    if (card) {
+      card.style.display = visible ? "block" : "none";
+    }
   }
 
-  if (helpEl && typeof options.help === "string") {
-    helpEl.textContent = options.help;
+  if (typeof options.help === "string") {
+    for (const helpEl of helpEls) {
+      if (helpEl) {
+        helpEl.textContent = options.help;
+      }
+    }
   }
 
-  if (stateEl && typeof options.state === "string") {
-    stateEl.textContent = options.state;
+  if (typeof options.state === "string") {
+    for (const stateEl of stateEls) {
+      if (stateEl) {
+        stateEl.textContent = options.state;
+      }
+    }
   }
 
   if (visible) {
@@ -4781,9 +4818,9 @@ function setClaimCardVisible(visible, options = {}) {
   }
 }
 
-async function claimDeviceFromCode() {
-  const input = document.getElementById("claimCodeInput");
-  const stateEl = document.getElementById("device-claim-state");
+async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device-claim-state") {
+  const input = document.getElementById(inputId);
+  const stateEl = document.getElementById(stateId);
   const rawCode = (input?.value || getPendingClaimCode()).trim();
   const claimCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
@@ -4796,7 +4833,12 @@ async function claimDeviceFromCode() {
 
   try {
     await submitClaimCode(claimCode, { navigate: false });
-    if (input) input.value = "";
+    for (const id of ["claimCodeInput", "dashboardClaimCodeInput"]) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = "";
+      }
+    }
     if (stateEl) stateEl.textContent = "Device claimed. Finishing setup…";
     setClaimCardVisible(false, { state: "" });
     await refreshSessionState();
@@ -7942,7 +7984,6 @@ async function enterDashboard(){
     return;
   }
 
-  setClaimCardVisible(false, { state: "" });
   showPage("content");
 
   updateAnalysisUI([]);

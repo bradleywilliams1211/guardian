@@ -1132,8 +1132,7 @@
     }
 
     .home-card{
-        width: min(520px, 92vw);
-        max-width: min(520px, 92vw);
+        width: min(1200px, 96vw);
         height: auto;
         overflow: visible;
     }
@@ -1395,6 +1394,291 @@
         background: linear-gradient(180deg, #54de71 0%, #09B02C 100%);
         border: none;
         opacity: 1;
+    }
+
+    .setup-shell{
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+        gap: 26px;
+        align-items: start;
+    }
+
+    .setup-main-card,
+    .setup-side-card{
+        background:
+          radial-gradient(circle at top right, rgba(84,222,113,.18), transparent 34%),
+          linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.48));
+        border: 1px solid rgba(255,255,255,.56);
+        box-shadow: var(--shadow-soft), var(--inner);
+        backdrop-filter: var(--blur);
+        -webkit-backdrop-filter: var(--blur);
+        border-radius: 24px;
+        padding: 26px;
+    }
+
+    .setup-main-card{
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .setup-side-card{
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        position: sticky;
+        top: 16px;
+    }
+
+    .setup-kicker{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(9,176,44,.12);
+        color: #0a7f26;
+        font-size: .78rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .setup-hero{
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .setup-hero h2{
+        margin: 0;
+        font-size: clamp(1.55rem, 2.6vw, 2.2rem);
+        letter-spacing: -.04em;
+        color: var(--ink);
+    }
+
+    .setup-hero p{
+        margin: 0;
+        opacity: .8;
+        max-width: 56ch;
+        line-height: 1.65;
+    }
+
+    .setup-step-card{
+        padding: 22px;
+        border-radius: 20px;
+        background: rgba(255,255,255,.68);
+        border: 1px solid rgba(255,255,255,.66);
+        box-shadow: 0 14px 30px rgba(16,25,21,.06);
+        min-height: 185px;
+    }
+
+    .setup-step-badge{
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #54de71 0%, #09B02C 100%);
+        color: white;
+        font-weight: 900;
+        box-shadow: 0 10px 20px rgba(9,176,44,.22);
+    }
+
+    .setup-step-card h3{
+        margin: 16px 0 10px;
+        font-size: 1.08rem;
+        color: var(--ink);
+    }
+
+    .setup-step-card p{
+        margin: 0;
+        opacity: .78;
+        line-height: 1.6;
+        max-width: 44ch;
+    }
+
+    .setup-step-card strong{
+        display: block;
+        margin-top: 14px;
+        font-size: .88rem;
+        color: #0a7f26;
+    }
+
+    .setup-action-card{
+        padding: 22px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(245,251,247,.82));
+        border: 1px solid rgba(255,255,255,.7);
+        box-shadow: 0 16px 36px rgba(16,25,21,.08);
+    }
+
+    .setup-action-card h3,
+    .setup-side-card h3{
+        margin: 0;
+        color: var(--ink);
+        font-size: 1.05rem;
+    }
+
+    .setup-action-copy,
+    .setup-side-card p{
+        margin: 10px 0 0;
+        opacity: .78;
+        line-height: 1.62;
+    }
+
+    .setup-primary-actions{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .setup-primary-actions button,
+    .setup-secondary-row button{
+        min-height: 46px;
+        padding: 0 16px;
+        border-radius: 14px;
+        font-weight: 800;
+    }
+
+    .setup-secondary-row{
+        margin-top: 14px;
+    }
+
+    .setup-secondary-row button{
+        background: rgba(16,25,21,.06);
+        color: var(--ink);
+        border: 1px solid rgba(16,25,21,.08);
+    }
+
+    .setup-secondary-row button:hover{
+        background: rgba(16,25,21,.09);
+    }
+
+    .setup-wifi-fields{
+        display: none;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(16,25,21,.08);
+    }
+
+    .setup-note{
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(16,25,21,.05);
+        color: rgba(16,25,21,.78);
+        line-height: 1.6;
+        font-size: .95rem;
+    }
+
+    .setup-claim-card{
+        padding: 22px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(16,25,21,.96), rgba(28,47,39,.94));
+        color: white;
+        box-shadow: 0 18px 36px rgba(16,25,21,.22);
+    }
+
+    .setup-claim-card p{
+        color: rgba(255,255,255,.78);
+    }
+
+    .setup-claim-code{
+        margin-top: 14px;
+        min-height: 64px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.08);
+        border: 1px solid rgba(255,255,255,.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-weight: 900;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .setup-claim-code .label{
+        font-size: .7rem;
+        letter-spacing: .1em;
+        opacity: .66;
+    }
+
+    .setup-claim-code .value{
+        font-size: 1.15rem;
+        color: #d4ffd7;
+        word-break: break-all;
+    }
+
+    .setup-claim-form{
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .setup-claim-form .smallbtn{
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.16);
+        color: white;
+    }
+
+    .setup-mini-list{
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .setup-mini-item{
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(16,25,21,.05);
+        line-height: 1.58;
+    }
+
+    .setup-card{
+        padding: 0;
+        height: auto;
+        min-height: 0;
+        gap: 16px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .step-panel{
+        display: block;
+        min-height: 0;
+    }
+
+    .step-panel .setup-step-card{
+        height: 100%;
+    }
+
+    .step-panel.active .setup-step-card{
+        border-color: rgba(9,176,44,.34);
+        box-shadow: 0 18px 38px rgba(9,176,44,.10);
+    }
+
+    .setup-footer,
+    .step-indicator{
+        display: none;
+    }
+
+    .setup-mini-item strong{
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ink);
     }
 
     /* =========================
@@ -2064,6 +2348,18 @@
         .dashboard{
         grid-template-columns: 1fr;
         }
+
+        .setup-shell{
+        grid-template-columns: 1fr;
+        }
+
+        .setup-side-card{
+        position: static;
+        }
+
+        .setup-card{
+        grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 760px){
@@ -2203,6 +2499,31 @@
         height: auto;
         min-height: 360px;
         padding: 18px;
+        }
+
+        .setup-main-card,
+        .setup-side-card{
+        padding: 16px;
+        border-radius: 18px;
+        }
+
+        .setup-hero h2{
+        font-size: 1.7rem;
+        }
+
+        .setup-primary-actions{
+        flex-direction: column;
+        }
+
+        .setup-primary-actions button,
+        .setup-secondary-row button,
+        .setup-claim-form button{
+        width: 100%;
+        }
+
+        .setup-claim-code{
+        flex-direction: column;
+        align-items: flex-start;
         }
 
         .logo-card{
@@ -2811,7 +3132,7 @@
       <div id="deviceClaimCard" class="card login-card" style="display:none;">
         <strong>Claim Your GUARD</strong>
         <p id="device-claim-help" style="opacity:.75;">
-          Power on your GUARD, send it Wi-Fi from Guardian over Bluetooth or GUARD-SETUP, and enter the pairing code shown during setup.
+          Power on your GUARD, send it Wi-Fi from Guardian over Bluetooth, and enter the pairing code shown during setup.
         </p>
         <form onsubmit="claimDeviceFromCode(); return false;"
               style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
@@ -2828,21 +3149,21 @@
       <div id="content" class="page">
         <h1 id="dashboardTitle" style="margin-bottom:12px;">Dashboard</h1>
 
+        <div id="deviceClaimDashboardCard" class="card" style="display:block; margin-bottom:18px;">
+          <strong>Claim Your GUARD</strong>
+          <p id="dashboard-device-claim-help" style="opacity:.75; margin-top:8px;">
+            Have a pairing code from your robot? Enter it here to link your GUARD to this account.
+          </p>
+          <form onsubmit="claimDeviceFromCode('dashboardClaimCodeInput', 'dashboard-device-claim-state'); return false;"
+                style="display:flex;flex-direction:column;gap:10px;margin-top:12px;max-width:420px;">
+            <input id="dashboardClaimCodeInput" placeholder="Pairing code" autocomplete="one-time-code">
+            <button type="submit">Claim Device</button>
+          </form>
+          <p id="dashboard-device-claim-state" style="margin-top:10px; opacity:.75;"></p>
+        </div>
+
         <div class="dashboard">
           <div class="column">
-            <div id="deviceClaimDashboardCard" class="card" style="display:none;">
-              <strong>Claim Your GUARD</strong>
-              <p id="dashboard-device-claim-help" style="opacity:.75; margin-top:8px;">
-                Enter the pairing code your GUARD showed after Wi-Fi setup to finish linking it to this account.
-              </p>
-              <form onsubmit="claimDeviceFromCode('dashboardClaimCodeInput', 'dashboard-device-claim-state'); return false;"
-                    style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
-                <input id="dashboardClaimCodeInput" placeholder="Pairing code" autocomplete="one-time-code">
-                <button type="submit">Claim Device</button>
-              </form>
-              <p id="dashboard-device-claim-state" style="margin-top:10px; opacity:.75;"></p>
-            </div>
-
             <div class="card">
               <strong>Dexcom Poll</strong>
               <p id="poll-status" style="opacity:.75;">Not started</p>
@@ -2903,61 +3224,127 @@
         <div class="card home-card">
           <!-- SETUP -->
           <div id="setup">
-            <div class="setup-card">
-              <div id="step1" class="step-panel">
-                <h3><span class="info-btn">ⓘ</span>Step 1</h3>
-                <p style="margin-top:8px;">Turn on your GUARD and keep this page open.</p>
+            <div class="setup-shell">
+              <div class="setup-main-card">
+                <div class="setup-hero">
+                  <span class="setup-kicker">Robot Setup</span>
+                  <h2>Pair your GUARD in a few calm steps.</h2>
+                  <p>
+                    Keep GUARD nearby, connect over Bluetooth, and if it is already on Wi-Fi Guardian will finish the pairing automatically.
+                    First-time setup is the only time you should need to enter Wi-Fi.
+                  </p>
+                </div>
+
+                <div class="setup-card">
+                  <div id="step1" class="step-panel">
+                    <div class="setup-step-card">
+                      <div class="setup-step-badge">1</div>
+                      <h3>Power on GUARD</h3>
+                      <p>Keep the robot nearby and leave this page open while you connect.</p>
+                      <strong>If it does not appear right away, wait a moment and scan again.</strong>
+                    </div>
+                  </div>
+
+                  <div id="step2" class="step-panel">
+                    <div class="setup-step-card">
+                      <div class="setup-step-badge">2</div>
+                      <h3>Connect over Bluetooth</h3>
+                      <p>Use the main connect button for normal pairing. Open Wi-Fi setup only for first-time setup or a network change.</p>
+                      <strong>Best in Chrome or Edge on Android, Windows, macOS, or Chromebook.</strong>
+                    </div>
+                  </div>
+
+                  <div id="step3" class="step-panel">
+                    <div class="setup-step-card">
+                      <div class="setup-step-badge">3</div>
+                      <h3>Finish with the pairing code</h3>
+                      <p>The code appears on this page as soon as Guardian sees the robot. Claim it below to finish linking your account.</p>
+                      <strong>After that, GUARD should reconnect on its own.</strong>
+                    </div>
+                  </div>
+
+                  <div id="setup-footer" class="setup-footer">
+                    <button id="backBtn" type="button" onclick="backStep()">←</button>
+                    <button id="nextBtn" type="button" onclick="nextStep()">Next</button>
+                  </div>
+                </div>
+
+                <div class="step-indicator">
+                  <div class="step-dot"></div>
+                  <div class="step-dot"></div>
+                  <div class="step-dot"></div>
+                </div>
+
+                <div class="setup-action-card">
+                  <h3>Connect nearby GUARD</h3>
+                  <p class="setup-action-copy">
+                    This is the normal path. If GUARD already knows its Wi-Fi, just connect over Bluetooth and let Guardian finish the rest.
+                  </p>
+
+                  <div class="setup-primary-actions">
+                    <button id="bleConnectButton" type="button" onclick="startGuardBluetoothSetup(false)">Connect Nearby GUARD</button>
+                  </div>
+
+                  <div class="setup-secondary-row">
+                    <button id="bleWifiToggleButton" type="button" class="smallbtn" onclick="toggleBleWifiFields()">First setup or new Wi-Fi?</button>
+                  </div>
+
+                  <div id="bleWifiFields" class="setup-wifi-fields">
+                    <form onsubmit="startGuardBluetoothSetup(true); return false;"
+                          style="display:flex;flex-direction:column;gap:10px;">
+                      <input id="bleWifiSsid" placeholder="Home Wi-Fi name (SSID)" autocomplete="off">
+                      <input id="bleWifiPassword" type="password" placeholder="Home Wi-Fi password" autocomplete="current-password">
+                      <button id="bleSetupButton" type="submit">Send Wi-Fi to GUARD</button>
+                    </form>
+                  </div>
+
+                  <p id="bleSetupState" class="setup-note">Guardian will look for a nearby GUARD over Bluetooth. Leave Wi-Fi blank if the robot already knows its network.</p>
+                  <p id="bleSetupFallback" style="margin-top:12px; opacity:.68;">
+                    Bluetooth setup needs a browser with Web Bluetooth support. Safari/iPhone does not currently support this setup flow.
+                  </p>
+                </div>
               </div>
 
-              <div id="step2" class="step-panel">
-                <h3><span class="info-btn">ⓘ</span>Step 2</h3>
-                <p style="margin-top:8px;">Use Bluetooth setup below to send your home Wi-Fi to GUARD.</p>
-                <p style="margin-top:10px; opacity:.8;">
-                  If your browser does not support Bluetooth, fall back to <b>GUARD-SETUP</b>.
-                  <br><br><em>Leave password blank if the network is public.</em>
-                </p>
+              <div class="setup-side-card">
+                <div class="setup-claim-card">
+                  <h3>Pairing Code</h3>
+                  <p>When GUARD reaches Guardian, the code will appear here automatically. You can also type a code in manually if the robot already showed one.</p>
+
+                  <div class="setup-claim-code">
+                    <div>
+                      <div class="label">Current Code</div>
+                      <div id="setupClaimCodePreview" class="value">Waiting…</div>
+                    </div>
+                  </div>
+
+                  <p id="bleSetupClaim" style="margin-top:12px; font-weight:700;"></p>
+
+                  <form class="setup-claim-form" onsubmit="claimDeviceFromCode('setupClaimCodeInput', 'setup-device-claim-state'); return false;">
+                    <input id="setupClaimCodeInput" placeholder="Enter pairing code" autocomplete="one-time-code">
+                    <button type="submit">Claim This GUARD</button>
+                    <button type="button" class="smallbtn" onclick="syncPendingClaimCodeUI()">Refresh code</button>
+                  </form>
+                  <p id="setup-device-claim-state" style="margin-top:10px; color:rgba(255,255,255,.82);"></p>
+                </div>
+
+                <div>
+                  <h3>What to expect</h3>
+                  <div class="setup-mini-list">
+                    <div class="setup-mini-item">
+                      <strong>Already set up before?</strong>
+                      Just tap <em>Connect Nearby GUARD</em>. You should not need Wi-Fi again.
+                    </div>
+                    <div class="setup-mini-item">
+                      <strong>Brand-new robot?</strong>
+                      Open the Wi-Fi section once, save the network, then future pairing can stay Bluetooth-first.
+                    </div>
+                    <div class="setup-mini-item">
+                      <strong>Still says disconnected?</strong>
+                      That means GUARD is paired to your account but is not reaching Guardian over the internet yet.
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              <div id="step3" class="step-panel">
-                <h3><span class="info-btn">ⓘ</span>Step 3</h3>
-                <p style="margin-top:8px;">Claim the pairing code Guardian shows and your robot will finish setup.</p>
-                <p style="margin-top:10px; opacity:.8;">
-                  After setup, GUARD stays on your Wi-Fi and keeps talking to Guardian in the cloud.
-                </p>
-              </div>
-
-              <div id="setup-footer" class="setup-footer">
-                <button id="backBtn" type="button" onclick="backStep()">←</button>
-                <button id="nextBtn" type="button" onclick="nextStep()">Next</button>
-              </div>
-            </div>
-
-            <div class="step-indicator">
-              <div class="step-dot"></div>
-              <div class="step-dot"></div>
-              <div class="step-dot"></div>
-            </div>
-
-            <div class="card" style="margin-top:18px;">
-              <strong>Bluetooth Setup</strong>
-              <p style="opacity:.78; margin-top:8px;">
-                Guardian can send Wi-Fi to your robot over Bluetooth with the native ESP-IDF firmware. If your
-                GUARD does not appear, use the fallback network <b>GUARD-SETUP</b>.
-              </p>
-              <form onsubmit="startGuardBluetoothSetup(); return false;"
-                    style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
-                <input id="bleWifiSsid" placeholder="Home Wi-Fi name (SSID)" autocomplete="off" required>
-                <input id="bleWifiPassword" type="password" placeholder="Home Wi-Fi password" autocomplete="current-password">
-                <button id="bleSetupButton" type="submit">Connect with Bluetooth</button>
-              </form>
-              <p id="bleSetupState" style="margin-top:12px; opacity:.8;">Guardian will look for a nearby GUARD over Bluetooth.</p>
-              <p id="bleSetupClaim" style="margin-top:8px; font-weight:700;"></p>
-              <p id="bleSetupFallback" style="margin-top:10px; opacity:.72;">
-                Fallback: if Bluetooth is unavailable on this browser or board, use GUARD-SETUP instead.
-              </p>
-              <p style="margin-top:12px; opacity:.68;">
-                Best support: Chrome or Edge on Android, Windows, macOS, or Chromebook. Safari/iPhone users may need the GUARD-SETUP fallback.
-              </p>
             </div>
           </div>
 
@@ -3207,10 +3594,10 @@ Guardian will show a pairing code after the device reaches Wi-Fi.
 Claim that code in your account and the robot will finish pairing.
 </p>
 
-<h3>Fallback – Use GUARD-SETUP</h3>
+<h3>Browser Support</h3>
 <p>
-If your browser or phone does not support Web Bluetooth, connect to the
-network named <b>GUARD-SETUP</b> and enter your Wi-Fi credentials there.
+Guardian Bluetooth setup currently works best in Chrome or Edge on
+Android, Windows, macOS, or Chromebook.
 </p>
 
 
@@ -3231,7 +3618,7 @@ and that your account connection is still valid.
 <h3>Robot connection issues</h3>
 <p>
 If Bluetooth setup is unavailable, try Chrome or Edge, move closer to
-the robot, or use the GUARD-SETUP fallback. If Wi-Fi still fails, try a
+the robot, and make sure Bluetooth is enabled. If Wi-Fi still fails, try a
 phone hotspot to rule out school or guest-network restrictions.
 </p>
 
@@ -3698,6 +4085,8 @@ contactguardiansupport@gmail.com
       - device_token is secret and should stay private
     */
     let currentDeviceId = "";
+    let guardBleKnownDevice = null;
+    const guardBleSubscribedDevices = new WeakSet();
     let guardBleSession = {
       device: null,
       server: null,
@@ -3705,6 +4094,7 @@ contactguardiansupport@gmail.com
       endpoints: {},
       security: null,
       hardwareId: "",
+      wifiFailureState: false,
     };
 
     function getCurrentDeviceId() {
@@ -3733,11 +4123,16 @@ contactguardiansupport@gmail.com
       return currentDeviceId;
     }
 
-    function buildDeviceApiUrl(path) {
+    function buildDeviceApiUrl(path, options = {}) {
       const url = new URL((API_BASE || "") + path, window.location.origin);
+      const includeStoredDeviceId = !!options.includeStoredDeviceId;
       const deviceId = getCurrentDeviceId();
 
-      if (deviceId) {
+      // For the normal signed-in website flow, let the Worker choose the
+      // currently claimed GUARD from the secure server-side session. This
+      // prevents stale localStorage device ids from pinning the dashboard to
+      // an older archived robot after a replacement claim.
+      if (includeStoredDeviceId && deviceId) {
         url.searchParams.set("device_id", deviceId);
       }
 
@@ -3907,20 +4302,45 @@ function setBleFallbackText(message) {
 function showBleFallbackGuidance(reason = "") {
   const extra = reason ? (" " + reason) : "";
   setBleSetupState(
-    "Use GUARD-SETUP instead: open your phone Wi-Fi settings, join GUARD-SETUP, enter your home Wi-Fi, then return here to claim the code." + extra,
+    "Bluetooth setup needs Chrome or Edge with Web Bluetooth available. Switch to a supported browser and try again." + extra,
     "muted"
   );
   setBleFallbackText(
-    "Fallback steps: 1) join GUARD-SETUP, 2) submit Wi-Fi, 3) claim the code on Guardian."
+    "Bluetooth support: use Chrome or Edge on Android, Windows, macOS, or Chromebook."
   );
 }
 
 function setBleSetupBusy(busy) {
-  const btn = document.getElementById("bleSetupButton");
-  if (!btn) return;
+  const connectBtn = document.getElementById("bleConnectButton");
+  const wifiBtn = document.getElementById("bleSetupButton");
+  const toggleBtn = document.getElementById("bleWifiToggleButton");
 
-  btn.disabled = !!busy;
-  btn.textContent = busy ? "Provisioning..." : "Connect with Bluetooth";
+  if (connectBtn) {
+    connectBtn.disabled = !!busy;
+    connectBtn.textContent = busy ? "Connecting..." : "Connect Nearby GUARD";
+  }
+
+  if (wifiBtn) {
+    wifiBtn.disabled = !!busy;
+    wifiBtn.textContent = busy ? "Provisioning..." : "Send Wi-Fi to GUARD";
+  }
+
+  if (toggleBtn) {
+    toggleBtn.disabled = !!busy;
+  }
+}
+
+function toggleBleWifiFields(forceOpen = null) {
+  const panel = document.getElementById("bleWifiFields");
+  const toggleBtn = document.getElementById("bleWifiToggleButton");
+  if (!panel) return;
+
+  const shouldOpen = forceOpen === null ? panel.style.display === "none" : !!forceOpen;
+  panel.style.display = shouldOpen ? "block" : "none";
+
+  if (toggleBtn) {
+    toggleBtn.textContent = shouldOpen ? "Hide Wi-Fi setup" : "First setup or new Wi-Fi?";
+  }
 }
 
 function getPendingClaimCode() {
@@ -3937,13 +4357,19 @@ function getPendingClaimCode() {
 function syncPendingClaimCodeUI() {
   const code = getPendingClaimCode();
   const claimEl = document.getElementById("bleSetupClaim");
+  const previewEl = document.getElementById("setupClaimCodePreview");
   const inputs = [
     document.getElementById("claimCodeInput"),
     document.getElementById("dashboardClaimCodeInput"),
+    document.getElementById("setupClaimCodeInput"),
   ];
 
   if (claimEl) {
-    claimEl.textContent = code ? ("Pairing code: " + code) : "";
+    claimEl.textContent = code ? "Guardian found a pairing code for this robot." : "";
+  }
+
+  if (previewEl) {
+    previewEl.textContent = code || "Waiting...";
   }
 
   for (const input of inputs) {
@@ -4040,6 +4466,16 @@ function xorBleBytes(a, b) {
     out[i] = aa[i] ^ bb[i];
   }
   return out;
+}
+
+function sameBleBytes(a, b) {
+  const aa = bleBytes(a);
+  const bb = bleBytes(b);
+  if (aa.length !== bb.length) return false;
+  for (let i = 0; i < aa.length; i++) {
+    if (aa[i] !== bb[i]) return false;
+  }
+  return true;
 }
 
 function encodeBleVarint(value) {
@@ -4151,6 +4587,12 @@ class GuardBleCtrStream {
     this.position = 0;
   }
 
+  clone() {
+    const copy = new GuardBleCtrStream(this.key, this.counterBytes);
+    copy.position = this.position;
+    return copy;
+  }
+
   async process(inputBytes) {
     const input = bleBytes(inputBytes);
     const blockIndex = Math.floor(this.position / 16);
@@ -4170,19 +4612,71 @@ class GuardBleCtrStream {
   }
 }
 
-function handleGuardBleDisconnect() {
+function handleGuardBleDisconnect(event) {
+  const disconnectedDevice = event?.target || guardBleSession?.device || null;
+  if (disconnectedDevice) {
+    guardBleKnownDevice = disconnectedDevice;
+  }
+
   guardBleSession = {
-    device: null,
+    device: disconnectedDevice,
     server: null,
     service: null,
     endpoints: {},
     security: null,
     hardwareId: "",
+    wifiFailureState: false,
   };
 
   setBleSetupState(
     "Bluetooth connection closed. Reconnect if you want to provision Wi-Fi again.",
     "muted"
+  );
+}
+
+async function resetGuardBleSession() {
+  const device = guardBleSession?.device || guardBleKnownDevice;
+  try {
+    if (device?.gatt?.connected) {
+      device.gatt.disconnect();
+    }
+  } catch {}
+
+  if (device) {
+    guardBleKnownDevice = device;
+  }
+
+  guardBleSession = {
+    device: guardBleKnownDevice,
+    server: null,
+    service: null,
+    endpoints: {},
+    security: null,
+    hardwareId: "",
+    wifiFailureState: false,
+  };
+
+  await new Promise((resolve) => setTimeout(resolve, 200));
+}
+
+function isGuardBleDisconnectError(err) {
+  const message = String(err?.message || err || "").toLowerCase();
+  return (
+    err?.name === "NetworkError" ||
+    /gatt server is disconnected/.test(message) ||
+    /cannot retrieve services/.test(message) ||
+    /reconnect first/.test(message) ||
+    /device is disconnected/.test(message) ||
+    /connection is lost/.test(message) ||
+    /not connected/.test(message)
+  );
+}
+
+function buildGuardBleReconnectMessage(deviceName = "GUARD") {
+  return (
+    "Guardian lost the Bluetooth link to " +
+    deviceName +
+    ". Tap the button again and reconnect before retrying."
   );
 }
 
@@ -4250,19 +4744,30 @@ async function readBleEndpoint(session, endpointName, payloadBytes) {
     throw new Error("GUARD is missing the BLE endpoint " + endpointName + ".");
   }
 
-  await writeBleValue(endpoint, payloadBytes);
-  await new Promise((resolve) => setTimeout(resolve, 120));
+  const requestBytes = bleBytes(payloadBytes);
+  await writeBleValue(endpoint, requestBytes);
 
-  let value = await endpoint.readValue();
-  let bytes = bleBytes(value);
-
-  if (!bytes.length) {
-    await new Promise((resolve) => setTimeout(resolve, 120));
-    value = await endpoint.readValue();
-    bytes = bleBytes(value);
+  // Web Bluetooth can occasionally return a stale characteristic value
+  // immediately after the write. Poll briefly so we have a better chance of
+  // reading the device's response instead of an echo/old cached value.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 160 : 120));
+    const value = await endpoint.readValue();
+    const bytes = bleBytes(value);
+    if (!bytes.length) {
+      continue;
+    }
+    if (
+      requestBytes.length &&
+      bytes.length === requestBytes.length &&
+      bytes.every((byte, index) => byte === requestBytes[index])
+    ) {
+      continue;
+    }
+    return bytes;
   }
 
-  return bytes;
+  return new Uint8Array([]);
 }
 
 async function ensureGuardBleSession(session) {
@@ -4276,7 +4781,7 @@ async function ensureGuardBleSession(session) {
   try {
     keyPair = await crypto.subtle.generateKey({ name: "X25519" }, true, ["deriveBits"]);
   } catch {
-    throw new Error("This browser does not support X25519 yet. Use a current Chrome or Edge build, or fall back to GUARD-SETUP.");
+    throw new Error("This browser does not support the Bluetooth security features Guardian needs yet. Use a current Chrome or Edge build.");
   }
 
   const clientPublicKey = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
@@ -4347,25 +4852,74 @@ async function guardBleEncrypt(session, inputBytes) {
   return session.security.stream.process(inputBytes);
 }
 
+async function guardBleTryDecodeResponse(session, encryptedBytes, decodeFn) {
+  await ensureGuardBleSession(session);
+  const previewStream = session.security.stream.clone();
+  const decryptedBytes = await previewStream.process(encryptedBytes);
+  const decoded = await decodeFn(decryptedBytes);
+  if (!decoded) {
+    return null;
+  }
+
+  session.security.stream = previewStream;
+  return decoded;
+}
+
+async function readGuardBleValidatedResponse(session, endpointName, encryptedRequest, decodeFn, options = {}) {
+  const endpoint = session.endpoints[String(endpointName || "").toLowerCase()];
+  if (!endpoint) {
+    throw new Error("GUARD is missing the BLE endpoint " + endpointName + ".");
+  }
+
+  const maxReads = Math.max(2, Number(options.maxReads || 6));
+  const firstResponse = await readBleEndpoint(session, endpointName, encryptedRequest);
+  const seenResponses = [];
+  let candidate = bleBytes(firstResponse);
+
+  for (let attempt = 0; attempt < maxReads; attempt++) {
+    if (candidate.length && !seenResponses.some((item) => sameBleBytes(item, candidate))) {
+      seenResponses.push(candidate.slice());
+      const decoded = await guardBleTryDecodeResponse(session, candidate, decodeFn);
+      if (decoded) {
+        return decoded;
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 180 : 140));
+    candidate = bleBytes(await endpoint.readValue());
+  }
+
+  throw new Error("Guardian could not read a complete Bluetooth response from GUARD. Try reconnecting and sending Wi-Fi again.");
+}
+
 async function readGuardBleDeviceInfo(session) {
   if (!session.endpoints["custom-data"]) {
     return null;
   }
 
   const encryptedRequest = await guardBleEncrypt(session, guardBleEncoder().encode("device-info"));
-  const encryptedResponse = await readBleEndpoint(session, "custom-data", encryptedRequest);
-  const responseBytes = await guardBleEncrypt(session, encryptedResponse);
-  const text = guardBleDecoder().decode(responseBytes).trim();
+  return readGuardBleValidatedResponse(
+    session,
+    "custom-data",
+    encryptedRequest,
+    async (responseBytes) => {
+      const text = guardBleDecoder().decode(responseBytes).trim();
+      if (!text) {
+        return null;
+      }
 
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed?.hardware_id) {
-      session.hardwareId = rememberPendingHardwareId(parsed.hardware_id);
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed?.hardware_id) {
+          session.hardwareId = rememberPendingHardwareId(parsed.hardware_id);
+        }
+        return parsed;
+      } catch {
+        return null;
+      }
+    },
+    { maxReads: 8 }
+  );
 }
 
 function buildBleWifiSetConfig(ssid, password) {
@@ -4382,26 +4936,41 @@ function buildBleWifiSetConfig(ssid, password) {
 }
 
 function buildBleWifiApplyConfig() {
+  // Espressif's official tool only serializes the enum for ApplyConfig.
   return concatBleBytes([
     encodeBleEnumField(1, 4),
-    encodeBleMessageField(14, new Uint8Array([])),
   ]);
 }
 
+function buildBleWifiCtrlReset() {
+  // Match Espressif's official client: CtrlReset serializes only the enum.
+  return encodeBleEnumField(1, 1);
+}
+
 function buildBleWifiGetStatus() {
-  return concatBleBytes([
-    encodeBleEnumField(1, 0),
-    encodeBleMessageField(10, new Uint8Array([])),
-  ]);
+  // In the official protobuf this is an empty CmdGetStatus message wrapped in
+  // field 10, which serializes to 0x52 0x00.
+  return encodeBleMessageField(10, new Uint8Array([]));
 }
 
 function parseBleWifiStatus(bytes) {
   const outer = decodeBleProto(bytes);
   const payload = decodeBleProto(getBleProtoField(outer, 11)?.value || []);
   return {
-    status: getBleProtoField(payload, 1)?.value ?? -1,
-    staState: getBleProtoField(payload, 2)?.value ?? -1,
-    failReason: getBleProtoField(payload, 10)?.value ?? -1,
+    msg: getBleProtoField(outer, 1)?.value ?? -1,
+    // Protobuf omits zero-value enums, so a successful response often arrives
+    // with an empty nested message instead of explicit status/state fields.
+    status: getBleProtoField(payload, 1)?.value ?? 0,
+    staState: getBleProtoField(payload, 2)?.value ?? 0,
+    failReason: getBleProtoField(payload, 10)?.value ?? 0,
+  };
+}
+
+function parseBleWifiCtrlStatus(bytes) {
+  const outer = decodeBleProto(bytes);
+  return {
+    msg: getBleProtoField(outer, 1)?.value ?? -1,
+    status: getBleProtoField(outer, 2)?.value ?? 0,
   };
 }
 
@@ -4428,19 +4997,102 @@ function describeGuardBleStatus(status) {
   }
 }
 
+async function resetGuardBleWifiFailureState(session, options = {}) {
+  if (!session.endpoints["prov-ctrl"]) {
+    return false;
+  }
+
+  const force = !!options.force;
+  if (!force && !session.wifiFailureState) {
+    return false;
+  }
+
+  const encryptedRequest = await guardBleEncrypt(session, buildBleWifiCtrlReset());
+  const ctrlStatus = await readGuardBleValidatedResponse(
+    session,
+    "prov-ctrl",
+    encryptedRequest,
+    async (responseBytes) => {
+      try {
+        const status = parseBleWifiCtrlStatus(responseBytes);
+        if (status.msg !== 2 || status.status < 0) {
+          return null;
+        }
+        return status;
+      } catch {
+        return null;
+      }
+    }
+  );
+
+  // `status 5` here usually just means "there was no failed provisioning state
+  // to clear". Treat that as a no-op because a reconnect can leave the browser
+  // with stale status knowledge even when GUARD itself is ready for a new try.
+  if (ctrlStatus.status === 0) {
+    session.wifiFailureState = false;
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    return true;
+  }
+
+  if (ctrlStatus.status === 5) {
+    session.wifiFailureState = false;
+    return false;
+  }
+
+  throw new Error(
+    "GUARD could not reset its previous Wi-Fi attempt (status " +
+    ctrlStatus.status +
+    ": " +
+    describeGuardBleStatus(ctrlStatus.status) +
+    "). Reconnect and try again."
+  );
+}
+
 async function getGuardBleWifiStatus(session) {
   const encryptedRequest = await guardBleEncrypt(session, buildBleWifiGetStatus());
-  const encryptedResponse = await readBleEndpoint(session, "prov-config", encryptedRequest);
-  const responseBytes = await guardBleEncrypt(session, encryptedResponse);
-  return parseBleWifiStatus(responseBytes);
+  return readGuardBleValidatedResponse(
+    session,
+    "prov-config",
+    encryptedRequest,
+    async (responseBytes) => {
+      try {
+        const status = parseBleWifiStatus(responseBytes);
+        if (status.msg !== 1 || status.status < 0) {
+          return null;
+        }
+        return status;
+      } catch {
+        return null;
+      }
+    }
+  );
 }
 
 async function provisionGuardWifiOverBle(session, ssid, password) {
+  // Only reset if GUARD is actually stuck in a failed state. That keeps first
+  // setup clean, while still clearing retries after a bad SSID/password.
+  await resetGuardBleWifiFailureState(session);
+
   const encryptedSet = await guardBleEncrypt(session, buildBleWifiSetConfig(ssid, password));
-  const setResponse = await readBleEndpoint(session, "prov-config", encryptedSet);
-  const setPayload = decodeBleProto(await guardBleEncrypt(session, setResponse));
+  const setPayload = await readGuardBleValidatedResponse(
+    session,
+    "prov-config",
+    encryptedSet,
+    async (responseBytes) => {
+      try {
+        const payload = decodeBleProto(responseBytes);
+        const msg = getBleProtoField(payload, 1)?.value ?? -1;
+        if (msg !== 3 || !getBleProtoField(payload, 13)) {
+          return null;
+        }
+        return payload;
+      } catch {
+        return null;
+      }
+    }
+  );
   const setStatus = decodeBleProto(getBleProtoField(setPayload, 13)?.value || []);
-  const setStatusCode = getBleProtoField(setStatus, 1)?.value ?? 1;
+  const setStatusCode = getBleProtoField(setStatus, 1)?.value ?? 0;
   if (setStatusCode !== 0) {
     const setStatusText = describeGuardBleStatus(setStatusCode);
     if (setStatusCode === 4) {
@@ -4456,10 +5108,25 @@ async function provisionGuardWifiOverBle(session, ssid, password) {
   }
 
   const encryptedApply = await guardBleEncrypt(session, buildBleWifiApplyConfig());
-  const applyResponse = await readBleEndpoint(session, "prov-config", encryptedApply);
-  const applyPayload = decodeBleProto(await guardBleEncrypt(session, applyResponse));
+  const applyPayload = await readGuardBleValidatedResponse(
+    session,
+    "prov-config",
+    encryptedApply,
+    async (responseBytes) => {
+      try {
+        const payload = decodeBleProto(responseBytes);
+        const msg = getBleProtoField(payload, 1)?.value ?? -1;
+        if (msg !== 5 || !getBleProtoField(payload, 15)) {
+          return null;
+        }
+        return payload;
+      } catch {
+        return null;
+      }
+    }
+  );
   const applyStatus = decodeBleProto(getBleProtoField(applyPayload, 15)?.value || []);
-  const applyStatusCode = getBleProtoField(applyStatus, 1)?.value ?? 1;
+  const applyStatusCode = getBleProtoField(applyStatus, 1)?.value ?? 0;
   if (applyStatusCode !== 0) {
     const applyStatusText = describeGuardBleStatus(applyStatusCode);
     throw new Error("GUARD could not apply the Wi-Fi configuration (status " + applyStatusCode + ": " + applyStatusText + ").");
@@ -4473,11 +5140,17 @@ async function provisionGuardWifiOverBle(session, ssid, password) {
     const status = await getGuardBleWifiStatus(session);
 
     if (status.staState === 0) {
+      session.wifiFailureState = false;
       setBleSetupState("GUARD joined Wi-Fi. Finishing pairing…", "success");
       return;
     }
 
     if (status.staState === 3) {
+      session.wifiFailureState = true;
+      try {
+        await resetGuardBleWifiFailureState(session, { force: true });
+      } catch {}
+
       if (status.failReason === 0) {
         throw new Error("GUARD could not join Wi-Fi because the password was incorrect.");
       }
@@ -4597,7 +5270,8 @@ async function tryFinishPendingBlePairing(hardwareId, options = {}) {
   }
 }
 
-async function connectGuardBluetooth() {
+async function connectGuardBluetooth(options = {}) {
+  const allowPicker = options.allowPicker !== false;
   if (
     guardBleSession.device?.gatt?.connected &&
     guardBleSession.service &&
@@ -4608,32 +5282,91 @@ async function connectGuardBluetooth() {
   }
 
   if (!hasWebBluetoothSupport()) {
-    throw new Error("Web Bluetooth is not available here. Use Chrome or Edge, or fall back to GUARD-SETUP.");
+      throw new Error("Web Bluetooth is not available here. Use Chrome or Edge.");
   }
 
-  setBleSetupState("Choose your GUARD from the Bluetooth picker…");
+  let device = guardBleKnownDevice;
+  let usingRememberedDevice = !!device;
 
-  let device;
-  try {
-    device = await navigator.bluetooth.requestDevice({
-      filters: [{ namePrefix: "GUARD" }],
-      optionalServices: [GUARD_BLE_SERVICE_UUID],
-    });
-  } catch (err) {
-    if (err?.name === "NotFoundError") {
-      throw new Error("No GUARD was found in Bluetooth. Use GUARD-SETUP instead if the robot is not advertising right now.");
+  if (!device) {
+    if (!allowPicker) {
+      throw new Error("Guardian needs you to tap the Bluetooth button again so the browser can reconnect to GUARD.");
     }
-    throw err;
+
+    setBleSetupState("Choose your GUARD from the Bluetooth picker…");
+
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: "GUARD" }],
+        optionalServices: [GUARD_BLE_SERVICE_UUID],
+      });
+    } catch (err) {
+      if (err?.name === "NotFoundError") {
+        throw new Error("No GUARD was found in Bluetooth. Make sure the robot is powered on and advertising, then try again.");
+      }
+      throw err;
+    }
   }
 
-  device.addEventListener("gattserverdisconnected", handleGuardBleDisconnect);
+  guardBleKnownDevice = device;
+  if (!guardBleSubscribedDevices.has(device)) {
+    device.addEventListener("gattserverdisconnected", handleGuardBleDisconnect);
+    guardBleSubscribedDevices.add(device);
+  }
 
   setBleSetupState("Connecting to " + (device.name || "GUARD") + "…");
 
-  const server = await device.gatt.connect();
-  const service = await server.getPrimaryService(GUARD_BLE_SERVICE_UUID);
-  const endpoints = await discoverGuardBleEndpoints(service);
-  if (!endpoints["prov-session"] || !endpoints["prov-config"] || !endpoints["proto-ver"]) {
+  let server = null;
+  let service = null;
+  let endpoints = null;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (!device?.gatt) {
+        throw new Error("This browser could not open a Bluetooth connection to GUARD.");
+      }
+
+      server = device.gatt.connected ? device.gatt : await device.gatt.connect();
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 80 : 140));
+      service = await server.getPrimaryService(GUARD_BLE_SERVICE_UUID);
+      endpoints = await discoverGuardBleEndpoints(service);
+      break;
+    } catch (err) {
+      const isDisconnect = isGuardBleDisconnectError(err);
+      try {
+        if (device?.gatt?.connected) {
+          device.gatt.disconnect();
+        }
+      } catch {}
+
+      if (!isDisconnect || attempt === 1) {
+        guardBleSession = {
+          device,
+          server: null,
+          service: null,
+          endpoints: {},
+          security: null,
+          hardwareId: "",
+          wifiFailureState: false,
+        };
+
+        if (usingRememberedDevice && isDisconnect) {
+          guardBleKnownDevice = null;
+          throw new Error(buildGuardBleReconnectMessage(device.name || "GUARD"));
+        }
+
+        if (isDisconnect) {
+          throw new Error("Guardian could not finish the Bluetooth connection. Keep GUARD nearby and try again.");
+        }
+
+        throw err;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 180));
+    }
+  }
+
+  if (!endpoints["prov-session"] || !endpoints["prov-config"]) {
     throw new Error("This GUARD does not expose the native provisioning BLE endpoints yet.");
   }
 
@@ -4644,41 +5377,66 @@ async function connectGuardBluetooth() {
     endpoints,
     security: null,
     hardwareId: "",
+    wifiFailureState: false,
   };
 
-  try {
-    const versionBytes = await readBleEndpoint(guardBleSession, "proto-ver", guardBleEncoder().encode(GUARD_BLE_PROTO_VER));
-    const versionText = decodeBleValue(versionBytes);
-    setBleSetupState(
-      "Connected to " + (device.name || "GUARD") + ". " + (versionText || "Provisioning service ready."),
-      "neutral"
-    );
-  } catch {
-    setBleSetupState("Connected to " + (device.name || "GUARD") + ". Provisioning service ready.", "neutral");
-  }
+  setBleSetupState("Connected to " + (device.name || "GUARD") + ". Provisioning service ready.", "neutral");
 
   return guardBleSession;
 }
 
-async function startGuardBluetoothSetup() {
+async function startGuardBluetoothSetup(requireWifi = false, retryingAfterSecurityError = false, allowPicker = true) {
   const ssid = document.getElementById("bleWifiSsid")?.value.trim() || "";
   const password = document.getElementById("bleWifiPassword")?.value || "";
-
-  if (!ssid) {
-    setBleSetupState("Enter your home Wi-Fi name first.", "error");
-    return;
-  }
 
   clearPendingClaimCode();
   setBleSetupBusy(true);
 
   try {
-    const session = await connectGuardBluetooth();
+    if (requireWifi) {
+      // Always start Wi-Fi provisioning from a fresh BLE session. This avoids
+      // stale secure-session state after earlier "connect only" attempts.
+      await resetGuardBleSession();
+    }
+
+    const session = await connectGuardBluetooth({ allowPicker });
     await ensureGuardBleSession(session);
+
+    // Default customer flow: if the robot already has saved Wi-Fi, Bluetooth
+    // only needs to discover the robot identity and finish the pairing flow.
+    if (!requireWifi && !ssid) {
+      const deviceInfo = await readGuardBleDeviceInfo(session);
+      const hardwareId = session.hardwareId || deviceInfo?.hardware_id || getPendingHardwareId();
+      if (!hardwareId) {
+        throw new Error("Guardian connected to GUARD, but the robot did not report a pairing identity yet.");
+      }
+
+      setBleSetupState("Connected to GUARD. Checking whether it is already online…", "neutral");
+      const paired = await tryFinishPendingBlePairing(hardwareId, { timeoutMs: 20000 });
+      if (!paired) {
+        setBleSetupState(
+          "GUARD connected over Bluetooth, but it has not reached Guardian yet. If this is the first setup, enter Wi-Fi once so it can get online.",
+          "muted"
+        );
+      }
+      return;
+    }
+
+    if (!ssid) {
+      setBleSetupState("Enter your home Wi-Fi name to set up internet on GUARD.", "error");
+      toggleBleWifiFields(true);
+      return;
+    }
+
     await provisionGuardWifiOverBle(session, ssid, password);
 
-    if (session.hardwareId || getPendingHardwareId()) {
-      await tryFinishPendingBlePairing(session.hardwareId || getPendingHardwareId());
+    // Read identity after Wi-Fi provisioning, not before, so the provisioning
+    // exchange matches Espressif's official request order as closely as possible.
+    const deviceInfo = await readGuardBleDeviceInfo(session);
+    const hardwareId = session.hardwareId || deviceInfo?.hardware_id || getPendingHardwareId();
+
+    if (hardwareId || getPendingHardwareId()) {
+      await tryFinishPendingBlePairing(hardwareId || getPendingHardwareId());
     } else {
       setBleSetupState(
         "Wi-Fi is saved. GUARD should print a claim code in the serial console once it reaches the cloud. Enter that code on the site to finish pairing.",
@@ -4687,9 +5445,22 @@ async function startGuardBluetoothSetup() {
     }
   } catch (err) {
     const message = err?.message || "Bluetooth setup failed.";
+
+    if (
+      requireWifi &&
+      !retryingAfterSecurityError &&
+      /status 1:\s*invalid security scheme/i.test(message)
+    ) {
+      setBleSetupState("Refreshing the secure Bluetooth session and trying again…", "neutral");
+      await resetGuardBleSession();
+      try {
+        await startGuardBluetoothSetup(requireWifi, true, false);
+        return;
+      } catch {}
+    }
+
     setBleSetupState(message, "error");
     if (
-      /GUARD-SETUP/i.test(message) ||
       /endpoints yet/i.test(message) ||
       /Web Bluetooth is not available/i.test(message)
     ) {
@@ -4705,22 +5476,23 @@ function initGuardBluetoothSetup() {
 
   if (!hasWebBluetoothSupport()) {
     setBleSetupState(
-      "This browser does not support Guardian Bluetooth setup. Use Chrome/Edge or fall back to GUARD-SETUP.",
+      "This browser does not support Guardian Bluetooth setup. Use Chrome or Edge.",
       "muted"
     );
     setBleFallbackText(
-      "This current setup should use GUARD-SETUP on unsupported browsers like Safari/iPhone."
+      "Guardian Bluetooth setup currently requires Chrome or Edge with Web Bluetooth support."
     );
     return;
   }
 
   setBleSetupState(
-    "Guardian can send Wi-Fi to your robot over Bluetooth here. If no GUARD appears, use GUARD-SETUP as a fallback.",
+    "Guardian can connect to a nearby robot over Bluetooth here. Enter Wi-Fi only if the robot still needs internet setup.",
     "muted"
   );
   setBleFallbackText(
-    "Fallback: if Bluetooth is unavailable on this browser or board, use GUARD-SETUP to send Wi-Fi instead."
+    "Use Chrome or Edge and keep the robot nearby while pairing."
   );
+  toggleBleWifiFields(false);
 }
 
 window.startGuardBluetoothSetup = startGuardBluetoothSetup;
@@ -4778,10 +5550,8 @@ window.getDeviceInfo = getDeviceInfo;
 window.rotateDeviceToken = rotateDeviceToken;
 
 function setClaimCardVisible(visible, options = {}) {
-  const cards = [
-    document.getElementById("deviceClaimCard"),
-    document.getElementById("deviceClaimDashboardCard"),
-  ];
+  const loginCard = document.getElementById("deviceClaimCard");
+  const dashboardCard = document.getElementById("deviceClaimDashboardCard");
   const helpEls = [
     document.getElementById("device-claim-help"),
     document.getElementById("dashboard-device-claim-help"),
@@ -4791,10 +5561,13 @@ function setClaimCardVisible(visible, options = {}) {
     document.getElementById("dashboard-device-claim-state"),
   ];
 
-  for (const card of cards) {
-    if (card) {
-      card.style.display = visible ? "block" : "none";
-    }
+  // The dashboard claim banner stays visible whenever the user is signed in so
+  // pairing is always discoverable, even if session state is stale.
+  if (loginCard) {
+    loginCard.style.display = visible ? "block" : "none";
+  }
+  if (dashboardCard) {
+    dashboardCard.style.display = hasServerSession ? "block" : "none";
   }
 
   if (typeof options.help === "string") {
@@ -4825,7 +5598,7 @@ async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device
   const claimCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   if (!claimCode) {
-    if (stateEl) stateEl.textContent = "Enter the pairing code shown after Bluetooth or GUARD-SETUP setup.";
+    if (stateEl) stateEl.textContent = "Enter the pairing code shown after Bluetooth setup.";
     return;
   }
 
@@ -4833,7 +5606,7 @@ async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device
 
   try {
     await submitClaimCode(claimCode, { navigate: false });
-    for (const id of ["claimCodeInput", "dashboardClaimCodeInput"]) {
+    for (const id of ["claimCodeInput", "dashboardClaimCodeInput", "setupClaimCodeInput"]) {
       const el = document.getElementById(id);
       if (el) {
         el.value = "";
@@ -6917,7 +7690,7 @@ async function refreshSessionState() {
       setCurrentDeviceId("");
       if (data.logged_in) {
         setClaimCardVisible(true, {
-          help: "Guardian is ready for pairing. Enter the claim code shown after Bluetooth or GUARD-SETUP setup.",
+          help: "Guardian is ready for pairing. Enter the claim code shown after Bluetooth setup.",
           state: ""
         });
         const pendingHardwareId = getPendingHardwareId();
@@ -7749,11 +8522,37 @@ async function updateStatus() {
   }
 
   try {
-    const res = await fetch(buildDeviceApiUrl("/status"), {
+    let res = await fetch(buildDeviceApiUrl("/status"), {
       cache: "no-store",
       credentials: "same-origin"
     });
-    const data = await res.json();
+    let data = await res.json().catch(() => ({}));
+
+    // If the session-side claimed device changed after pairing or replacement,
+    // resync from /session once and try status again against the server's
+    // current device mapping before showing a stale "waiting" message.
+    if ((!res.ok || !data.lastSeen) && !isDemoMode()) {
+      const before = getCurrentDeviceId();
+      const session = await refreshSessionState();
+      const after = session?.device_id || getCurrentDeviceId();
+
+      if (session?.logged_in && after && after !== before) {
+        res = await fetch(buildDeviceApiUrl("/status"), {
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+        data = await res.json().catch(() => ({}));
+      }
+    }
+
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 401) {
+        el.textContent = "Not paired yet";
+        el.style.color = "grey";
+        return;
+      }
+      throw new Error(data.error || "Status request failed");
+    }
 
     if (!data.lastSeen) {
       el.textContent = "Waiting for GUARD heartbeat…";
@@ -7926,7 +8725,7 @@ async function saveDexcomCreds() {
     }
     if (!sessionState.device_id) {
       setClaimCardVisible(true, {
-        help: "Optional: pair your GUARD anytime by entering the claim code shown after Bluetooth or GUARD-SETUP setup.",
+        help: "Optional: pair your GUARD anytime by entering the claim code shown after Bluetooth setup.",
         state: "Logged in. You can use Guardian now, even without a GUARD device."
       });
       stateEl.textContent = "Logged in";

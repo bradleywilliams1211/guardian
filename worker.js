@@ -31,7 +31,10 @@ const DEVICE_CLAIM_PREFIX = "deviceClaim:v1:";
 const OWNER_DEVICE_PREFIX = "ownerDevice:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
-const HEARTBEAT_MIN_WRITE_MS = 5 * 60 * 1000;
+// Keep persisted heartbeats comfortably inside the online window so /status
+// does not fall back to a several-minutes-old KV timestamp and falsely show a
+// live robot as disconnected.
+const HEARTBEAT_MIN_WRITE_MS = 30 * 1000;
 const ONLINE_WINDOW_MS = 60 * 1000;
 const LASTSEEN_CACHE_TTL_SECONDS = 2 * 60;
 
@@ -659,16 +662,7 @@ async function handleClaimDevice(request, env) {
   }
 
   const currentOwnerDeviceId = await findOwnedDeviceId(env, session);
-  if (currentOwnerDeviceId) {
-    return jsonResponse(
-      {
-        ok: false,
-        error: "This account already has a claimed device",
-        device_id: currentOwnerDeviceId,
-      },
-      409
-    );
-  }
+  let replacedPreviousDeviceId = "";
 
   const lookup = await loadClaimLookup(env, claimCode);
   if (!lookup?.hardware_id) {
@@ -727,6 +721,20 @@ async function handleClaimDevice(request, env) {
     );
   }
 
+  if (currentOwnerDeviceId && currentOwnerDeviceId !== deviceId) {
+    const previousRecord = await loadDeviceRecord(env, currentOwnerDeviceId);
+    if (previousRecord && sessionOwnsDevice(session, previousRecord)) {
+      replacedPreviousDeviceId = currentOwnerDeviceId;
+      const archivedPreviousRecord = {
+        ...previousRecord,
+        replaced_by_device_id: deviceId,
+        replaced_at: now,
+        updated_at: now,
+      };
+      await saveDeviceRecord(env, currentOwnerDeviceId, archivedPreviousRecord);
+    }
+  }
+
   const updatedBootstrap = {
     ...bootstrap,
     state: "claimed",
@@ -756,7 +764,10 @@ async function handleClaimDevice(request, env) {
     ok: true,
     claimed: true,
     device_id: deviceId,
-    message: "Device claimed. The robot will pick up its secure token automatically.",
+    replaced_previous_device_id: replacedPreviousDeviceId || null,
+    message: replacedPreviousDeviceId
+      ? "Device claimed. Your previous GUARD link was replaced with this robot."
+      : "Device claimed. The robot will pick up its secure token automatically.",
   });
 }
 

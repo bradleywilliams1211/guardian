@@ -6,3 +6,7 @@ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# Browsers can handle the provisioning session's Sec1 crypto, but they do not
+# reliably expose the OS-level BLE pairing flow needed for Secure Connections.
+# Leave link-layer secure connections off so Web Bluetooth can complete setup.
+# CONFIG_WIFI_PROV_BLE_SEC_CONN is not set

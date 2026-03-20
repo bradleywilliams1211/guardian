@@ -32,6 +32,9 @@ static const char *GUARD_PROV_POP = "guardian-setup";
 
 static EventGroupHandle_t s_guard_event_group;
 static bool s_wifi_started = false;
+static int s_bootstrap_failures = 0;
+static bool s_provisioning_active = false;
+static bool s_runtime_wifi_retry_enabled = false;
 
 typedef struct {
     char body[GUARD_HTTP_BUFFER_SIZE];
@@ -270,6 +273,8 @@ static void guard_event_handler(void *arg, esp_event_base_t event_base, int32_t 
     if (event_base == WIFI_PROV_EVENT) {
         switch (event_id) {
             case WIFI_PROV_START:
+                s_provisioning_active = true;
+                s_runtime_wifi_retry_enabled = false;
                 ESP_LOGI(TAG, "BLE provisioning started");
                 break;
             case WIFI_PROV_CRED_RECV: {
@@ -290,6 +295,7 @@ static void guard_event_handler(void *arg, esp_event_base_t event_base, int32_t 
                 ESP_LOGI(TAG, "Provisioning credentials accepted");
                 break;
             case WIFI_PROV_END:
+                s_provisioning_active = false;
                 ESP_LOGI(TAG, "Provisioning manager finished");
                 xEventGroupSetBits(s_guard_event_group, PROV_ENDED_BIT);
                 wifi_prov_mgr_deinit();
@@ -301,12 +307,20 @@ static void guard_event_handler(void *arg, esp_event_base_t event_base, int32_t 
         switch (event_id) {
             case WIFI_EVENT_STA_START:
                 ESP_LOGI(TAG, "Wi-Fi STA started");
-                esp_wifi_connect();
+                if (s_runtime_wifi_retry_enabled && !s_provisioning_active) {
+                    esp_wifi_connect();
+                }
                 break;
             case WIFI_EVENT_STA_DISCONNECTED:
-                ESP_LOGW(TAG, "Wi-Fi disconnected, retrying...");
                 xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
-                esp_wifi_connect();
+                if (s_provisioning_active) {
+                    ESP_LOGW(TAG, "Wi-Fi disconnected while provisioning; waiting for provisioning manager to retry");
+                } else if (s_runtime_wifi_retry_enabled) {
+                    ESP_LOGW(TAG, "Wi-Fi disconnected, retrying...");
+                    esp_wifi_connect();
+                } else {
+                    ESP_LOGW(TAG, "Wi-Fi disconnected");
+                }
                 break;
             default:
                 break;
@@ -345,6 +359,7 @@ static void guard_wifi_init(void) {
 }
 
 static esp_err_t guard_start_wifi_station(void) {
+    s_runtime_wifi_retry_enabled = true;
     ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), TAG, "esp_wifi_set_mode failed");
 
     if (!s_wifi_started) {
@@ -356,55 +371,30 @@ static esp_err_t guard_start_wifi_station(void) {
     return esp_wifi_connect();
 }
 
-static bool guard_has_dev_wifi_credentials(void) {
-    return GUARD_DEV_WIFI_SSID[0] != '\0';
-}
+static esp_err_t guard_reset_saved_wifi_provisioning(void) {
+    wifi_prov_mgr_config_t config = {
+        .scheme = wifi_prov_scheme_ble,
+        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM,
+    };
 
-static esp_err_t guard_try_dev_wifi_credentials(void) {
-    if (!guard_has_dev_wifi_credentials()) {
-        return ESP_ERR_NOT_FOUND;
+    ESP_LOGW(TAG, "Resetting saved Wi-Fi credentials so Bluetooth provisioning can start again");
+    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+    esp_err_t err = wifi_prov_mgr_reset_provisioning();
+    wifi_prov_mgr_deinit();
+    if (err != ESP_OK) {
+        return err;
     }
 
-    wifi_config_t wifi_cfg = {0};
-    snprintf((char *)wifi_cfg.sta.ssid, sizeof(wifi_cfg.sta.ssid), "%s", GUARD_DEV_WIFI_SSID);
-    snprintf((char *)wifi_cfg.sta.password, sizeof(wifi_cfg.sta.password), "%s", GUARD_DEV_WIFI_PASS);
-
-    ESP_LOGI(TAG, "Trying built-in development Wi-Fi credentials for SSID: %s", GUARD_DEV_WIFI_SSID);
-    xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
-
-    ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), TAG, "esp_wifi_set_mode failed for dev Wi-Fi");
-    ESP_RETURN_ON_ERROR(esp_wifi_set_storage(WIFI_STORAGE_RAM), TAG, "esp_wifi_set_storage failed for dev Wi-Fi");
-
-    if (s_wifi_started) {
-        (void)esp_wifi_disconnect();
-        esp_err_t stop_err = esp_wifi_stop();
-        if (stop_err != ESP_OK && stop_err != ESP_ERR_WIFI_NOT_STARTED) {
-            ESP_RETURN_ON_ERROR(stop_err, TAG, "esp_wifi_stop failed for dev Wi-Fi");
-        }
-        s_wifi_started = false;
-    }
-
-    ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg), TAG, "esp_wifi_set_config failed for dev Wi-Fi");
-    ESP_RETURN_ON_ERROR(esp_wifi_start(), TAG, "esp_wifi_start failed for dev Wi-Fi");
-    s_wifi_started = true;
-
-    EventBits_t bits = xEventGroupWaitBits(
-        s_guard_event_group,
-        WIFI_CONNECTED_BIT,
-        pdFALSE,
-        pdTRUE,
-        pdMS_TO_TICKS(GUARD_WIFI_CONNECT_TIMEOUT_MS)
-    );
-
-    if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "Connected using built-in development Wi-Fi credentials");
-        g_ctx.has_wifi_credentials = true;
-        return ESP_OK;
-    }
-
-    ESP_LOGW(TAG, "Built-in development Wi-Fi credentials did not connect");
     (void)esp_wifi_disconnect();
-    return ESP_ERR_TIMEOUT;
+    esp_err_t stop_err = esp_wifi_stop();
+    if (stop_err != ESP_OK && stop_err != ESP_ERR_WIFI_NOT_STARTED) {
+        return stop_err;
+    }
+
+    s_wifi_started = false;
+    g_ctx.has_wifi_credentials = false;
+    xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
+    return ESP_OK;
 }
 
 static void guard_build_service_name(char *service_name, size_t max_len) {
@@ -525,15 +515,6 @@ static esp_err_t guard_start_ble_provisioning(void) {
 
     ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
 
-    esp_err_t dev_wifi_err = guard_try_dev_wifi_credentials();
-    if (dev_wifi_err == ESP_OK) {
-        wifi_prov_mgr_deinit();
-        return ESP_OK;
-    }
-    if (dev_wifi_err != ESP_ERR_NOT_FOUND) {
-        ESP_LOGW(TAG, "Built-in development Wi-Fi path failed: %s", esp_err_to_name(dev_wifi_err));
-    }
-
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
     if (provisioned) {
@@ -543,6 +524,7 @@ static esp_err_t guard_start_ble_provisioning(void) {
         return guard_start_wifi_station();
     }
 
+    s_runtime_wifi_retry_enabled = false;
     guard_build_service_name(service_name, sizeof(service_name));
     ESP_LOGI(TAG, "Starting Guardian BLE provisioning as %s", service_name);
     ESP_LOGI(TAG, "Proof of possession: %s", pop);
@@ -557,7 +539,7 @@ static esp_err_t guard_start_ble_provisioning(void) {
     ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key));
     ESP_ERROR_CHECK(wifi_prov_mgr_endpoint_register("custom-data", guard_custom_prov_data_handler, NULL));
 
-    ESP_LOGI(TAG, "Use the ESP provisioning app or esp_prov.py to send Wi-Fi credentials.");
+    ESP_LOGI(TAG, "Waiting for Guardian to send Wi-Fi credentials over Bluetooth.");
 
     EventBits_t bits = xEventGroupWaitBits(
         s_guard_event_group,
@@ -606,7 +588,7 @@ static void guard_log_ble_provisioning_help(void) {
     ESP_LOGI(TAG, "PoP: %s", GUARD_PROV_POP);
     ESP_LOGI(
         TAG,
-        "CLI example: python %s\\tools\\esp_prov\\esp_prov.py --transport ble --service_name %s --sec_ver 1 --pop %s --ssid <wifi> --passphrase <password>",
+        "Developer CLI example: python %s\\tools\\esp_prov\\esp_prov.py --transport ble --service_name %s --sec_ver 1 --pop %s --ssid <wifi> --passphrase <password>",
         "%%IDF_PATH%%",
         service_name,
         GUARD_PROV_POP
@@ -614,14 +596,6 @@ static void guard_log_ble_provisioning_help(void) {
 }
 
 static esp_err_t guard_resume_wifi_from_saved_credentials(void) {
-    esp_err_t dev_wifi_err = guard_try_dev_wifi_credentials();
-    if (dev_wifi_err == ESP_OK) {
-        return ESP_OK;
-    }
-    if (dev_wifi_err != ESP_ERR_NOT_FOUND) {
-        ESP_LOGW(TAG, "Built-in development Wi-Fi path failed: %s", esp_err_to_name(dev_wifi_err));
-    }
-
     ESP_LOGI(TAG, "Trying saved Wi-Fi credentials");
     ESP_RETURN_ON_ERROR(guard_start_wifi_station(), TAG, "Could not start Wi-Fi station");
     return guard_wait_for_wifi_if_needed();
@@ -795,6 +769,7 @@ static esp_err_t guard_bootstrap_device(guard_device_context_t *ctx) {
         guard_http_response_free(response);
         ESP_RETURN_ON_ERROR(err, TAG, "Could not save claimed credentials");
 
+        s_bootstrap_failures = 0;
         ESP_LOGI(TAG, "Device claimed as %s (token hint: %s)", ctx->device_id, token_hint[0] ? token_hint : "n/a");
         return ESP_OK;
     }
@@ -813,6 +788,7 @@ static esp_err_t guard_bootstrap_device(guard_device_context_t *ctx) {
     guard_http_response_free(response);
 
     guard_clear_claimed_credentials(ctx);
+    s_bootstrap_failures = 0;
 
     ESP_LOGI(TAG, "Waiting for user claim. Code: %s", ctx->claim_code[0] ? ctx->claim_code : "(missing)");
     ESP_LOGI(TAG, "Claim URL: %s", ctx->claim_url);
@@ -863,6 +839,7 @@ static esp_err_t guard_send_heartbeat(guard_device_context_t *ctx) {
 
     char status_text[32] = {0};
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(root, "status"), status_text, sizeof(status_text));
+    s_bootstrap_failures = 0;
     ESP_LOGI(TAG, "Heartbeat OK for %s (%s)", ctx->device_id, status_text[0] ? status_text : "ok");
 
     cJSON_Delete(root);
@@ -1003,7 +980,10 @@ static void guard_run_state_machine(void) {
                     }
                 } else if (guard_resume_wifi_from_saved_credentials() != ESP_OK) {
                     ESP_LOGW(TAG, "Saved Wi-Fi did not connect in time, reopening BLE provisioning");
-                    g_ctx.has_wifi_credentials = false;
+                    if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
+                        state = GUARD_STATE_ERROR;
+                        break;
+                    }
                     if (guard_start_ble_provisioning() != ESP_OK) {
                         state = GUARD_STATE_ERROR;
                         break;
@@ -1015,8 +995,28 @@ static void guard_run_state_machine(void) {
             case GUARD_STATE_BOOTSTRAP_DEVICE:
                 ESP_LOGI(TAG, "State: BOOTSTRAP_DEVICE");
                 if (guard_bootstrap_device(&g_ctx) == ESP_OK) {
+                    s_bootstrap_failures = 0;
                     state = g_ctx.is_claimed ? GUARD_STATE_RUNTIME : GUARD_STATE_WAIT_FOR_CLAIM;
                 } else {
+                    s_bootstrap_failures++;
+                    if (!guard_is_wifi_connected()) {
+                        ESP_LOGW(TAG, "Bootstrap failed because Wi-Fi is unavailable. Returning to Wi-Fi setup.");
+                        state = GUARD_STATE_WAIT_FOR_WIFI;
+                        break;
+                    }
+
+                    if (g_ctx.has_wifi_credentials &&
+                        s_bootstrap_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
+                        ESP_LOGW(TAG, "Bootstrap keeps failing on saved Wi-Fi. Reopening Bluetooth provisioning.");
+                        if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
+                            state = GUARD_STATE_ERROR;
+                            break;
+                        }
+                        s_bootstrap_failures = 0;
+                        state = GUARD_STATE_WAIT_FOR_WIFI;
+                        break;
+                    }
+
                     ESP_LOGW(TAG, "Bootstrap failed, retrying soon");
                     vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
                 }
@@ -1024,9 +1024,27 @@ static void guard_run_state_machine(void) {
 
             case GUARD_STATE_WAIT_FOR_CLAIM:
                 ESP_LOGI(TAG, "State: WAIT_FOR_CLAIM");
+                if (!guard_is_wifi_connected()) {
+                    ESP_LOGW(TAG, "Wi-Fi dropped while waiting for claim. Returning to Wi-Fi setup.");
+                    state = GUARD_STATE_WAIT_FOR_WIFI;
+                    break;
+                }
                 vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
                 if (guard_bootstrap_device(&g_ctx) == ESP_OK && g_ctx.is_claimed) {
+                    s_bootstrap_failures = 0;
                     state = GUARD_STATE_RUNTIME;
+                } else {
+                    s_bootstrap_failures++;
+                    if (g_ctx.has_wifi_credentials &&
+                        s_bootstrap_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
+                        ESP_LOGW(TAG, "Claim polling keeps failing on saved Wi-Fi. Reopening Bluetooth provisioning.");
+                        if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
+                            state = GUARD_STATE_ERROR;
+                            break;
+                        }
+                        s_bootstrap_failures = 0;
+                        state = GUARD_STATE_WAIT_FOR_WIFI;
+                    }
                 }
                 break;
 

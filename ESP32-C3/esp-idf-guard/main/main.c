@@ -33,6 +33,7 @@ static const char *GUARD_PROV_POP = "guardian-setup";
 static EventGroupHandle_t s_guard_event_group;
 static bool s_wifi_started = false;
 static int s_bootstrap_failures = 0;
+static int s_saved_wifi_failures = 0;
 static bool s_provisioning_active = false;
 static bool s_runtime_wifi_retry_enabled = false;
 
@@ -55,6 +56,32 @@ static guard_device_context_t g_ctx = {
     .last_heartbeat_ms = 0,
     .last_mailbox_updated_at_ms = 0,
 };
+
+typedef struct {
+    char ssid[GUARD_WIFI_SSID_MAX_LEN + 1];
+    char password[GUARD_WIFI_PASS_MAX_LEN + 1];
+} guard_saved_wifi_network_t;
+
+typedef struct {
+    uint32_t version;
+    uint8_t count;
+    uint8_t reserved[3];
+    guard_saved_wifi_network_t networks[GUARD_MAX_SAVED_WIFI_NETWORKS];
+} guard_saved_wifi_store_t;
+
+static guard_saved_wifi_store_t s_saved_wifi_store = {0};
+static int s_requested_wifi_network_index = -1;
+static int s_current_wifi_network_index = -1;
+static int64_t s_last_preferred_wifi_scan_ms = 0;
+static char s_pending_provision_ssid[GUARD_WIFI_SSID_MAX_LEN + 1] = "";
+static char s_pending_provision_password[GUARD_WIFI_PASS_MAX_LEN + 1] = "";
+static bool s_force_ble_reprovision = false;
+static char s_last_ble_reprovision_command[64] = "";
+
+static esp_err_t guard_wait_for_wifi_if_needed(void);
+static esp_err_t guard_resume_wifi_from_saved_credentials(void);
+static bool guard_mailbox_control_matches_last_command(const char *command_id);
+static void guard_request_ble_reprovision_restart(const char *command_id);
 
 static void guard_copy_string(char *dest, size_t dest_len, const char *src) {
     if (!dest || dest_len == 0) {
@@ -119,6 +146,22 @@ static bool guard_is_wifi_connected(void) {
 
     EventBits_t bits = xEventGroupGetBits(s_guard_event_group);
     return (bits & WIFI_CONNECTED_BIT) != 0;
+}
+
+static const char *guard_wifi_disconnect_reason_text(uint8_t reason) {
+    switch (reason) {
+        case WIFI_REASON_AUTH_EXPIRE: return "auth expired";
+        case WIFI_REASON_AUTH_FAIL: return "authentication failed";
+        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT: return "handshake timeout";
+        case WIFI_REASON_HANDSHAKE_TIMEOUT: return "handshake timeout";
+        case WIFI_REASON_NO_AP_FOUND: return "network not found";
+        case WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY: return "network found but security incompatible";
+        case WIFI_REASON_ASSOC_FAIL: return "association failed";
+        case WIFI_REASON_CONNECTION_FAIL: return "connection failed";
+        case WIFI_REASON_BEACON_TIMEOUT: return "beacon timeout";
+        case WIFI_REASON_ROAMING: return "roaming";
+        default: return "unknown";
+    }
 }
 
 // HTTP responses can be several kilobytes long, so keeping them off the main
@@ -223,6 +266,259 @@ static esp_err_t guard_store_claimed_credentials(guard_device_context_t *ctx) {
     return ESP_OK;
 }
 
+static void guard_saved_wifi_store_reset(guard_saved_wifi_store_t *store) {
+    if (!store) {
+        return;
+    }
+
+    memset(store, 0, sizeof(*store));
+    store->version = 1;
+}
+
+static bool guard_saved_wifi_entry_valid(const guard_saved_wifi_network_t *entry) {
+    return entry && entry->ssid[0] != '\0';
+}
+
+static void guard_saved_wifi_store_compact(guard_saved_wifi_store_t *store) {
+    if (!store) {
+        return;
+    }
+
+    guard_saved_wifi_store_t clean = {0};
+    clean.version = 1;
+
+    for (size_t i = 0; i < GUARD_MAX_SAVED_WIFI_NETWORKS; i++) {
+        if (!guard_saved_wifi_entry_valid(&store->networks[i])) {
+            continue;
+        }
+
+        if (clean.count >= GUARD_MAX_SAVED_WIFI_NETWORKS) {
+            break;
+        }
+
+        clean.networks[clean.count++] = store->networks[i];
+    }
+
+    *store = clean;
+}
+
+static bool guard_saved_wifi_store_has_entries(const guard_saved_wifi_store_t *store) {
+    return store && store->count > 0 && guard_saved_wifi_entry_valid(&store->networks[0]);
+}
+
+static int guard_saved_wifi_store_find_index(const guard_saved_wifi_store_t *store, const char *ssid) {
+    if (!guard_saved_wifi_store_has_entries(store) || !ssid || ssid[0] == '\0') {
+        return -1;
+    }
+
+    for (int i = 0; i < (int)store->count; i++) {
+        if (strcmp(store->networks[i].ssid, ssid) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static esp_err_t guard_load_saved_wifi_store(guard_saved_wifi_store_t *store) {
+    nvs_handle_t handle;
+    size_t blob_len = sizeof(*store);
+    esp_err_t err;
+
+    ESP_RETURN_ON_FALSE(store != NULL, ESP_ERR_INVALID_ARG, TAG, "saved wifi store is required");
+    guard_saved_wifi_store_reset(store);
+
+    ESP_RETURN_ON_ERROR(guard_open_device_nvs(NVS_READONLY, &handle), TAG, "Could not open NVS for saved Wi-Fi load");
+    err = nvs_get_blob(handle, GUARD_NVS_KEY_WIFI_LIST, store, &blob_len);
+    nvs_close(handle);
+
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        guard_saved_wifi_store_reset(store);
+        return ESP_OK;
+    }
+
+    ESP_RETURN_ON_ERROR(err, TAG, "Could not load saved Wi-Fi list");
+
+    if (blob_len != sizeof(*store) || store->version != 1 || store->count > GUARD_MAX_SAVED_WIFI_NETWORKS) {
+        ESP_LOGW(TAG, "Saved Wi-Fi list format was invalid. Resetting it.");
+        guard_saved_wifi_store_reset(store);
+        return ESP_OK;
+    }
+
+    guard_saved_wifi_store_compact(store);
+    return ESP_OK;
+}
+
+static esp_err_t guard_save_saved_wifi_store(const guard_saved_wifi_store_t *store) {
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    ESP_RETURN_ON_FALSE(store != NULL, ESP_ERR_INVALID_ARG, TAG, "saved wifi store is required");
+    ESP_RETURN_ON_ERROR(guard_open_device_nvs(NVS_READWRITE, &handle), TAG, "Could not open NVS for saved Wi-Fi save");
+
+    err = nvs_set_blob(handle, GUARD_NVS_KEY_WIFI_LIST, store, sizeof(*store));
+    err = guard_nvs_commit_and_close(handle, err);
+    ESP_RETURN_ON_ERROR(err, TAG, "Could not save Wi-Fi list");
+    return ESP_OK;
+}
+
+static esp_err_t guard_load_force_ble_reprovision_flag(bool *out_flag) {
+    nvs_handle_t handle;
+    uint8_t value = 0;
+    esp_err_t err;
+
+    ESP_RETURN_ON_FALSE(out_flag != NULL, ESP_ERR_INVALID_ARG, TAG, "force ble output flag is required");
+    *out_flag = false;
+
+    ESP_RETURN_ON_ERROR(guard_open_device_nvs(NVS_READONLY, &handle), TAG, "Could not open NVS for force BLE flag");
+    err = nvs_get_u8(handle, GUARD_NVS_KEY_FORCE_BLE, &value);
+    nvs_close(handle);
+
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        return ESP_OK;
+    }
+
+    ESP_RETURN_ON_ERROR(err, TAG, "Could not load force BLE flag");
+    *out_flag = value != 0;
+    return ESP_OK;
+}
+
+static esp_err_t guard_set_force_ble_reprovision_flag(bool enabled) {
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    ESP_RETURN_ON_ERROR(guard_open_device_nvs(NVS_READWRITE, &handle), TAG, "Could not open NVS for force BLE flag");
+    err = nvs_set_u8(handle, GUARD_NVS_KEY_FORCE_BLE, enabled ? 1 : 0);
+    err = guard_nvs_commit_and_close(handle, err);
+    ESP_RETURN_ON_ERROR(err, TAG, "Could not save force BLE flag");
+    s_force_ble_reprovision = enabled;
+    return ESP_OK;
+}
+
+static esp_err_t guard_load_last_ble_reprovision_command(char *out, size_t out_len) {
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    ESP_RETURN_ON_FALSE(out != NULL && out_len > 0, ESP_ERR_INVALID_ARG, TAG, "last BLE command buffer is required");
+    out[0] = '\0';
+
+    ESP_RETURN_ON_ERROR(guard_open_device_nvs(NVS_READONLY, &handle), TAG, "Could not open NVS for BLE command load");
+    err = guard_nvs_load_string(handle, GUARD_NVS_KEY_LAST_BLE_CMD, out, out_len);
+    nvs_close(handle);
+
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        out[0] = '\0';
+        return ESP_OK;
+    }
+
+    ESP_RETURN_ON_ERROR(err, TAG, "Could not load last BLE command");
+    return ESP_OK;
+}
+
+static esp_err_t guard_store_last_ble_reprovision_command(const char *command_id) {
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    ESP_RETURN_ON_ERROR(guard_open_device_nvs(NVS_READWRITE, &handle), TAG, "Could not open NVS for BLE command save");
+    err = nvs_set_str(handle, GUARD_NVS_KEY_LAST_BLE_CMD, command_id ? command_id : "");
+    err = guard_nvs_commit_and_close(handle, err);
+    ESP_RETURN_ON_ERROR(err, TAG, "Could not save last BLE command");
+    guard_copy_string(s_last_ble_reprovision_command, sizeof(s_last_ble_reprovision_command), command_id);
+    return ESP_OK;
+}
+
+static esp_err_t guard_upsert_saved_wifi_network(const char *ssid, const char *password, bool make_preferred) {
+    guard_saved_wifi_store_t store = s_saved_wifi_store;
+    guard_saved_wifi_network_t entry = {0};
+    int existing_index;
+
+    ESP_RETURN_ON_FALSE(ssid != NULL && ssid[0] != '\0', ESP_ERR_INVALID_ARG, TAG, "Wi-Fi SSID is required");
+
+    guard_copy_string(entry.ssid, sizeof(entry.ssid), ssid);
+    guard_copy_string(entry.password, sizeof(entry.password), password ? password : "");
+
+    existing_index = guard_saved_wifi_store_find_index(&store, entry.ssid);
+    if (existing_index >= 0) {
+        store.networks[existing_index] = entry;
+    } else if (store.count < GUARD_MAX_SAVED_WIFI_NETWORKS) {
+        store.networks[store.count] = entry;
+        existing_index = (int)store.count;
+        store.count++;
+    } else {
+        existing_index = GUARD_MAX_SAVED_WIFI_NETWORKS - 1;
+        store.networks[existing_index] = entry;
+    }
+
+    if (make_preferred && existing_index > 0) {
+        guard_saved_wifi_network_t promoted = store.networks[existing_index];
+        for (int i = existing_index; i > 0; i--) {
+            store.networks[i] = store.networks[i - 1];
+        }
+        store.networks[0] = promoted;
+    }
+
+    guard_saved_wifi_store_compact(&store);
+    ESP_RETURN_ON_ERROR(guard_save_saved_wifi_store(&store), TAG, "Could not commit updated Wi-Fi list");
+    s_saved_wifi_store = store;
+
+    ESP_LOGI(
+        TAG,
+        "Saved Wi-Fi network %s%s (%d stored)",
+        entry.ssid,
+        make_preferred ? " as preferred" : "",
+        (int)s_saved_wifi_store.count
+    );
+    return ESP_OK;
+}
+
+static void guard_clear_pending_provision_credentials(void) {
+    s_pending_provision_ssid[0] = '\0';
+    s_pending_provision_password[0] = '\0';
+}
+
+static void guard_remember_provision_credentials(const wifi_sta_config_t *wifi_sta_cfg) {
+    if (!wifi_sta_cfg) {
+        guard_clear_pending_provision_credentials();
+        return;
+    }
+
+    guard_copy_string(s_pending_provision_ssid, sizeof(s_pending_provision_ssid), (const char *)wifi_sta_cfg->ssid);
+    guard_copy_string(s_pending_provision_password, sizeof(s_pending_provision_password), (const char *)wifi_sta_cfg->password);
+}
+
+static void guard_log_saved_wifi_summary(void) {
+    if (!guard_saved_wifi_store_has_entries(&s_saved_wifi_store)) {
+        ESP_LOGI(TAG, "Saved Wi-Fi list is empty");
+        return;
+    }
+
+    ESP_LOGI(
+        TAG,
+        "Saved Wi-Fi networks: preferred=%s total=%d",
+        s_saved_wifi_store.networks[0].ssid,
+        (int)s_saved_wifi_store.count
+    );
+}
+
+static esp_err_t guard_build_device_info_json(char *response, size_t response_len) {
+    const char *preferred_ssid = guard_saved_wifi_store_has_entries(&s_saved_wifi_store)
+        ? s_saved_wifi_store.networks[0].ssid
+        : "";
+
+    int written = snprintf(
+        response,
+        response_len,
+        "{\"hardware_id\":\"%s\",\"device_id\":\"%s\",\"claimed\":%s,\"saved_wifi_count\":%d,\"preferred_wifi_ssid\":\"%s\"}",
+        g_ctx.hardware_id,
+        g_ctx.device_id,
+        g_ctx.is_claimed ? "true" : "false",
+        (int)s_saved_wifi_store.count,
+        preferred_ssid
+    );
+
+    return (written > 0 && (size_t)written < response_len) ? ESP_OK : ESP_ERR_NO_MEM;
+}
+
 static esp_err_t guard_custom_prov_data_handler(
     uint32_t session_id,
     const uint8_t *inbuf,
@@ -234,22 +530,59 @@ static esp_err_t guard_custom_prov_data_handler(
     (void)session_id;
     (void)priv_data;
 
-    char request_text[48] = {0};
+    char request_text[384] = {0};
     if (inbuf && inlen > 0) {
         size_t copy_len = (size_t)inlen < sizeof(request_text) - 1 ? (size_t)inlen : sizeof(request_text) - 1;
         memcpy(request_text, inbuf, copy_len);
     }
 
-    char response[256] = {0};
+    char response[512] = {0};
     if (strcmp(request_text, "device-info") == 0 || request_text[0] == '\0') {
-        snprintf(
-            response,
-            sizeof(response),
-            "{\"hardware_id\":\"%s\",\"device_id\":\"%s\",\"claimed\":%s}",
-            g_ctx.hardware_id,
-            g_ctx.device_id,
-            g_ctx.is_claimed ? "true" : "false"
-        );
+        ESP_RETURN_ON_ERROR(guard_build_device_info_json(response, sizeof(response)), TAG, "Could not build device info response");
+    } else if (request_text[0] == '{') {
+        cJSON *root = cJSON_Parse(request_text);
+        const cJSON *type_item = root ? cJSON_GetObjectItemCaseSensitive(root, "type") : NULL;
+        const char *type = cJSON_IsString(type_item) ? type_item->valuestring : "";
+
+        if (strcmp(type, "wifi-save") == 0) {
+            const cJSON *ssid_item = cJSON_GetObjectItemCaseSensitive(root, "ssid");
+            const cJSON *password_item = cJSON_GetObjectItemCaseSensitive(root, "password");
+            bool preferred = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(root, "preferred"));
+
+            if (!cJSON_IsString(ssid_item) || !ssid_item->valuestring || ssid_item->valuestring[0] == '\0') {
+                snprintf(response, sizeof(response), "{\"ok\":false,\"error\":\"ssid required\"}");
+            } else {
+                const char *password = (cJSON_IsString(password_item) && password_item->valuestring)
+                    ? password_item->valuestring
+                    : "";
+
+                esp_err_t save_err = guard_upsert_saved_wifi_network(ssid_item->valuestring, password, preferred);
+                if (save_err == ESP_OK) {
+                    snprintf(
+                        response,
+                        sizeof(response),
+                        "{\"ok\":true,\"saved\":true,\"saved_wifi_count\":%d,\"preferred_wifi_ssid\":\"%s\"}",
+                        (int)s_saved_wifi_store.count,
+                        guard_saved_wifi_store_has_entries(&s_saved_wifi_store) ? s_saved_wifi_store.networks[0].ssid : ""
+                    );
+                } else {
+                    snprintf(response, sizeof(response), "{\"ok\":false,\"error\":\"save failed\"}");
+                }
+            }
+        } else if (strcmp(type, "wifi-list") == 0) {
+            ESP_RETURN_ON_ERROR(guard_build_device_info_json(response, sizeof(response)), TAG, "Could not build wifi list response");
+        } else {
+            snprintf(
+                response,
+                sizeof(response),
+                "{\"ok\":false,\"hardware_id\":\"%s\",\"message\":\"unknown request\"}",
+                g_ctx.hardware_id
+            );
+        }
+
+        if (root) {
+            cJSON_Delete(root);
+        }
     } else {
         snprintf(
             response,
@@ -279,11 +612,13 @@ static void guard_event_handler(void *arg, esp_event_base_t event_base, int32_t 
                 break;
             case WIFI_PROV_CRED_RECV: {
                 wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
+                guard_remember_provision_credentials(wifi_sta_cfg);
                 ESP_LOGI(TAG, "Received Wi-Fi credentials for SSID: %s", (const char *)wifi_sta_cfg->ssid);
                 break;
             }
             case WIFI_PROV_CRED_FAIL: {
                 wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
+                guard_clear_pending_provision_credentials();
                 ESP_LOGE(
                     TAG,
                     "Provisioning failed: %s",
@@ -312,6 +647,15 @@ static void guard_event_handler(void *arg, esp_event_base_t event_base, int32_t 
                 }
                 break;
             case WIFI_EVENT_STA_DISCONNECTED:
+                if (event_data) {
+                    wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t *)event_data;
+                    ESP_LOGW(
+                        TAG,
+                        "Wi-Fi disconnected (reason %u: %s)",
+                        disconnected->reason,
+                        guard_wifi_disconnect_reason_text(disconnected->reason)
+                    );
+                }
                 xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
                 if (s_provisioning_active) {
                     ESP_LOGW(TAG, "Wi-Fi disconnected while provisioning; waiting for provisioning manager to retry");
@@ -329,6 +673,31 @@ static void guard_event_handler(void *arg, esp_event_base_t event_base, int32_t 
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Connected with IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
         xEventGroupSetBits(s_guard_event_group, WIFI_CONNECTED_BIT);
+        if (s_requested_wifi_network_index >= 0 && s_requested_wifi_network_index < (int)s_saved_wifi_store.count) {
+            s_current_wifi_network_index = s_requested_wifi_network_index;
+        }
+        s_requested_wifi_network_index = -1;
+
+        if (s_pending_provision_ssid[0] != '\0') {
+            if (guard_upsert_saved_wifi_network(s_pending_provision_ssid, s_pending_provision_password, true) == ESP_OK) {
+                s_current_wifi_network_index = guard_saved_wifi_store_find_index(&s_saved_wifi_store, s_pending_provision_ssid);
+                guard_log_saved_wifi_summary();
+            }
+            guard_clear_pending_provision_credentials();
+        } else if (!guard_saved_wifi_store_has_entries(&s_saved_wifi_store)) {
+            wifi_config_t wifi_config = {0};
+            if (esp_wifi_get_config(WIFI_IF_STA, &wifi_config) == ESP_OK && wifi_config.sta.ssid[0] != '\0') {
+                if (guard_upsert_saved_wifi_network((const char *)wifi_config.sta.ssid, (const char *)wifi_config.sta.password, true) == ESP_OK) {
+                    s_current_wifi_network_index = 0;
+                    ESP_LOGI(TAG, "Adopted current Wi-Fi %s into GUARD's saved network list", (const char *)wifi_config.sta.ssid);
+                }
+            }
+        }
+
+        if (s_force_ble_reprovision) {
+            (void)guard_set_force_ble_reprovision_flag(false);
+            ESP_LOGI(TAG, "Forced Bluetooth reprovision mode is complete.");
+        }
     } else if (event_base == PROTOCOMM_TRANSPORT_BLE_EVENT) {
         switch (event_id) {
             case PROTOCOMM_TRANSPORT_BLE_CONNECTED:
@@ -358,6 +727,28 @@ static void guard_wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 }
 
+static esp_err_t guard_wait_for_wifi_timeout(uint32_t timeout_ms) {
+    if (guard_is_wifi_connected()) {
+        g_ctx.has_wifi_credentials = true;
+        return ESP_OK;
+    }
+
+    EventBits_t bits = xEventGroupWaitBits(
+        s_guard_event_group,
+        WIFI_CONNECTED_BIT,
+        pdFALSE,
+        pdTRUE,
+        pdMS_TO_TICKS(timeout_ms)
+    );
+
+    if (bits & WIFI_CONNECTED_BIT) {
+        g_ctx.has_wifi_credentials = true;
+        return ESP_OK;
+    }
+
+    return ESP_ERR_TIMEOUT;
+}
+
 static esp_err_t guard_start_wifi_station(void) {
     s_runtime_wifi_retry_enabled = true;
     ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), TAG, "esp_wifi_set_mode failed");
@@ -371,17 +762,161 @@ static esp_err_t guard_start_wifi_station(void) {
     return esp_wifi_connect();
 }
 
-static esp_err_t guard_reset_saved_wifi_provisioning(void) {
-    wifi_prov_mgr_config_t config = {
-        .scheme = wifi_prov_scheme_ble,
-        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM,
+static esp_err_t guard_connect_saved_wifi_network(int index) {
+    wifi_config_t wifi_config = {0};
+    const guard_saved_wifi_network_t *network;
+
+    ESP_RETURN_ON_FALSE(
+        index >= 0 && index < (int)s_saved_wifi_store.count,
+        ESP_ERR_INVALID_ARG,
+        TAG,
+        "Saved Wi-Fi index %d is invalid",
+        index
+    );
+
+    network = &s_saved_wifi_store.networks[index];
+    guard_copy_string((char *)wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid), network->ssid);
+    guard_copy_string((char *)wifi_config.sta.password, sizeof(wifi_config.sta.password), network->password);
+    wifi_config.sta.threshold.authmode = network->password[0] ? WIFI_AUTH_WPA2_PSK : WIFI_AUTH_OPEN;
+    wifi_config.sta.pmf_cfg.capable = true;
+    wifi_config.sta.pmf_cfg.required = false;
+
+    ESP_RETURN_ON_ERROR(guard_start_wifi_station(), TAG, "Could not start Wi-Fi station");
+    (void)esp_wifi_disconnect();
+    ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config), TAG, "esp_wifi_set_config failed for saved network");
+
+    s_requested_wifi_network_index = index;
+    ESP_LOGI(
+        TAG,
+        "Trying saved Wi-Fi network %s%s",
+        network->ssid,
+        index == 0 ? " (preferred)" : ""
+    );
+    return esp_wifi_connect();
+}
+
+static int guard_pick_visible_saved_wifi_index(void) {
+    uint16_t ap_count = 0;
+    wifi_scan_config_t scan_config = {
+        .show_hidden = true,
+        .scan_type = WIFI_SCAN_TYPE_ACTIVE,
     };
 
-    ESP_LOGW(TAG, "Resetting saved Wi-Fi credentials so Bluetooth provisioning can start again");
-    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
-    esp_err_t err = wifi_prov_mgr_reset_provisioning();
-    wifi_prov_mgr_deinit();
-    if (err != ESP_OK) {
+    if (!guard_saved_wifi_store_has_entries(&s_saved_wifi_store)) {
+        return -1;
+    }
+
+    if (esp_wifi_scan_start(&scan_config, true) != ESP_OK) {
+        ESP_LOGW(TAG, "Saved Wi-Fi scan could not start");
+        return -1;
+    }
+
+    if (esp_wifi_scan_get_ap_num(&ap_count) != ESP_OK || ap_count == 0) {
+        return -1;
+    }
+
+    wifi_ap_record_t *records = (wifi_ap_record_t *)calloc(ap_count, sizeof(wifi_ap_record_t));
+    if (!records) {
+        ESP_LOGW(TAG, "Could not allocate Wi-Fi scan records");
+        return -1;
+    }
+
+    if (esp_wifi_scan_get_ap_records(&ap_count, records) != ESP_OK) {
+        free(records);
+        return -1;
+    }
+
+    for (int i = 0; i < (int)s_saved_wifi_store.count; i++) {
+        for (uint16_t j = 0; j < ap_count; j++) {
+            if (strcmp((const char *)records[j].ssid, s_saved_wifi_store.networks[i].ssid) == 0) {
+                free(records);
+                return i;
+            }
+        }
+    }
+
+    free(records);
+    return -1;
+}
+
+static esp_err_t guard_try_saved_wifi_candidates(void) {
+    int visible_index = guard_pick_visible_saved_wifi_index();
+
+    if (visible_index >= 0) {
+        ESP_RETURN_ON_ERROR(guard_connect_saved_wifi_network(visible_index), TAG, "Could not connect chosen saved network");
+        if (guard_wait_for_wifi_timeout(GUARD_WIFI_CONNECT_ATTEMPT_MS) == ESP_OK) {
+            return ESP_OK;
+        }
+    }
+
+    for (int i = 0; i < (int)s_saved_wifi_store.count; i++) {
+        if (i == visible_index) {
+            continue;
+        }
+
+        ESP_RETURN_ON_ERROR(guard_connect_saved_wifi_network(i), TAG, "Could not connect fallback saved network");
+        if (guard_wait_for_wifi_timeout(GUARD_WIFI_CONNECT_ATTEMPT_MS) == ESP_OK) {
+            return ESP_OK;
+        }
+    }
+
+    return ESP_ERR_TIMEOUT;
+}
+
+static esp_err_t guard_maybe_switch_back_to_preferred_wifi(void) {
+    int64_t now_ms;
+    int visible_index;
+
+    if (!guard_is_wifi_connected()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!guard_saved_wifi_store_has_entries(&s_saved_wifi_store) || s_current_wifi_network_index <= 0) {
+        return ESP_OK;
+    }
+
+    now_ms = esp_timer_get_time() / 1000;
+    if ((now_ms - s_last_preferred_wifi_scan_ms) < GUARD_WIFI_PREFERRED_SCAN_INTERVAL_MS) {
+        return ESP_OK;
+    }
+    s_last_preferred_wifi_scan_ms = now_ms;
+
+    visible_index = guard_pick_visible_saved_wifi_index();
+    if (visible_index != 0) {
+        return ESP_OK;
+    }
+
+    ESP_LOGI(TAG, "Preferred Wi-Fi %s is visible again. Switching back.", s_saved_wifi_store.networks[0].ssid);
+    ESP_RETURN_ON_ERROR(guard_connect_saved_wifi_network(0), TAG, "Could not switch back to preferred Wi-Fi");
+    return guard_wait_for_wifi_timeout(GUARD_WIFI_CONNECT_ATTEMPT_MS);
+}
+
+static bool guard_has_dev_wifi_override(void) {
+    return GUARD_DEV_WIFI_SSID[0] != '\0';
+}
+
+static esp_err_t guard_apply_dev_wifi_override(void) {
+    wifi_config_t wifi_config = {0};
+
+    guard_copy_string((char *)wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid), GUARD_DEV_WIFI_SSID);
+    guard_copy_string((char *)wifi_config.sta.password, sizeof(wifi_config.sta.password), GUARD_DEV_WIFI_PASS);
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_config.sta.pmf_cfg.capable = true;
+    wifi_config.sta.pmf_cfg.required = false;
+
+    ESP_LOGI(TAG, "Applying local Wi-Fi override for SSID: %s", GUARD_DEV_WIFI_SSID);
+    ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), TAG, "esp_wifi_set_mode failed for dev Wi-Fi override");
+    ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config), TAG, "esp_wifi_set_config failed for dev Wi-Fi override");
+    (void)guard_upsert_saved_wifi_network(GUARD_DEV_WIFI_SSID, GUARD_DEV_WIFI_PASS, true);
+
+    g_ctx.has_wifi_credentials = true;
+    return guard_start_wifi_station();
+}
+
+static esp_err_t guard_reset_saved_wifi_provisioning(void) {
+    ESP_LOGW(TAG, "Clearing saved Wi-Fi credentials so Bluetooth provisioning can start again");
+    esp_err_t err = esp_wifi_restore();
+    if (err != ESP_OK && err != ESP_ERR_WIFI_NOT_INIT) {
         return err;
     }
 
@@ -392,9 +927,27 @@ static esp_err_t guard_reset_saved_wifi_provisioning(void) {
     }
 
     s_wifi_started = false;
+    guard_saved_wifi_store_reset(&s_saved_wifi_store);
+    ESP_RETURN_ON_ERROR(guard_save_saved_wifi_store(&s_saved_wifi_store), TAG, "Could not clear saved Wi-Fi list");
     g_ctx.has_wifi_credentials = false;
     xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
     return ESP_OK;
+}
+
+static void guard_restart_into_ble_provisioning(const char *reason) {
+    if (reason && reason[0] != '\0') {
+        ESP_LOGW(TAG, "%s", reason);
+    }
+
+    esp_err_t reset_err = guard_reset_saved_wifi_provisioning();
+    if (reset_err != ESP_OK) {
+        ESP_LOGE(TAG, "Could not clear saved Wi-Fi credentials: %s", esp_err_to_name(reset_err));
+        return;
+    }
+
+    ESP_LOGW(TAG, "Restarting GUARD so Bluetooth provisioning starts cleanly.");
+    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_restart();
 }
 
 static void guard_build_service_name(char *service_name, size_t max_len) {
@@ -486,6 +1039,19 @@ static esp_err_t guard_load_or_create_identity(guard_device_context_t *ctx) {
     ctx->is_claimed = (ctx->device_id[0] != '\0' && ctx->device_token[0] != '\0');
     ctx->last_heartbeat_ms = 0;
     ctx->last_mailbox_updated_at_ms = 0;
+    ESP_RETURN_ON_ERROR(guard_load_saved_wifi_store(&s_saved_wifi_store), TAG, "Could not load saved Wi-Fi list");
+    ESP_RETURN_ON_ERROR(guard_load_force_ble_reprovision_flag(&s_force_ble_reprovision), TAG, "Could not load force BLE flag");
+    ESP_RETURN_ON_ERROR(
+        guard_load_last_ble_reprovision_command(
+            s_last_ble_reprovision_command,
+            sizeof(s_last_ble_reprovision_command)
+        ),
+        TAG,
+        "Could not load last BLE reprovision command"
+    );
+    ctx->has_wifi_credentials = guard_saved_wifi_store_has_entries(&s_saved_wifi_store);
+    s_current_wifi_network_index = -1;
+    s_requested_wifi_network_index = -1;
 
     if (should_commit) {
         ESP_RETURN_ON_ERROR(nvs_commit(handle), TAG, "Could not commit device identity");
@@ -496,6 +1062,10 @@ static esp_err_t guard_load_or_create_identity(guard_device_context_t *ctx) {
     ESP_LOGI(TAG, "Loaded device identity: %s", ctx->hardware_id);
     if (ctx->is_claimed) {
         ESP_LOGI(TAG, "Loaded saved claimed credentials for device %s", ctx->device_id);
+    }
+    guard_log_saved_wifi_summary();
+    if (s_force_ble_reprovision) {
+        ESP_LOGW(TAG, "GUARD will re-enter Bluetooth provisioning on this boot.");
     }
 
     return ESP_OK;
@@ -517,11 +1087,28 @@ static esp_err_t guard_start_ble_provisioning(void) {
 
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
-    if (provisioned) {
-        ESP_LOGI(TAG, "Wi-Fi is already provisioned, starting station mode");
+    if (guard_has_dev_wifi_override()) {
+        ESP_LOGI(TAG, "Using local development Wi-Fi override instead of Bluetooth provisioning");
+        wifi_prov_mgr_deinit();
+        return guard_apply_dev_wifi_override();
+    }
+
+    if (provisioned && !s_force_ble_reprovision) {
+        ESP_LOGI(TAG, "Wi-Fi is already provisioned, resuming saved station credentials");
         wifi_prov_mgr_deinit();
         g_ctx.has_wifi_credentials = true;
-        return guard_start_wifi_station();
+        return guard_resume_wifi_from_saved_credentials();
+    }
+
+    if (s_force_ble_reprovision) {
+        ESP_LOGW(TAG, "Forced Bluetooth reprovision mode requested. Starting BLE setup without clearing saved networks.");
+        xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
+        s_runtime_wifi_retry_enabled = false;
+        (void)esp_wifi_disconnect();
+        if (s_wifi_started) {
+            (void)esp_wifi_stop();
+            s_wifi_started = false;
+        }
     }
 
     s_runtime_wifi_retry_enabled = false;
@@ -558,25 +1145,7 @@ static esp_err_t guard_start_ble_provisioning(void) {
 }
 
 static esp_err_t guard_wait_for_wifi_if_needed(void) {
-    if (guard_is_wifi_connected()) {
-        g_ctx.has_wifi_credentials = true;
-        return ESP_OK;
-    }
-
-    EventBits_t bits = xEventGroupWaitBits(
-        s_guard_event_group,
-        WIFI_CONNECTED_BIT,
-        pdFALSE,
-        pdTRUE,
-        pdMS_TO_TICKS(GUARD_WIFI_CONNECT_TIMEOUT_MS)
-    );
-
-    if (bits & WIFI_CONNECTED_BIT) {
-        g_ctx.has_wifi_credentials = true;
-        return ESP_OK;
-    }
-
-    return ESP_ERR_TIMEOUT;
+    return guard_wait_for_wifi_timeout(GUARD_WIFI_CONNECT_TIMEOUT_MS);
 }
 
 static void guard_log_ble_provisioning_help(void) {
@@ -597,6 +1166,10 @@ static void guard_log_ble_provisioning_help(void) {
 
 static esp_err_t guard_resume_wifi_from_saved_credentials(void) {
     ESP_LOGI(TAG, "Trying saved Wi-Fi credentials");
+    if (guard_saved_wifi_store_has_entries(&s_saved_wifi_store)) {
+        return guard_try_saved_wifi_candidates();
+    }
+
     ESP_RETURN_ON_ERROR(guard_start_wifi_station(), TAG, "Could not start Wi-Fi station");
     return guard_wait_for_wifi_if_needed();
 }
@@ -912,12 +1485,18 @@ static esp_err_t guard_fetch_mailbox(guard_device_context_t *ctx) {
     char glucose_text[32] = {0};
     char predicted_text[32] = {0};
     char message_text[96] = {0};
+    char reprovision_command_text[64] = {0};
 
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "glucose_low"), low_text, sizeof(low_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "glucose_high"), high_text, sizeof(high_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "current_glucose"), glucose_text, sizeof(glucose_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "predicted_far"), predicted_text, sizeof(predicted_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "message"), message_text, sizeof(message_text));
+    guard_describe_json_value(
+        cJSON_GetObjectItemCaseSensitive(mailbox, "control_reenter_ble_setup"),
+        reprovision_command_text,
+        sizeof(reprovision_command_text)
+    );
 
     ESP_LOGI(
         TAG,
@@ -928,6 +1507,13 @@ static esp_err_t guard_fetch_mailbox(guard_device_context_t *ctx) {
         predicted_text,
         message_text
     );
+
+    if (reprovision_command_text[0] != '\0' && !guard_mailbox_control_matches_last_command(reprovision_command_text)) {
+        cJSON_Delete(root);
+        guard_http_response_free(response);
+        guard_request_ble_reprovision_restart(reprovision_command_text);
+        return ESP_OK;
+    }
 
     cJSON_Delete(root);
     guard_http_response_free(response);
@@ -949,7 +1535,37 @@ static esp_err_t guard_runtime_tick(guard_device_context_t *ctx) {
         ctx->last_heartbeat_ms = now_ms;
     }
 
-    return guard_fetch_mailbox(ctx);
+    ESP_RETURN_ON_ERROR(guard_fetch_mailbox(ctx), TAG, "Mailbox tick failed");
+    (void)guard_maybe_switch_back_to_preferred_wifi();
+    return ESP_OK;
+}
+
+static bool guard_mailbox_control_matches_last_command(const char *command_id) {
+    if (!command_id || command_id[0] == '\0') {
+        return true;
+    }
+
+    return strcmp(s_last_ble_reprovision_command, command_id) == 0;
+}
+
+static void guard_request_ble_reprovision_restart(const char *command_id) {
+    if (!command_id || command_id[0] == '\0') {
+        return;
+    }
+
+    if (guard_store_last_ble_reprovision_command(command_id) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not record BLE reprovision command id");
+        return;
+    }
+
+    if (guard_set_force_ble_reprovision_flag(true) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not persist forced BLE reprovision flag");
+        return;
+    }
+
+    ESP_LOGW(TAG, "Guardian requested Bluetooth setup mode. Restarting into BLE provisioning.");
+    vTaskDelay(pdMS_TO_TICKS(350));
+    esp_restart();
 }
 
 static void guard_run_state_machine(void) {
@@ -974,21 +1590,31 @@ static void guard_run_state_machine(void) {
             case GUARD_STATE_WAIT_FOR_WIFI:
                 ESP_LOGI(TAG, "State: WAIT_FOR_WIFI");
                 if (!g_ctx.has_wifi_credentials) {
+                    s_saved_wifi_failures = 0;
                     if (guard_start_ble_provisioning() != ESP_OK) {
                         state = GUARD_STATE_ERROR;
                         break;
                     }
                 } else if (guard_resume_wifi_from_saved_credentials() != ESP_OK) {
-                    ESP_LOGW(TAG, "Saved Wi-Fi did not connect in time, reopening BLE provisioning");
-                    if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
+                    s_saved_wifi_failures++;
+                    if (s_saved_wifi_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
+                        guard_restart_into_ble_provisioning(
+                            "Saved Wi-Fi did not connect after multiple attempts. Returning to Bluetooth setup."
+                        );
                         state = GUARD_STATE_ERROR;
                         break;
                     }
-                    if (guard_start_ble_provisioning() != ESP_OK) {
-                        state = GUARD_STATE_ERROR;
-                        break;
-                    }
+                    ESP_LOGW(
+                        TAG,
+                        "Saved Wi-Fi did not connect in time. Retrying saved network (%d/%d).",
+                        s_saved_wifi_failures,
+                        GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION
+                    );
+                    vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
+                    state = GUARD_STATE_WAIT_FOR_WIFI;
+                    break;
                 }
+                s_saved_wifi_failures = 0;
                 state = GUARD_STATE_BOOTSTRAP_DEVICE;
                 break;
 
@@ -1000,24 +1626,12 @@ static void guard_run_state_machine(void) {
                 } else {
                     s_bootstrap_failures++;
                     if (!guard_is_wifi_connected()) {
-                        ESP_LOGW(TAG, "Bootstrap failed because Wi-Fi is unavailable. Returning to Wi-Fi setup.");
+                        ESP_LOGW(TAG, "Bootstrap failed before Wi-Fi finished connecting. Waiting for Wi-Fi and retrying.");
                         state = GUARD_STATE_WAIT_FOR_WIFI;
                         break;
                     }
 
-                    if (g_ctx.has_wifi_credentials &&
-                        s_bootstrap_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
-                        ESP_LOGW(TAG, "Bootstrap keeps failing on saved Wi-Fi. Reopening Bluetooth provisioning.");
-                        if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
-                            state = GUARD_STATE_ERROR;
-                            break;
-                        }
-                        s_bootstrap_failures = 0;
-                        state = GUARD_STATE_WAIT_FOR_WIFI;
-                        break;
-                    }
-
-                    ESP_LOGW(TAG, "Bootstrap failed, retrying soon");
+                    ESP_LOGW(TAG, "Bootstrap failed on a connected network. Retrying cloud reachability soon.");
                     vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
                 }
                 break;
@@ -1035,16 +1649,7 @@ static void guard_run_state_machine(void) {
                     state = GUARD_STATE_RUNTIME;
                 } else {
                     s_bootstrap_failures++;
-                    if (g_ctx.has_wifi_credentials &&
-                        s_bootstrap_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
-                        ESP_LOGW(TAG, "Claim polling keeps failing on saved Wi-Fi. Reopening Bluetooth provisioning.");
-                        if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
-                            state = GUARD_STATE_ERROR;
-                            break;
-                        }
-                        s_bootstrap_failures = 0;
-                        state = GUARD_STATE_WAIT_FOR_WIFI;
-                    }
+                    ESP_LOGW(TAG, "Claim polling failed on a connected network. Retrying soon.");
                 }
                 break;
 

@@ -31,11 +31,11 @@ const DEVICE_CLAIM_PREFIX = "deviceClaim:v1:";
 const OWNER_DEVICE_PREFIX = "ownerDevice:v1:";
 
 /* ===== FREE TIER THROTTLES ===== */
-// Keep persisted heartbeats comfortably inside the online window so /status
-// does not fall back to a several-minutes-old KV timestamp and falsely show a
-// live robot as disconnected.
-const HEARTBEAT_MIN_WRITE_MS = 30 * 1000;
-const ONLINE_WINDOW_MS = 60 * 1000;
+// Match the persisted heartbeat cadence to the device's 15s heartbeat interval
+// so /status can mark an unplugged robot offline within about half a minute
+// without relying on stale cached timestamps.
+const HEARTBEAT_MIN_WRITE_MS = 15 * 1000;
+const ONLINE_WINDOW_MS = 30 * 1000;
 const LASTSEEN_CACHE_TTL_SECONDS = 2 * 60;
 
 /* ===== SERVER-SIDE SESSION TTL ===== */

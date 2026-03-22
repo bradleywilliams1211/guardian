@@ -3,12 +3,26 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+// Add extra Arduino-style libraries here when you need them.
+// Examples:
+//   #include <LiquidCrystal_I2C.h>
+//   #include <Servo.h>
+//   #include <Adafruit_NeoPixel.h>
+//
+// Try to keep your custom robot code in this file so it feels like working in
+// a normal Arduino sketch, while the ESP-IDF side keeps handling Wi-Fi, BLE,
+// Guardian mailbox sync, and device setup for you.
+
 #include <stdio.h>
 #include <string.h>
 
 // -------------------------
 // Hardware settings to edit
 // -------------------------
+//
+// This is the main "change me" section for wiring.
+// If you move your LED, LCD, buzzer, motor driver, etc., change the pins here.
+// You usually do NOT need to edit the lower LCD driver internals.
 
 // Change this if your alert LED is wired to a different pin.
 static constexpr uint8_t kAlertLedPin = 8;
@@ -54,6 +68,21 @@ static char sSetupLine0[kLcdColumns + 1] = "GUARD Setup";
 static char sSetupLine1[kLcdColumns + 1] = "Starting...";
 static char sLastLine0[kLcdColumns + 1] = "";
 static char sLastLine1[kLcdColumns + 1] = "";
+
+// These values are filled in for you by the Guardian firmware.
+// Think of them like global variables that your Arduino-style logic can read.
+//
+// sHasCurrentGlucose / sCurrentGlucoseMgdl:
+//   The current Dexcom glucose value from Guardian.
+//
+// sHasLowThreshold / sLowThresholdMgdl:
+//   The user's configured low threshold.
+//
+// sHasHighThreshold / sHighThresholdMgdl:
+//   The user's configured high threshold.
+//
+// Most custom robot behaviors only need these values plus the functions near
+// the bottom of this file.
 
 static void lcdExpanderWrite(uint8_t value) {
   Wire.beginTransmission(kLcdAddress);
@@ -186,8 +215,23 @@ static void updateLcdOutput(void) {
   snprintf(sLastLine1, sizeof(sLastLine1), "%s", line1);
 }
 
-// Change this if you want the robot to blink, drive a buzzer, or trigger a
-// motor instead of a simple LED.
+// -------------------------
+// Arduino-style robot behavior
+// -------------------------
+//
+// If you are looking for the "loop()" part of the robot, this is the best
+// place to start.
+//
+// Guardian calls this whenever fresh glucose data arrives or when hardware
+// should refresh. Put your custom reactions here:
+//   - turn an LED on/off
+//   - blink a buzzer
+//   - move a motor driver
+//   - update extra displays
+//
+// Example ideas:
+//   if (sHasCurrentGlucose && sCurrentGlucoseMgdl <= sLowThresholdMgdl) { ... }
+//   if (sHasCurrentGlucose && sCurrentGlucoseMgdl >= sHighThresholdMgdl) { ... }
 static void applyAlertOutput() {
   const bool shouldTurnLedOn =
       sHasLowThreshold &&
@@ -199,6 +243,15 @@ static void applyAlertOutput() {
 }
 
 extern "C" void guard_robot_hw_init(void) {
+  // Treat this like Arduino setup().
+  // Put one-time hardware startup here:
+  //   pinMode(...)
+  //   lcd.begin()/lcdInit()
+  //   servo.attach(...)
+  //   strip.begin()
+  //
+  // This runs after Guardian is far enough along that Arduino-side hardware
+  // init will not interfere with BLE startup.
   if (!sArduinoReady) {
     initArduino();
     pinMode(kAlertLedPin, OUTPUT);
@@ -211,6 +264,9 @@ extern "C" void guard_robot_hw_init(void) {
 }
 
 extern "C" void guard_robot_show_setup_message(const char *line0, const char *line1) {
+  // This is only for setup/status text before live glucose arrives.
+  // You usually do not need to edit this unless you want different wording on
+  // the LCD during Bluetooth/Wi-Fi/Guardian startup.
   if (!sArduinoReady) {
     initArduino();
     pinMode(kAlertLedPin, OUTPUT);
@@ -232,6 +288,15 @@ extern "C" void guard_robot_apply_glucose_alert(
     int high_threshold_mgdl,
     bool has_current_glucose,
     int current_glucose_mgdl) {
+  // This is where Guardian hands your Arduino-style code the latest values.
+  // You usually do not add behavior here directly. Instead, this function saves
+  // the values, then calls applyAlertOutput(), which is the easier place to
+  // customize your robot behavior.
+  //
+  // Values passed in:
+  //   low_threshold_mgdl   -> user's low threshold
+  //   high_threshold_mgdl  -> user's high threshold
+  //   current_glucose_mgdl -> current Dexcom reading
   sHasLowThreshold = has_low_threshold;
   sLowThresholdMgdl = low_threshold_mgdl;
   sHasHighThreshold = has_high_threshold;

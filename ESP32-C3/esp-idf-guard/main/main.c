@@ -858,6 +858,11 @@ static int guard_pick_visible_saved_wifi_index(void) {
 }
 
 static esp_err_t guard_try_saved_wifi_candidates(void) {
+    if (guard_is_wifi_connected()) {
+        g_ctx.has_wifi_credentials = true;
+        return ESP_OK;
+    }
+
     int visible_index = guard_pick_visible_saved_wifi_index();
 
     if (visible_index >= 0) {
@@ -950,22 +955,6 @@ static esp_err_t guard_reset_saved_wifi_provisioning(void) {
     g_ctx.has_wifi_credentials = false;
     xEventGroupClearBits(s_guard_event_group, WIFI_CONNECTED_BIT);
     return ESP_OK;
-}
-
-static void guard_restart_into_ble_provisioning(const char *reason) {
-    if (reason && reason[0] != '\0') {
-        ESP_LOGW(TAG, "%s", reason);
-    }
-
-    esp_err_t reset_err = guard_reset_saved_wifi_provisioning();
-    if (reset_err != ESP_OK) {
-        ESP_LOGE(TAG, "Could not clear saved Wi-Fi credentials: %s", esp_err_to_name(reset_err));
-        return;
-    }
-
-    ESP_LOGW(TAG, "Restarting GUARD so Bluetooth provisioning starts cleanly.");
-    vTaskDelay(pdMS_TO_TICKS(500));
-    esp_restart();
 }
 
 static void guard_build_service_name(char *service_name, size_t max_len) {
@@ -1185,6 +1174,11 @@ static void guard_log_ble_provisioning_help(void) {
 
 static esp_err_t guard_resume_wifi_from_saved_credentials(void) {
     ESP_LOGI(TAG, "Trying saved Wi-Fi credentials");
+    if (guard_is_wifi_connected()) {
+        g_ctx.has_wifi_credentials = true;
+        return ESP_OK;
+    }
+
     if (guard_saved_wifi_store_has_entries(&s_saved_wifi_store)) {
         return guard_try_saved_wifi_candidates();
     }
@@ -1682,7 +1676,12 @@ static void guard_run_state_machine(void) {
             case GUARD_STATE_WAIT_FOR_WIFI:
                 ESP_LOGI(TAG, "State: WAIT_FOR_WIFI");
                 guard_robot_apply_glucose_alert(false, 0, false, 0, false, 0);
-                if (!g_ctx.has_wifi_credentials) {
+                if (guard_is_wifi_connected()) {
+                    s_saved_wifi_failures = 0;
+                    state = GUARD_STATE_BOOTSTRAP_DEVICE;
+                    break;
+                }
+                if (!g_ctx.has_wifi_credentials || s_force_ble_reprovision) {
                     s_saved_wifi_failures = 0;
                     if (guard_start_ble_provisioning() != ESP_OK) {
                         state = GUARD_STATE_ERROR;
@@ -1692,18 +1691,10 @@ static void guard_run_state_machine(void) {
                     guard_robot_show_setup_message("Joining Wi-Fi", "Saved network");
                     if (guard_resume_wifi_from_saved_credentials() != ESP_OK) {
                         s_saved_wifi_failures++;
-                        if (s_saved_wifi_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
-                            guard_restart_into_ble_provisioning(
-                                "Saved Wi-Fi did not connect after multiple attempts. Returning to Bluetooth setup."
-                            );
-                            state = GUARD_STATE_ERROR;
-                            break;
-                        }
                         ESP_LOGW(
                             TAG,
-                            "Saved Wi-Fi did not connect in time. Retrying saved network (%d/%d).",
-                            s_saved_wifi_failures,
-                            GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION
+                            "Saved Wi-Fi did not connect in time. Retrying saved network (%d).",
+                            s_saved_wifi_failures
                         );
                         vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
                         state = GUARD_STATE_WAIT_FOR_WIFI;

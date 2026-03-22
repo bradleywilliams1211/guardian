@@ -29,6 +29,7 @@ const DEVICE_MAILBOX_PREFIX = "deviceMailbox:v1:";
 const DEVICE_BOOTSTRAP_PREFIX = "deviceBootstrap:v1:";
 const DEVICE_CLAIM_PREFIX = "deviceClaim:v1:";
 const OWNER_DEVICE_PREFIX = "ownerDevice:v1:";
+const OWNER_DEXCOM_PREFIX = "ownerDexcom:v1:";
 const CONTROL_COMMAND_TTL_MS = 5 * 60 * 1000;
 
 /* ===== FREE TIER THROTTLES ===== */
@@ -56,11 +57,16 @@ const APPLICATION_IDS = {
   jp: "d8665ade-9673-4e27-9ff6-92db4ce13d13",
 };
 
+const DEXCOM_DEFAULT_MINUTES = 180;
+const DEXCOM_DEFAULT_MAX_COUNT = 72;
+const DEXCOM_DEVICE_SYNC_MIN_MS = 15 * 1000;
+
 /* =========================
    CACHE KEYS
    ========================= */
 const CACHE_LASTSEEN = new Request("https://cache.guardian/local/lastSeen");
 const CACHE_TRUSTED_USERS = new Request("https://cache.guardian/local/trustedUsers");
+const OWNER_DEXCOM_CACHE_TTL_SECONDS = 60;
 
 /* =========================
    CACHE HELPERS
@@ -349,9 +355,23 @@ async function buildOwnerDeviceKey(region, accountId) {
   return `${OWNER_DEVICE_PREFIX}${digest}`;
 }
 
+async function buildOwnerDexcomKey(region, accountId) {
+  const normalizedRegion = String(region || "us").trim().toLowerCase();
+  const normalizedAccountId = String(accountId || "").trim().toLowerCase();
+  const digest = await sha256B64Url(`${normalizedRegion}:${normalizedAccountId}`);
+  return `${OWNER_DEXCOM_PREFIX}${digest}`;
+}
+
 function cacheLastSeenKey(deviceId) {
   return new Request(
     `https://cache.guardian/local/lastSeen/${encodeURIComponent(deviceId)}`
+  );
+}
+
+async function cacheOwnerDexcomPullKey(region, accountId) {
+  const key = await buildOwnerDexcomKey(region, accountId);
+  return new Request(
+    `https://cache.guardian/local/ownerDexcomPull/${encodeURIComponent(key)}`
   );
 }
 
@@ -413,6 +433,19 @@ async function getOwnerDeviceId(env, region, accountId) {
   const key = await buildOwnerDeviceKey(region, accountId);
   const value = await env.ESP32_KV.get(key);
   return String(value || "").trim();
+}
+
+async function loadOwnerDexcomRecord(env, region, accountId) {
+  if (!String(accountId || "").trim()) return null;
+  const raw = await env.ESP32_KV.get(await buildOwnerDexcomKey(region, accountId));
+  const record = safeJsonParse(raw, null);
+  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+}
+
+async function saveOwnerDexcomRecord(env, record) {
+  const key = await buildOwnerDexcomKey(record?.region, record?.accountId);
+  const out = await kvPutSafe(env, key, JSON.stringify(record));
+  return { record, save: out };
 }
 
 function sessionOwnsDevice(session, record) {
@@ -1056,6 +1089,384 @@ async function dexcomGetReadings(region, sessionId, minutes = 60, maxCount = 24)
   return points;
 }
 
+function buildGlucoseMailboxPatch(latest) {
+  if (!latest) {
+    return {
+      current_glucose: null,
+      current_glucose_ts: null,
+      current_glucose_trend: "",
+    };
+  }
+
+  return {
+    current_glucose: Number(latest.glucose),
+    current_glucose_ts: Number(latest.ts),
+    current_glucose_trend: typeof latest.trend === "string" ? latest.trend : "",
+  };
+}
+
+function sameMailboxGlucoseValue(current, next) {
+  const currentValue = Number(current);
+  const nextValue = Number(next);
+  if (!Number.isFinite(currentValue) && !Number.isFinite(nextValue)) return true;
+  return currentValue === nextValue;
+}
+
+function mailboxAlreadyMatchesGlucosePatch(mailbox, patch) {
+  return (
+    sameMailboxGlucoseValue(mailbox?.current_glucose, patch.current_glucose) &&
+    sameMailboxGlucoseValue(mailbox?.current_glucose_ts, patch.current_glucose_ts) &&
+    String(mailbox?.current_glucose_trend || "") === String(patch.current_glucose_trend || "")
+  );
+}
+
+async function syncDeviceGlucoseMailbox(env, deviceId, latest) {
+  if (!deviceId) {
+    return { ok: true, skipped: true, wrote: false, unchanged: true };
+  }
+
+  const patch = buildGlucoseMailboxPatch(latest);
+  const currentMailbox = await readMailbox(env, deviceId);
+
+  if (mailboxAlreadyMatchesGlucosePatch(currentMailbox, patch)) {
+    return { ok: true, skipped: false, wrote: false, unchanged: true };
+  }
+
+  const result = await saveMailboxPatch(env, deviceId, patch);
+  return {
+    ok: !!result.save?.ok,
+    skipped: false,
+    wrote: !!result.save?.ok,
+    unchanged: false,
+    mailbox: result.mailbox,
+    save: result.save,
+  };
+}
+
+async function markOwnerDexcomPull(env, region, accountId) {
+  const cacheKey = await cacheOwnerDexcomPullKey(region, accountId);
+  await cachePutJson(cacheKey, { last_pull_at: Date.now() }, OWNER_DEXCOM_CACHE_TTL_SECONDS);
+  return { ok: true, cached: true };
+}
+
+async function shouldRefreshOwnerDexcomNow(env, region, accountId, minMs = DEXCOM_DEVICE_SYNC_MIN_MS) {
+  const cacheKey = await cacheOwnerDexcomPullKey(region, accountId);
+  const cached = await cacheGetJson(cacheKey);
+  const lastPullAt = Number(cached?.last_pull_at || 0);
+  if (lastPullAt > 0 && (Date.now() - lastPullAt) < minMs) {
+    return { ok: true, allow: false, reason: "throttled", record: null };
+  }
+
+  const existing = await loadOwnerDexcomRecord(env, region, accountId);
+  if (!existing) {
+    return { ok: false, allow: false, reason: "missing_owner_record", record: null };
+  }
+
+  await cachePutJson(cacheKey, { last_pull_at: Date.now() }, OWNER_DEXCOM_CACHE_TTL_SECONDS);
+  return {
+    ok: true,
+    allow: true,
+    reason: "claimed",
+    record: existing,
+  };
+}
+
+function isActiveDexcomSessionRecord(session) {
+  return !!(
+    session &&
+    typeof session === "object" &&
+    String(session.username || "").trim() &&
+    String(session.password || "").trim() &&
+    String(session.accountId || "").trim() &&
+    BASE_URLS[String(session.region || "us").trim().toLowerCase()]
+  );
+}
+
+function buildDexcomSessionOwnerKey(session) {
+  return `${String(session?.region || "us").trim().toLowerCase()}:${String(session?.accountId || "").trim().toLowerCase()}`;
+}
+
+function buildOwnerDexcomRecord(session, previous = null) {
+  return {
+    username: String(session?.username || "").trim(),
+    password: String(session?.password || "").trim(),
+    region: String(session?.region || "us").trim().toLowerCase(),
+    accountId: String(session?.accountId || "").trim(),
+    updated_at: Date.now(),
+  };
+}
+
+async function rememberOwnerDexcomSession(env, session) {
+  if (!isActiveDexcomSessionRecord(session)) {
+    return { ok: false, skipped: true };
+  }
+
+  const existing = await loadOwnerDexcomRecord(env, session.region, session.accountId);
+  const nextRecord = buildOwnerDexcomRecord(session, existing);
+  const sameCredentials =
+    existing &&
+    existing.username === nextRecord.username &&
+    existing.password === nextRecord.password &&
+    existing.region === nextRecord.region &&
+    existing.accountId === nextRecord.accountId;
+
+  if (sameCredentials) {
+    return { ok: true, skipped: true, record: existing };
+  }
+
+  return await saveOwnerDexcomRecord(env, nextRecord);
+}
+
+async function listActiveDexcomSessions(env) {
+  const sessionsByOwner = new Map();
+  let cursor = undefined;
+
+  while (true) {
+    const page = await env.ESP32_KV.list({
+      prefix: SESSION_PREFIX,
+      limit: 1000,
+      ...(cursor ? { cursor } : {}),
+    });
+
+    const raws = await Promise.all(
+      (page?.keys || []).map((entry) => env.ESP32_KV.get(entry.name))
+    );
+
+    for (const raw of raws) {
+      const session = safeJsonParse(raw, null);
+      if (!isActiveDexcomSessionRecord(session)) continue;
+
+      const ownerKey = buildDexcomSessionOwnerKey(session);
+      const existing = sessionsByOwner.get(ownerKey);
+      const createdAt = Number(session.createdAt || 0);
+      const existingCreatedAt = Number(existing?.createdAt || 0);
+
+      if (!existing || createdAt >= existingCreatedAt) {
+        sessionsByOwner.set(ownerKey, session);
+      }
+    }
+
+    if (page?.list_complete || !page?.cursor) {
+      break;
+    }
+
+    cursor = page.cursor;
+  }
+
+  return Array.from(sessionsByOwner.values());
+}
+
+async function listSavedOwnerDexcomSessions(env) {
+  const sessionsByOwner = new Map();
+  let cursor = undefined;
+
+  while (true) {
+    const page = await env.ESP32_KV.list({
+      prefix: OWNER_DEXCOM_PREFIX,
+      limit: 1000,
+      ...(cursor ? { cursor } : {}),
+    });
+
+    const raws = await Promise.all(
+      (page?.keys || []).map((entry) => env.ESP32_KV.get(entry.name))
+    );
+
+    for (const raw of raws) {
+      const session = safeJsonParse(raw, null);
+      if (!isActiveDexcomSessionRecord(session)) continue;
+      sessionsByOwner.set(buildDexcomSessionOwnerKey(session), session);
+    }
+
+    if (page?.list_complete || !page?.cursor) {
+      break;
+    }
+
+    cursor = page.cursor;
+  }
+
+  return Array.from(sessionsByOwner.values());
+}
+
+async function listDexcomSyncSubjects(env) {
+  const merged = new Map();
+  const saved = await listSavedOwnerDexcomSessions(env);
+  for (const session of saved) {
+    merged.set(buildDexcomSessionOwnerKey(session), session);
+  }
+
+  const active = await listActiveDexcomSessions(env);
+  for (const session of active) {
+    merged.set(buildDexcomSessionOwnerKey(session), session);
+    await rememberOwnerDexcomSession(env, session);
+  }
+
+  return Array.from(merged.values());
+}
+
+async function refreshDexcomForSession(env, session, options = {}) {
+  const minutes = Math.max(1, Math.min(1440, Number(options.minutes || DEXCOM_DEFAULT_MINUTES)));
+  const maxCount = Math.max(1, Math.min(288, Number(options.maxCount || DEXCOM_DEFAULT_MAX_COUNT)));
+  const syncMailbox = options.syncMailbox !== false;
+
+  await rememberOwnerDexcomSession(env, session);
+
+  let freshSessionId = null;
+  let ownedDeviceId = "";
+
+  async function ensureOwnedDeviceId() {
+    if (ownedDeviceId) return ownedDeviceId;
+    ownedDeviceId = await findOwnedDeviceId(env, session);
+    return ownedDeviceId;
+  }
+
+  try {
+    const freshAccountId = await dexcomPost(
+      session.region,
+      "General/AuthenticatePublisherAccount",
+      {
+        accountName: session.username,
+        password: session.password,
+        applicationId: APPLICATION_IDS[session.region],
+      }
+    );
+
+    if (!freshAccountId || typeof freshAccountId !== "string") {
+      await markOwnerDexcomPull(env, session.region, session.accountId);
+      return {
+        ok: false,
+        error: "Dexcom re-auth failed: no account id returned",
+        dexcom_status: 401,
+        freshSessionId: null,
+      };
+    }
+
+    freshSessionId = await dexcomPost(
+      session.region,
+      "General/LoginPublisherAccountById",
+      {
+        accountId: freshAccountId,
+        password: session.password,
+        applicationId: APPLICATION_IDS[session.region],
+      }
+    );
+
+    if (!freshSessionId || typeof freshSessionId !== "string") {
+      await markOwnerDexcomPull(env, session.region, session.accountId);
+      return {
+        ok: false,
+        error: "Dexcom re-auth failed: no session id returned",
+        dexcom_status: 401,
+        freshSessionId,
+      };
+    }
+
+    const points = await dexcomGetReadings(
+      session.region,
+      freshSessionId,
+      minutes,
+      maxCount
+    );
+    const latest = points.length ? points[points.length - 1] : null;
+
+    let mailboxSync = null;
+    if (syncMailbox) {
+      mailboxSync = await syncDeviceGlucoseMailbox(env, await ensureOwnedDeviceId(), latest);
+    }
+
+    await markOwnerDexcomPull(env, session.region, session.accountId);
+    return {
+      ok: true,
+      points,
+      latest,
+      status: "ok",
+      freshSessionId,
+      ownedDeviceId,
+      mailboxSync,
+    };
+  } catch (e) {
+    const msg = String(e?.message || "");
+    const bodyText = String(e?.body || "");
+    const fullError = bodyText || msg || "";
+
+    if (fullError.includes("SessionIdNotFound")) {
+      let mailboxSync = null;
+      if (syncMailbox) {
+        mailboxSync = await syncDeviceGlucoseMailbox(env, await ensureOwnedDeviceId(), null);
+      }
+
+      await markOwnerDexcomPull(env, session.region, session.accountId);
+      return {
+        ok: true,
+        points: [],
+        latest: null,
+        status: "no_active_sensor",
+        message: "Dexcom authenticated, but no active CGM session was available.",
+        freshSessionId,
+        ownedDeviceId,
+        mailboxSync,
+      };
+    }
+
+    await markOwnerDexcomPull(env, session.region, session.accountId);
+    return {
+      ok: false,
+      error: fullError || "Failed to fetch Dexcom data",
+      dexcom_status: e?.status || null,
+      freshSessionId,
+    };
+  }
+}
+
+async function syncDexcomMailboxesForActiveSessions(env) {
+  const sessions = await listDexcomSyncSubjects(env);
+  const summary = {
+    ok: true,
+    scanned_sessions: sessions.length,
+    synced_devices: 0,
+    unchanged_devices: 0,
+    no_active_sensor: 0,
+    skipped_devices: 0,
+    failed_sessions: 0,
+  };
+
+  for (const session of sessions) {
+    const result = await refreshDexcomForSession(env, session, {
+      minutes: DEXCOM_DEFAULT_MINUTES,
+      maxCount: DEXCOM_DEFAULT_MAX_COUNT,
+      syncMailbox: true,
+    });
+
+    if (!result.ok) {
+      summary.failed_sessions += 1;
+      console.warn(
+        "Guardian scheduled Dexcom sync failed",
+        JSON.stringify({
+          region: session.region,
+          accountId: session.accountId,
+          error: result.error,
+          dexcom_status: result.dexcom_status,
+        })
+      );
+      continue;
+    }
+
+    if (result.status === "no_active_sensor") {
+      summary.no_active_sensor += 1;
+    }
+
+    if (result.mailboxSync?.skipped) {
+      summary.skipped_devices += 1;
+    } else if (result.mailboxSync?.unchanged) {
+      summary.unchanged_devices += 1;
+    } else if (result.mailboxSync?.wrote) {
+      summary.synced_devices += 1;
+    }
+  }
+
+  console.log("Guardian scheduled Dexcom sync complete", JSON.stringify(summary));
+  return summary;
+}
+
 /* =========================
    Heartbeat write throttle
    ========================= */
@@ -1320,6 +1731,8 @@ async function handleDexcomLogin(request, env) {
       );
     }
 
+    await rememberOwnerDexcomSession(env, ownerSession);
+
     try {
       await rememberTrustedDexcomUser(env, region, accountId);
     } catch {}
@@ -1439,130 +1852,42 @@ async function handleDexcomRecent(request, env) {
   }
 
   const url = new URL(request.url);
-  const minutes = Math.max(1, Math.min(1440, Number(url.searchParams.get("minutes") || 180)));
-  const maxCount = Math.max(1, Math.min(288, Number(url.searchParams.get("maxCount") || 72)));
+  const minutes = Math.max(1, Math.min(1440, Number(url.searchParams.get("minutes") || DEXCOM_DEFAULT_MINUTES)));
+  const maxCount = Math.max(1, Math.min(288, Number(url.searchParams.get("maxCount") || DEXCOM_DEFAULT_MAX_COUNT)));
 
-  let freshAccountId = null;
-  let freshSessionId = null;
+  const result = await refreshDexcomForSession(env, session, {
+    minutes,
+    maxCount,
+    syncMailbox: true,
+  });
 
-  try {
-    freshAccountId = await dexcomPost(
-      session.region,
-      "General/AuthenticatePublisherAccount",
-      {
-        accountName: session.username,
-        password: session.password,
-        applicationId: APPLICATION_IDS[session.region],
-      }
-    );
-
-    if (!freshAccountId || typeof freshAccountId !== "string") {
-      return jsonResponse(
-        {
-          ok: false,
-          error: "Dexcom re-auth failed: no account id returned",
-          debug_saved_session_id: session.sessionId || null,
-          debug_fresh_session_id: null,
-        },
-        401
-      );
-    }
-
-    freshSessionId = await dexcomPost(
-      session.region,
-      "General/LoginPublisherAccountById",
-      {
-        accountId: freshAccountId,
-        password: session.password,
-        applicationId: APPLICATION_IDS[session.region],
-      }
-    );
-
-    if (!freshSessionId || typeof freshSessionId !== "string") {
-      return jsonResponse(
-        {
-          ok: false,
-          error: "Dexcom re-auth failed: no session id returned",
-          debug_saved_session_id: session.sessionId || null,
-          debug_fresh_session_id: freshSessionId,
-        },
-        401
-      );
-    }
-
-    const points = await dexcomGetReadings(
-      session.region,
-      freshSessionId,
-      minutes,
-      maxCount
-    );
-
-    const latest = points.length ? points[points.length - 1] : null;
-
-    const ownedDeviceId = await findOwnedDeviceId(env, session);
-    if (ownedDeviceId) {
-      const glucosePatch = latest
-        ? {
-            current_glucose: Number(latest.glucose),
-            current_glucose_ts: Number(latest.ts),
-            current_glucose_trend: typeof latest.trend === "string" ? latest.trend : "",
-          }
-        : {
-            current_glucose: null,
-            current_glucose_ts: null,
-            current_glucose_trend: "",
-          };
-
-      await saveMailboxPatch(env, ownedDeviceId, glucosePatch);
-    }
-
+  if (result.ok) {
     return jsonResponse({
       ok: true,
-      points,
-      latest,
+      points: result.points,
+      latest: result.latest,
+      status: result.status === "ok" ? undefined : result.status,
+      message: result.message || undefined,
       debug_saved_session_id: session.sessionId || null,
-      debug_fresh_session_id: freshSessionId,
+      debug_fresh_session_id: result.freshSessionId || null,
     });
-  } catch (e) {
-    const msg = String(e?.message || "");
-    const bodyText = String(e?.body || "");
-    const fullError = bodyText || msg || "";
-
-    if (fullError.includes("SessionIdNotFound")) {
-      const ownedDeviceId = await findOwnedDeviceId(env, session);
-      if (ownedDeviceId) {
-        await saveMailboxPatch(env, ownedDeviceId, {
-          current_glucose: null,
-          current_glucose_ts: null,
-          current_glucose_trend: "",
-        });
-      }
-
-      return jsonResponse(
-        {
-          ok: true,
-          points: [],
-          latest: null,
-          status: "no_active_sensor",
-          message: "Dexcom authenticated, but no active CGM session was available.",
-          debug_saved_session_id: session.sessionId || null,
-          debug_fresh_session_id: freshSessionId,
-        },
-        200
-      );
-    }
-
-    return jsonResponse(
-      {
-        ok: false,
-        error: fullError || "Failed to fetch Dexcom data",
-        dexcom_status: e?.status || null,
-        debug_saved_session_id: session.sessionId || null,
-        debug_fresh_session_id: freshSessionId,
-      },
-      e?.status && Number.isFinite(e.status) ? e.status : 500
-    );
   }
+
+  const responseStatus =
+    result.dexcom_status && Number.isFinite(Number(result.dexcom_status))
+      ? Number(result.dexcom_status)
+      : 500;
+
+  return jsonResponse(
+    {
+      ok: false,
+      error: result.error || "Failed to fetch Dexcom data",
+      dexcom_status: result.dexcom_status || null,
+      debug_saved_session_id: session.sessionId || null,
+      debug_fresh_session_id: result.freshSessionId || null,
+    },
+    responseStatus
+  );
 }
 
 async function handleDexcomLogout(request, env) {
@@ -1865,6 +2190,35 @@ async function handleFactoryResetDevice(request, env) {
   });
 }
 
+async function maybeRefreshDexcomMailboxForDevice(env, deviceRecord) {
+  const ownerRegion = String(deviceRecord?.owner_region || "us").trim().toLowerCase();
+  const ownerAccountId = String(deviceRecord?.owner_account_id || "").trim();
+  if (!ownerAccountId) {
+    return { ok: false, skipped: true, reason: "missing_owner" };
+  }
+
+  const shouldRefresh = await shouldRefreshOwnerDexcomNow(
+    env,
+    ownerRegion,
+    ownerAccountId,
+    DEXCOM_DEVICE_SYNC_MIN_MS
+  );
+
+  if (!shouldRefresh.allow || !shouldRefresh.record) {
+    return {
+      ok: !!shouldRefresh.ok,
+      skipped: true,
+      reason: shouldRefresh.reason || "throttled",
+    };
+  }
+
+  return await refreshDexcomForSession(env, shouldRefresh.record, {
+    minutes: DEXCOM_DEFAULT_MINUTES,
+    maxCount: DEXCOM_DEFAULT_MAX_COUNT,
+    syncMailbox: true,
+  });
+}
+
 async function handleMailboxGet(request, env) {
   // GET /mailbox is intentionally simple:
   // it returns the full mailbox for one authenticated device instead of one
@@ -1877,6 +2231,20 @@ async function handleMailboxGet(request, env) {
 
   if (!context.ok) {
     return jsonResponse({ ok: false, error: context.error }, context.status || 401);
+  }
+
+  if (context.auth === "device") {
+    try {
+      await maybeRefreshDexcomMailboxForDevice(env, context.device);
+    } catch (error) {
+      console.warn(
+        "Guardian mailbox-triggered Dexcom refresh failed",
+        JSON.stringify({
+          deviceId: context.deviceId,
+          error: String(error?.message || error || "unknown"),
+        })
+      );
+    }
   }
 
   const mailbox = await readMailbox(env, context.deviceId);
@@ -2035,5 +2403,8 @@ export default {
         500
       );
     }
+  },
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(syncDexcomMailboxesForActiveSessions(env));
   },
 };

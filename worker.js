@@ -29,6 +29,7 @@ const DEVICE_MAILBOX_PREFIX = "deviceMailbox:v1:";
 const DEVICE_BOOTSTRAP_PREFIX = "deviceBootstrap:v1:";
 const DEVICE_CLAIM_PREFIX = "deviceClaim:v1:";
 const OWNER_DEVICE_PREFIX = "ownerDevice:v1:";
+const CONTROL_COMMAND_TTL_MS = 5 * 60 * 1000;
 
 /* ===== FREE TIER THROTTLES ===== */
 // Match the persisted heartbeat cadence to the device's 15s heartbeat interval
@@ -401,6 +402,11 @@ async function deleteClaimLookup(env, claimCode) {
 async function setOwnerDeviceMapping(env, region, accountId, deviceId) {
   const key = await buildOwnerDeviceKey(region, accountId);
   return await kvPutSafe(env, key, deviceId);
+}
+
+async function deleteOwnerDeviceMapping(env, region, accountId) {
+  const key = await buildOwnerDeviceKey(region, accountId);
+  await env.ESP32_KV.delete(key);
 }
 
 async function getOwnerDeviceId(env, region, accountId) {
@@ -1132,6 +1138,25 @@ async function readMailbox(env, deviceId) {
   const cleanMailbox =
     mailbox && typeof mailbox === "object" && !Array.isArray(mailbox) ? mailbox : {};
 
+  const now = Date.now();
+  const sanitizeControlCommand = (commandKey, timestampKey) => {
+    const commandValue = cleanMailbox[commandKey];
+    const timestampValue = Number(cleanMailbox[timestampKey]);
+    const hasCommand = typeof commandValue === "string" && commandValue.trim() !== "";
+    const isFresh =
+      Number.isFinite(timestampValue) &&
+      timestampValue > 0 &&
+      Math.abs(now - timestampValue) <= CONTROL_COMMAND_TTL_MS;
+
+    if (hasCommand && !isFresh) {
+      delete cleanMailbox[commandKey];
+      delete cleanMailbox[timestampKey];
+    }
+  };
+
+  sanitizeControlCommand("control_reenter_ble_setup", "control_reenter_ble_setup_at");
+  sanitizeControlCommand("control_factory_reset", "control_factory_reset_at");
+
   // low/high now live in mailbox too. If they are missing there, fall back to
   // the older settings storage so existing thresholds keep showing up until the
   // website saves them into mailbox.
@@ -1148,10 +1173,29 @@ async function saveMailboxPatch(env, deviceId, patch) {
   // We merge the new keys into the existing mailbox instead of replacing
   // the whole object. That lets the website update one field at a time.
   // Example: posting { message: "Hello" } keeps current_glucose intact.
+  const nextPatch =
+    patch && typeof patch === "object" && !Array.isArray(patch) ? { ...patch } : {};
+
+  if (
+    typeof nextPatch.control_reenter_ble_setup === "string" &&
+    nextPatch.control_reenter_ble_setup.trim() &&
+    !Number.isFinite(Number(nextPatch.control_reenter_ble_setup_at))
+  ) {
+    nextPatch.control_reenter_ble_setup_at = Date.now();
+  }
+
+  if (
+    typeof nextPatch.control_factory_reset === "string" &&
+    nextPatch.control_factory_reset.trim() &&
+    !Number.isFinite(Number(nextPatch.control_factory_reset_at))
+  ) {
+    nextPatch.control_factory_reset_at = Date.now();
+  }
+
   const current = await readMailbox(env, deviceId);
   const mailbox = {
     ...current,
-    ...patch,
+    ...nextPatch,
     // updatedAt is handy for debugging and lets the ESP32 tell when the
     // mailbox was last changed.
     updatedAt: Date.now(),
@@ -1173,6 +1217,31 @@ async function handleTrustedUsersCount(env) {
 /* =========================
    ROUTE HELPERS
    ========================= */
+function friendlyDexcomLoginError(error) {
+  const msg = String(error?.message || "");
+  const bodyText = String(error?.body || "");
+  const combined = `${msg}\n${bodyText}`.toLowerCase();
+
+  if (
+    combined.includes("authenticatepublisheraccount") ||
+    combined.includes("loginpublisheraccountbyid") ||
+    combined.includes("accountpasswordinvalid") ||
+    combined.includes("account not found") ||
+    combined.includes("no account id returned") ||
+    combined.includes("no session id returned") ||
+    combined.includes("invalid password") ||
+    combined.includes("invalid account") ||
+    combined.includes("authentication") ||
+    combined.includes("<html") ||
+    combined.includes("<!doctype") ||
+    [400, 401, 403, 404, 500].includes(Number(error?.status))
+  ) {
+    return "No account found";
+  }
+
+  return "Dexcom login failed";
+}
+
 async function handleDexcomLogin(request, env) {
   const body = await readJson(request);
   if (!body.ok) {
@@ -1204,7 +1273,7 @@ async function handleDexcomLogin(request, env) {
 
     if (!accountId || typeof accountId !== "string") {
       return jsonResponse(
-        { ok: false, error: "Dexcom login failed: no account id returned" },
+        { ok: false, error: "No account found" },
         401
       );
     }
@@ -1221,7 +1290,7 @@ async function handleDexcomLogin(request, env) {
 
     if (!sessionId || typeof sessionId !== "string") {
       return jsonResponse(
-        { ok: false, error: "Dexcom login failed: no session id returned" },
+        { ok: false, error: "No account found" },
         401
       );
     }
@@ -1271,19 +1340,17 @@ async function handleDexcomLogin(request, env) {
       { "Set-Cookie": makeSessionCookie(storedSession.sessionId) }
     );
   } catch (e) {
-    const msg = String(e?.message || "");
-    const bodyText = String(e?.body || "");
-    const fullError = bodyText || msg || "";
+    const friendlyError = friendlyDexcomLoginError(e);
 
     return jsonResponse(
       {
         ok: false,
-        error: fullError || "Dexcom login failed",
+        error: friendlyError,
         dexcom_status: e?.status || null,
         debug_saved_session_id: null,
         debug_fresh_session_id: null,
       },
-      e?.status && Number.isFinite(e.status) ? e.status : 500
+      401
     );
   }
 }
@@ -1432,6 +1499,23 @@ async function handleDexcomRecent(request, env) {
 
     const latest = points.length ? points[points.length - 1] : null;
 
+    const ownedDeviceId = await findOwnedDeviceId(env, session);
+    if (ownedDeviceId) {
+      const glucosePatch = latest
+        ? {
+            current_glucose: Number(latest.glucose),
+            current_glucose_ts: Number(latest.ts),
+            current_glucose_trend: typeof latest.trend === "string" ? latest.trend : "",
+          }
+        : {
+            current_glucose: null,
+            current_glucose_ts: null,
+            current_glucose_trend: "",
+          };
+
+      await saveMailboxPatch(env, ownedDeviceId, glucosePatch);
+    }
+
     return jsonResponse({
       ok: true,
       points,
@@ -1445,6 +1529,15 @@ async function handleDexcomRecent(request, env) {
     const fullError = bodyText || msg || "";
 
     if (fullError.includes("SessionIdNotFound")) {
+      const ownedDeviceId = await findOwnedDeviceId(env, session);
+      if (ownedDeviceId) {
+        await saveMailboxPatch(env, ownedDeviceId, {
+          current_glucose: null,
+          current_glucose_ts: null,
+          current_glucose_trend: "",
+        });
+      }
+
       return jsonResponse(
         {
           ok: true,
@@ -1691,6 +1784,87 @@ async function handleRotateDeviceToken(request, env) {
   });
 }
 
+async function handleFactoryResetDevice(request, env) {
+  const session = await requireSession(request, env);
+  if (!session) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const deviceId = await findOwnedDeviceId(env, session);
+  if (!deviceId) {
+    return jsonResponse({ ok: false, error: "No claimed GUARD for this account yet" }, 404);
+  }
+
+  const existing = await loadDeviceRecord(env, deviceId);
+  if (!existing || !sessionOwnsDevice(session, existing)) {
+    return jsonResponse({ ok: false, error: "Claimed device record missing" }, 404);
+  }
+
+  const hardwareId = normalizeHardwareId(existing.hardware_id);
+  if (!hardwareId) {
+    return jsonResponse({ ok: false, error: "GUARD is missing its hardware identity" }, 409);
+  }
+
+  const bootstrap = await loadBootstrapRecord(env, hardwareId);
+  if (!bootstrap?.bootstrap_secret_hash) {
+    return jsonResponse({ ok: false, error: "GUARD bootstrap record missing" }, 404);
+  }
+
+  if (bootstrap.claim_code) {
+    await deleteClaimLookup(env, bootstrap.claim_code);
+  }
+
+  const pending = await createPendingBootstrap(env, hardwareId, bootstrap.bootstrap_secret_hash);
+  if (!pending.ok) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: pending.error || "Could not create a fresh claim code",
+        kv_limited: !!pending.save?.kvLimited,
+      },
+      pending.save?.kvLimited ? 429 : 500
+    );
+  }
+
+  const resetCommand = `factory-${randomOpaqueId(9)}`;
+  const mailboxResult = await saveMailboxPatch(env, deviceId, {
+    control_factory_reset: resetCommand,
+    control_factory_reset_at: Date.now(),
+    message: "Factory reset requested",
+  });
+
+  if (!mailboxResult.save.ok) {
+    await saveBootstrapRecord(env, hardwareId, bootstrap);
+    await deleteClaimLookup(env, pending.record?.claim_code);
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Could not send the factory reset command to GUARD",
+        kv_limited: !!mailboxResult.save?.kvLimited,
+      },
+      mailboxResult.save?.kvLimited ? 429 : 500
+    );
+  }
+
+  const archivedRecord = {
+    ...existing,
+    factory_reset_requested_at: Date.now(),
+    updated_at: Date.now(),
+  };
+  await saveDeviceRecord(env, deviceId, archivedRecord);
+  await deleteOwnerDeviceMapping(env, session.region, session.accountId);
+
+  return jsonResponse({
+    ok: true,
+    reset_requested: true,
+    device_id: deviceId,
+    reset_command: resetCommand,
+    claim_code: pending.record.claim_code,
+    claim_expires_at: pending.record.claim_expires_at,
+    message: "GUARD is resetting. It will erase Wi-Fi and pairing, then restart into Bluetooth setup.",
+  });
+}
+
 async function handleMailboxGet(request, env) {
   // GET /mailbox is intentionally simple:
   // it returns the full mailbox for one authenticated device instead of one
@@ -1807,6 +1981,10 @@ export default {
 
       if (url.pathname === "/device/rotate-token" && request.method === "POST") {
         return await handleRotateDeviceToken(request, env);
+      }
+
+      if (url.pathname === "/device/factory-reset" && request.method === "POST") {
+        return await handleFactoryResetDevice(request, env);
       }
 
       if (url.pathname === "/get-settings" && request.method === "GET") {

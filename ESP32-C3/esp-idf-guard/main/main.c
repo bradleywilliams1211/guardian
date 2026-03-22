@@ -24,6 +24,7 @@
 #include "wifi_provisioning/scheme_ble.h"
 
 #include "guard_config.h"
+#include "guard_robot_arduino.h"
 
 static const char *TAG = "guardian";
 static const int WIFI_CONNECTED_BIT = BIT0;
@@ -82,6 +83,8 @@ static esp_err_t guard_wait_for_wifi_if_needed(void);
 static esp_err_t guard_resume_wifi_from_saved_credentials(void);
 static bool guard_mailbox_control_matches_last_command(const char *command_id);
 static void guard_request_ble_reprovision_restart(const char *command_id);
+static void guard_request_factory_reset_restart(const char *command_id);
+static void guard_factory_reset_task(void *arg);
 
 static void guard_copy_string(char *dest, size_t dest_len, const char *src) {
     if (!dest || dest_len == 0) {
@@ -568,6 +571,21 @@ static esp_err_t guard_custom_prov_data_handler(
                 } else {
                     snprintf(response, sizeof(response), "{\"ok\":false,\"error\":\"save failed\"}");
                 }
+            }
+        } else if (strcmp(type, "factory-reset") == 0) {
+            const cJSON *command_item = cJSON_GetObjectItemCaseSensitive(root, "command_id");
+            const char *command_id = (cJSON_IsString(command_item) && command_item->valuestring && command_item->valuestring[0] != '\0')
+                ? command_item->valuestring
+                : "ble-factory-reset";
+
+            char *task_command = strdup(command_id);
+            if (!task_command) {
+                snprintf(response, sizeof(response), "{\"ok\":false,\"error\":\"reset allocation failed\"}");
+            } else if (xTaskCreate(guard_factory_reset_task, "guard_factory_reset", 4096, task_command, 5, NULL) != pdPASS) {
+                free(task_command);
+                snprintf(response, sizeof(response), "{\"ok\":false,\"error\":\"reset task failed\"}");
+            } else {
+                snprintf(response, sizeof(response), "{\"ok\":true,\"resetting\":true}");
             }
         } else if (strcmp(type, "wifi-list") == 0) {
             ESP_RETURN_ON_ERROR(guard_build_device_info_json(response, sizeof(response)), TAG, "Could not build wifi list response");
@@ -1125,6 +1143,7 @@ static esp_err_t guard_start_ble_provisioning(void) {
     ESP_ERROR_CHECK(wifi_prov_mgr_endpoint_create("custom-data"));
     ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key));
     ESP_ERROR_CHECK(wifi_prov_mgr_endpoint_register("custom-data", guard_custom_prov_data_handler, NULL));
+    guard_robot_show_setup_message("Bluetooth Setup", service_name);
 
     ESP_LOGI(TAG, "Waiting for Guardian to send Wi-Fi credentials over Bluetooth.");
 
@@ -1486,16 +1505,25 @@ static esp_err_t guard_fetch_mailbox(guard_device_context_t *ctx) {
     char predicted_text[32] = {0};
     char message_text[96] = {0};
     char reprovision_command_text[64] = {0};
+    char factory_reset_command_text[64] = {0};
 
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "glucose_low"), low_text, sizeof(low_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "glucose_high"), high_text, sizeof(high_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "current_glucose"), glucose_text, sizeof(glucose_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "predicted_far"), predicted_text, sizeof(predicted_text));
     guard_describe_json_value(cJSON_GetObjectItemCaseSensitive(mailbox, "message"), message_text, sizeof(message_text));
+    cJSON *low_item = cJSON_GetObjectItemCaseSensitive(mailbox, "glucose_low");
+    cJSON *high_item = cJSON_GetObjectItemCaseSensitive(mailbox, "glucose_high");
+    cJSON *current_item = cJSON_GetObjectItemCaseSensitive(mailbox, "current_glucose");
     guard_describe_json_value(
         cJSON_GetObjectItemCaseSensitive(mailbox, "control_reenter_ble_setup"),
         reprovision_command_text,
         sizeof(reprovision_command_text)
+    );
+    guard_describe_json_value(
+        cJSON_GetObjectItemCaseSensitive(mailbox, "control_factory_reset"),
+        factory_reset_command_text,
+        sizeof(factory_reset_command_text)
     );
 
     ESP_LOGI(
@@ -1508,12 +1536,28 @@ static esp_err_t guard_fetch_mailbox(guard_device_context_t *ctx) {
         message_text
     );
 
+    if (factory_reset_command_text[0] != '\0' && !guard_mailbox_control_matches_last_command(factory_reset_command_text)) {
+        cJSON_Delete(root);
+        guard_http_response_free(response);
+        guard_request_factory_reset_restart(factory_reset_command_text);
+        return ESP_OK;
+    }
+
     if (reprovision_command_text[0] != '\0' && !guard_mailbox_control_matches_last_command(reprovision_command_text)) {
         cJSON_Delete(root);
         guard_http_response_free(response);
         guard_request_ble_reprovision_restart(reprovision_command_text);
         return ESP_OK;
     }
+
+    guard_robot_apply_glucose_alert(
+        cJSON_IsNumber(low_item),
+        cJSON_IsNumber(low_item) ? (int)cJSON_GetNumberValue(low_item) : 0,
+        cJSON_IsNumber(high_item),
+        cJSON_IsNumber(high_item) ? (int)cJSON_GetNumberValue(high_item) : 0,
+        cJSON_IsNumber(current_item),
+        cJSON_IsNumber(current_item) ? (int)cJSON_GetNumberValue(current_item) : 0
+    );
 
     cJSON_Delete(root);
     guard_http_response_free(response);
@@ -1568,6 +1612,54 @@ static void guard_request_ble_reprovision_restart(const char *command_id) {
     esp_restart();
 }
 
+static void guard_request_factory_reset_restart(const char *command_id) {
+    if (!command_id || command_id[0] == '\0') {
+        return;
+    }
+
+    if (guard_store_last_ble_reprovision_command(command_id) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not record factory reset command id");
+        return;
+    }
+
+    ESP_LOGW(TAG, "Guardian requested a full factory reset. Clearing saved pairing and Wi-Fi.");
+    guard_clear_pending_provision_credentials();
+
+    if (guard_clear_claimed_credentials(&g_ctx) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not clear saved claimed credentials");
+        return;
+    }
+
+    g_ctx.claim_code[0] = '\0';
+    g_ctx.claim_url[0] = '\0';
+
+    if (guard_set_force_ble_reprovision_flag(true) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not persist Bluetooth reprovision flag during factory reset");
+        return;
+    }
+
+    if (guard_reset_saved_wifi_provisioning() != ESP_OK) {
+        ESP_LOGE(TAG, "Could not clear saved Wi-Fi credentials during factory reset");
+        return;
+    }
+
+    ESP_LOGW(TAG, "Factory reset complete. Restarting GUARD into Bluetooth setup.");
+    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_restart();
+}
+
+static void guard_factory_reset_task(void *arg) {
+    char command_id[64] = {0};
+    if (arg) {
+        guard_copy_string(command_id, sizeof(command_id), (const char *)arg);
+        free(arg);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(220));
+    guard_request_factory_reset_restart(command_id[0] ? command_id : "ble-factory-reset");
+    vTaskDelete(NULL);
+}
+
 static void guard_run_state_machine(void) {
     guard_state_t state = GUARD_STATE_BOOT;
 
@@ -1589,30 +1681,34 @@ static void guard_run_state_machine(void) {
 
             case GUARD_STATE_WAIT_FOR_WIFI:
                 ESP_LOGI(TAG, "State: WAIT_FOR_WIFI");
+                guard_robot_apply_glucose_alert(false, 0, false, 0, false, 0);
                 if (!g_ctx.has_wifi_credentials) {
                     s_saved_wifi_failures = 0;
                     if (guard_start_ble_provisioning() != ESP_OK) {
                         state = GUARD_STATE_ERROR;
                         break;
                     }
-                } else if (guard_resume_wifi_from_saved_credentials() != ESP_OK) {
-                    s_saved_wifi_failures++;
-                    if (s_saved_wifi_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
-                        guard_restart_into_ble_provisioning(
-                            "Saved Wi-Fi did not connect after multiple attempts. Returning to Bluetooth setup."
+                } else {
+                    guard_robot_show_setup_message("Joining Wi-Fi", "Saved network");
+                    if (guard_resume_wifi_from_saved_credentials() != ESP_OK) {
+                        s_saved_wifi_failures++;
+                        if (s_saved_wifi_failures >= GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION) {
+                            guard_restart_into_ble_provisioning(
+                                "Saved Wi-Fi did not connect after multiple attempts. Returning to Bluetooth setup."
+                            );
+                            state = GUARD_STATE_ERROR;
+                            break;
+                        }
+                        ESP_LOGW(
+                            TAG,
+                            "Saved Wi-Fi did not connect in time. Retrying saved network (%d/%d).",
+                            s_saved_wifi_failures,
+                            GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION
                         );
-                        state = GUARD_STATE_ERROR;
+                        vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
+                        state = GUARD_STATE_WAIT_FOR_WIFI;
                         break;
                     }
-                    ESP_LOGW(
-                        TAG,
-                        "Saved Wi-Fi did not connect in time. Retrying saved network (%d/%d).",
-                        s_saved_wifi_failures,
-                        GUARD_BOOTSTRAP_FAILURES_BEFORE_REPROVISION
-                    );
-                    vTaskDelay(pdMS_TO_TICKS(GUARD_BOOTSTRAP_RETRY_MS));
-                    state = GUARD_STATE_WAIT_FOR_WIFI;
-                    break;
                 }
                 s_saved_wifi_failures = 0;
                 state = GUARD_STATE_BOOTSTRAP_DEVICE;
@@ -1620,6 +1716,7 @@ static void guard_run_state_machine(void) {
 
             case GUARD_STATE_BOOTSTRAP_DEVICE:
                 ESP_LOGI(TAG, "State: BOOTSTRAP_DEVICE");
+                guard_robot_show_setup_message("Contacting", "Guardian");
                 if (guard_bootstrap_device(&g_ctx) == ESP_OK) {
                     s_bootstrap_failures = 0;
                     state = g_ctx.is_claimed ? GUARD_STATE_RUNTIME : GUARD_STATE_WAIT_FOR_CLAIM;
@@ -1638,6 +1735,7 @@ static void guard_run_state_machine(void) {
 
             case GUARD_STATE_WAIT_FOR_CLAIM:
                 ESP_LOGI(TAG, "State: WAIT_FOR_CLAIM");
+                guard_robot_show_setup_message("Finishing up", "with Guardian");
                 if (!guard_is_wifi_connected()) {
                     ESP_LOGW(TAG, "Wi-Fi dropped while waiting for claim. Returning to Wi-Fi setup.");
                     state = GUARD_STATE_WAIT_FOR_WIFI;
@@ -1654,6 +1752,10 @@ static void guard_run_state_machine(void) {
                 break;
 
             case GUARD_STATE_RUNTIME: {
+                // Delay Arduino-side hardware init until GUARD is already past
+                // BLE provisioning. Initializing it at boot was colliding with
+                // NimBLE startup on this board.
+                guard_robot_hw_init();
                 esp_err_t err = guard_runtime_tick(&g_ctx);
                 if (err == ESP_ERR_INVALID_STATE) {
                     ESP_LOGW(TAG, "Runtime auth is no longer valid. Returning to bootstrap.");

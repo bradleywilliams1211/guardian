@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
     const menuToggle = document.getElementById('menuToggle');
     const nav = document.getElementById('nav');
 
@@ -538,19 +532,41 @@ function syncPendingClaimCodeUI() {
   const code = getPendingClaimCode();
   const claimEl = document.getElementById("bleSetupClaim");
   const previewEl = document.getElementById("setupClaimCodePreview");
+  const labelEl = document.getElementById("setupClaimCodeLabel");
+  const fallbackEl = document.getElementById("setupClaimFallback");
+  const setupCardEl = document.getElementById("setupClaimCard");
+  const loginCard = document.getElementById("deviceClaimCard");
   const inputs = [
     document.getElementById("claimCodeInput"),
-    document.getElementById("dashboardClaimCodeInput"),
     document.getElementById("setupClaimCodeInput"),
   ];
 
   if (claimEl) {
-    claimEl.textContent = code ? "Guardian found a pairing code for this robot." : "";
+    claimEl.textContent = code
+      ? "Guardian exposed a fallback code in case automatic pairing needs help."
+      : "If Guardian ever needs a manual fallback, it will appear here.";
+  }
+
+  if (labelEl) {
+    labelEl.textContent = "Fallback code";
   }
 
   if (previewEl) {
-    previewEl.textContent = code || "Waiting for code";
+    previewEl.textContent = code || "Waiting for fallback code";
     previewEl.classList.toggle("setup-claim-empty", !code);
+  }
+
+  if (fallbackEl) {
+    fallbackEl.hidden = !code;
+  }
+
+  if (setupCardEl) {
+    setupCardEl.hidden = !code;
+    setupCardEl.classList.toggle("is-visible", !!code);
+  }
+
+  if (loginCard && !code) {
+    loginCard.style.display = "none";
   }
 
   for (const input of inputs) {
@@ -1519,7 +1535,7 @@ async function tryFinishPendingBlePairing(hardwareId, options = {}) {
   if (!hasServerSession) {
     setBleSetupState("Wi-Fi is saved. Log in to Guardian to finish pairing this robot.", "success");
     setClaimCardVisible(true, {
-      help: "Log in, then Guardian can finish pairing the GUARD you just provisioned over Bluetooth.",
+      help: "Log in, then Guardian can try to finish pairing automatically. If needed, a fallback code will appear here.",
       state: "",
     });
     return null;
@@ -1539,7 +1555,7 @@ async function tryFinishPendingBlePairing(hardwareId, options = {}) {
         setBleSetupState("GUARD joined Wi-Fi. Waiting for it to reach Guardian…", "neutral");
       } else if (status.state === "pending" && status.claim_code) {
         const claimCode = rememberPendingClaimCode(status.claim_code);
-        setBleSetupState("Pairing code received. Finishing claim…", "neutral");
+        setBleSetupState("Guardian found this robot. Finishing pairing automatically…", "neutral");
         await submitClaimCode(claimCode);
         clearPendingCloudHandoffAt();
         setBleSetupState("GUARD is paired and ready.", "success");
@@ -1859,7 +1875,7 @@ async function startGuardBluetoothSetup(requireWifi = false, retryingAfterSecuri
       await tryFinishPendingBlePairing(hardwareId || getPendingHardwareId());
     } else {
       setBleSetupState(
-        "Wi-Fi is saved. GUARD may disconnect from Bluetooth now while it reaches Guardian. If a pairing code does not appear shortly, reconnect once more.",
+        "Wi-Fi is saved. GUARD may disconnect from Bluetooth now while Guardian finishes pairing in the background.",
         "success"
       );
     }
@@ -1978,23 +1994,16 @@ window.rotateDeviceToken = rotateDeviceToken;
 
 function setClaimCardVisible(visible, options = {}) {
   const loginCard = document.getElementById("deviceClaimCard");
-  const dashboardCard = document.getElementById("deviceClaimDashboardCard");
+  const shouldShow = visible && (!!getPendingClaimCode() || !!options.force);
   const helpEls = [
     document.getElementById("device-claim-help"),
-    document.getElementById("dashboard-device-claim-help"),
   ];
   const stateEls = [
     document.getElementById("device-claim-state"),
-    document.getElementById("dashboard-device-claim-state"),
   ];
 
-  // The dashboard claim banner stays visible whenever the user is signed in so
-  // pairing is always discoverable, even if session state is stale.
   if (loginCard) {
-    loginCard.style.display = visible ? "block" : "none";
-  }
-  if (dashboardCard) {
-    dashboardCard.style.display = hasServerSession ? "block" : "none";
+    loginCard.style.display = shouldShow ? "block" : "none";
   }
 
   if (typeof options.help === "string") {
@@ -2025,7 +2034,7 @@ async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device
   const claimCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   if (!claimCode) {
-    if (stateEl) stateEl.textContent = "Enter the pairing code shown after Bluetooth setup.";
+    if (stateEl) stateEl.textContent = "Enter the fallback code only if Guardian asks for one.";
     return;
   }
 
@@ -2033,7 +2042,7 @@ async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device
 
   try {
     await submitClaimCode(claimCode, { navigate: false });
-    for (const id of ["claimCodeInput", "dashboardClaimCodeInput", "setupClaimCodeInput"]) {
+    for (const id of ["claimCodeInput", "setupClaimCodeInput"]) {
       const el = document.getElementById(id);
       if (el) {
         el.value = "";
@@ -2447,12 +2456,13 @@ const ROBOT_MODELS = {
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
   },
-    turtle: {
+
+  turtle: {
     path: "/models/Assembly/turtle.glb",
     scale: [1.2, 1.2, 1.2],
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
-  },
+  }
 };
 /* ============================================================
    ROBOT MODEL LIBRARY
@@ -2697,7 +2707,7 @@ function loadRobotModel(modelKey = "dog") {
       console.error("Model failed to load:", modelKey, error);
 
       if (wrap) {
-        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">' + modelKey + ' model is not available yet.<br>Missing file: ' + config.path + '</div>';
+        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">' + modelKey + ' is still a concept view right now.<br>Its full render is not ready yet.</div>';
       }
     }
   );
@@ -3978,13 +3988,61 @@ function showPage(id){
   syncFloatingFooter();
 }
 
+let homeFlowStep = 1;
+let homeRobotPageReady = false;
+
+function ensureHomeRobotPageReady() {
+  initModelWheel();
+  initRobotViewer();
+
+  requestAnimationFrame(() => {
+    resizeRobotViewer();
+    centerModelWheelOn(currentRobotAnimal, false);
+    updateModelWheelSelection();
+  });
+
+  homeRobotPageReady = true;
+}
+
+function setHomeFlowStep(step, options = {}) {
+  const normalizedStep = step === 2 ? 2 : 1;
+  homeFlowStep = normalizedStep;
+
+  const setupEl = document.getElementById("setup");
+  const robotEl = document.getElementById("robot");
+  const setupButton = document.getElementById("homeFlowSetupButton");
+  const robotButton = document.getElementById("homeFlowRobotButton");
+
+  if (setupEl) setupEl.hidden = normalizedStep !== 1;
+  if (robotEl) robotEl.hidden = normalizedStep !== 2;
+
+  if (setupButton) {
+    setupButton.classList.toggle("is-active", normalizedStep === 1);
+    setupButton.setAttribute("aria-current", normalizedStep === 1 ? "step" : "false");
+  }
+
+  if (robotButton) {
+    robotButton.classList.toggle("is-active", normalizedStep === 2);
+    robotButton.setAttribute("aria-current", normalizedStep === 2 ? "step" : "false");
+  }
+
+  if (normalizedStep === 2) {
+    ensureHomeRobotPageReady();
+  }
+
+  if (options.scroll === false) return;
+
+  requestAnimationFrame(() => {
+    const target = normalizedStep === 1 ? setupEl : robotEl;
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 
 
 function home() {
   showPage("home");
-
-  document.getElementById("robot").style.display = "none";
-  document.getElementById("setup").style.display = "flex";
+  setHomeFlowStep(1, { scroll: false });
 }
 
 function data() {
@@ -3998,8 +4056,7 @@ function settings() {
 function openlogin() {
   showPage("user-screen");
 
-  document.getElementById("robot").style.display = "none";
-  document.getElementById("setup").style.display = "flex";
+  setHomeFlowStep(1, { scroll: false });
 }
 
 function isSiteFooterNearViewport() {
@@ -4113,7 +4170,7 @@ async function refreshSessionState() {
       setCurrentDeviceId("");
       if (data.logged_in) {
         setClaimCardVisible(true, {
-          help: "Guardian is ready for pairing. Enter the claim code shown after Bluetooth setup.",
+          help: "Guardian is ready for pairing. Bluetooth setup will usually finish automatically, and a fallback code only appears if it is needed.",
           state: ""
         });
         const pendingHardwareId = getPendingHardwareId();
@@ -4135,10 +4192,6 @@ async function refreshSessionState() {
     setCurrentDeviceId("");
     return { ok: false, logged_in: false, demo: false };
   }
-}
-
-function info() {
-  home();
 }
 
 /* ============================================================
@@ -4163,7 +4216,18 @@ function setEmpty(isEmpty) {
    ============================================================ */
 function setThresholdLabels() {
   const el = document.getElementById("threshold-labels");
-  if (el) el.textContent = "Low " + RANGE_LOW + " • High " + RANGE_HIGH;
+  if (!el) return;
+  el.innerHTML = "";
+
+  const low = document.createElement("span");
+  low.className = "threshold-chip threshold-chip-low";
+  low.textContent = "Low " + RANGE_LOW;
+
+  const high = document.createElement("span");
+  high.className = "threshold-chip threshold-chip-high";
+  high.textContent = "High " + RANGE_HIGH;
+
+  el.append(low, high);
 }
 
 /* ============================================================
@@ -4302,8 +4366,8 @@ function updateAnalysisUI(normalizedPts) {
   const r = avgChangeWindow(normalizedPts, 60);
 
   if (!r.ok) {
-    avgEl.textContent = "Average change (1h): —";
-    urgEl.textContent = "Urgency: —";
+    avgEl.textContent = "Unavailable right now";
+    urgEl.textContent = "Waiting for a clearer read";
     dbg("Analysis failed: " + (r.reason || "unknown"));
     return;
   }
@@ -4311,14 +4375,13 @@ function updateAnalysisUI(normalizedPts) {
   const sign = r.delta >= 0 ? "+" : "-";
   const label = r.minutesUsed >= 59.5 ? "1h" : (r.minutesUsed.toFixed(0) + " min");
 
-  avgEl.textContent =
-    "Average change (" + label + "): " + sign + r.delta.toFixed(0) + " mg/dL";
+  avgEl.textContent = sign + r.delta.toFixed(0) + " mg/dL over " + label;
 
   let u = "Low";
   if (r.ratePerHr <= -60) u = "High";
   else if (r.ratePerHr <= -30) u = "Medium";
 
-  urgEl.textContent = "Urgency: " + u;
+  urgEl.textContent = u + " urgency";
 
   dbg("Analysis OK. Points=" + normalizedPts.length + ". WindowUsed=" + r.minutesUsed.toFixed(1) + " min.");
 }
@@ -4875,12 +4938,17 @@ async function refreshLatestCardFromRecent(recent) {
    Check if robot is connected
    ============================================================ */
 async function updateStatus() {
-  const el = document.getElementById("wifi-status");
-  if (!el) return;
+  const els = Array.from(document.querySelectorAll("[data-guard-status]"));
+  if (!els.length) return;
+  const setStatus = (text, color) => {
+    for (const el of els) {
+      el.textContent = text;
+      el.style.color = color;
+    }
+  };
 
   if (!getCurrentDeviceId()) {
-    el.textContent = "Not paired yet";
-    el.style.color = "grey";
+    setStatus("Not paired yet", "grey");
     return;
   }
 
@@ -4910,8 +4978,7 @@ async function updateStatus() {
 
     if (!res.ok) {
       if (res.status === 404 || res.status === 401) {
-        el.textContent = "Not paired yet";
-        el.style.color = "grey";
+        setStatus("Not paired yet", "grey");
         return;
       }
       throw new Error(data.error || "Status request failed");
@@ -4919,31 +4986,25 @@ async function updateStatus() {
 
     if (!data.lastSeen) {
       if (hasRecentPendingCloudHandoff()) {
-        el.textContent = "Waiting for GUARD to finish its first cloud check-in…";
-        el.style.color = "grey";
+        setStatus("Waiting for GUARD to finish its first cloud check-in…", "grey");
         return;
       }
-      el.textContent = "Waiting for GUARD heartbeat…";
-      el.style.color = "grey";
+      setStatus("Waiting for GUARD heartbeat…", "grey");
       return;
     }
 
     if (data.online) {
       clearPendingCloudHandoffAt();
-      el.textContent = "Connected";
-      el.style.color = "green";
+      setStatus("Connected", "green");
     } else {
       if (hasRecentPendingCloudHandoff()) {
-        el.textContent = "GUARD saved Wi-Fi. Waiting for its first heartbeat…";
-        el.style.color = "grey";
+        setStatus("GUARD saved Wi-Fi. Waiting for its first heartbeat…", "grey");
         return;
       }
-      el.textContent = "Disconnected (no heartbeat)";
-      el.style.color = "red";
+      setStatus("Disconnected (no heartbeat)", "red");
     }
   } catch {
-    el.textContent = "Status error";
-    el.style.color = "red";
+    setStatus("Status error", "red");
   }
 }
 function setAnalysisState(state, extra = "") {
@@ -4953,22 +5014,22 @@ function setAnalysisState(state, extra = "") {
   if (!avgEl || !urgEl) return;
 
   if (state === "connecting") {
-    avgEl.textContent = "Average change (1h): Connecting to Dexcom…";
-    urgEl.textContent = "Urgency: Checking CGM session…";
+    avgEl.textContent = "Connecting to Dexcom…";
+    urgEl.textContent = "Checking CGM session…";
     dbg(extra || "Connecting to Dexcom...");
     return;
   }
 
   if (state === "no_sensor") {
-    avgEl.textContent = "Average change (1h): No Dexcom connected";
-    urgEl.textContent = "Urgency: No CGM session detected";
+    avgEl.textContent = "No Dexcom connected";
+    urgEl.textContent = "No CGM session detected";
     dbg(extra || "Dexcom connected but no active sensor session.");
     return;
   }
 
   if (state === "no_data") {
-    avgEl.textContent = "Average change (1h): Waiting for data…";
-    urgEl.textContent = "Urgency: Waiting for data…";
+    avgEl.textContent = "Waiting for data…";
+    urgEl.textContent = "Waiting for data…";
     dbg(extra || "No glucose points available yet.");
     return;
   }
@@ -5037,6 +5098,29 @@ document.getElementById("settingsForm").addEventListener("submit", async (e) => 
 /* ============================================================
    LOGIN FLOW
    ============================================================ */
+function normalizeDexcomLoginMessage(message) {
+  const text = String(message || "").trim();
+  const lowered = text.toLowerCase();
+
+  if (
+    !text ||
+    lowered.includes("authenticatepublisheraccount") ||
+    lowered.includes("loginpublisheraccountbyid") ||
+    lowered.includes("accountpasswordinvalid") ||
+    lowered.includes("no account id returned") ||
+    lowered.includes("no session id returned") ||
+    lowered.includes("invalid account") ||
+    lowered.includes("authentication") ||
+    lowered.includes("<html") ||
+    lowered.includes("<!doctype") ||
+    text.length > 140
+  ) {
+    return "No account found";
+  }
+
+  return text;
+}
+
 async function saveDexcomCreds() {
   const username = document.getElementById("dxUser").value.trim();
   const password = document.getElementById("dxPass").value.trim();
@@ -5069,14 +5153,14 @@ async function saveDexcomCreds() {
     try {
       data = JSON.parse(text);
     } catch {
-      const loginError = text || "Login failed";
+      const loginError = normalizeDexcomLoginMessage(text || "Login failed");
       dbg("Login response was not valid JSON: " + loginError);
       stateEl.textContent = loginError;
       return;
     }
 
     if (!res.ok || !data.ok) {
-      const loginError = data?.error || text || "Login failed";
+      const loginError = normalizeDexcomLoginMessage(data?.error || text || "Login failed");
       dbg("Login failed: " + loginError);
       stateEl.textContent = loginError;
       return;
@@ -5099,7 +5183,7 @@ async function saveDexcomCreds() {
     }
     if (!sessionState.device_id) {
       setClaimCardVisible(true, {
-        help: "Optional: pair your GUARD anytime by entering the claim code shown after Bluetooth setup.",
+        help: "Optional: pair your GUARD anytime with Bluetooth setup. Guardian usually finishes the pairing automatically.",
         state: "Logged in. You can use Guardian now, even without a GUARD device."
       });
       stateEl.textContent = "Logged in";
@@ -5109,7 +5193,7 @@ async function saveDexcomCreds() {
     await enterDashboard();
 
   } catch (err) {
-    const loginError = err?.message || String(err) || "Login failed";
+    const loginError = normalizeDexcomLoginMessage(err?.message || String(err) || "Login failed");
     dbg("Login fetch error: " + loginError);
     stateEl.textContent = loginError;
   }
@@ -5236,11 +5320,11 @@ async function bootstrapExistingSession() {
    ============================================================ */
 async function pollDexcomNow() {
   const el = document.getElementById("poll-status");
-  el.textContent = "Refreshing…";
+  if (el) el.textContent = "Refreshing…";
 
   const r = await loadDexcomRecent();
   if (!r) {
-    el.textContent = "Dexcom unavailable";
+    if (el) el.textContent = "Dexcom unavailable";
     alert("Could not load Dexcom data.");
     return;
   }
@@ -5251,13 +5335,13 @@ async function pollDexcomNow() {
     document.getElementById("glucose-trend").textContent = "Trend: —";
     document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
     document.getElementById("glucose-age").textContent = "—";
-    el.textContent = "No active sensor";
+    if (el) el.textContent = "No active sensor";
     return;
   }
 
   renderLastHour(r.points);
   await refreshLatestCardFromRecent(r);
-  el.textContent = "Updated ?";
+  if (el) el.textContent = "Updated ?";
 }
 
 function makeFakeDexcomRecent({ minutes = 180, stepMin = 5, base = 120 } = {}) {
@@ -5334,4 +5418,3 @@ initGuardBluetoothSetup();
 void bootstrapExistingSession();
 
   
-

@@ -1135,6 +1135,22 @@
         width: min(1200px, 96vw);
         height: auto;
         overflow: visible;
+        align-self: stretch;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .home-flow-pane[hidden]{
+        display: none !important;
+    }
+
+    #setup,
+    #robot{
+        min-width: 0;
     }
 
     .card{
@@ -1198,11 +1214,507 @@
     /* =========================
         CHART / DASHBOARD
         ========================= */
+    .dashboard-page{
+        width: min(1180px, 96vw);
+        margin: 0 auto;
+    }
+
+    .home-page{
+        width: min(1180px, 96vw);
+        margin: 0 auto;
+        align-items: stretch;
+    }
+
+    .home-flow-pane{
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .dashboard-page .card{
+        max-width: none;
+    }
+
+    .home-page .card{
+        max-width: none;
+    }
+
+    .home-page-title{
+        width: 100%;
+        max-width: none;
+        margin: 0 0 18px;
+        align-self: stretch;
+        text-align: left;
+    }
+
+    .robot-pane{
+        max-width: 920px;
+        margin: 0 auto;
+    }
+
+    .robot-pane h2{
+        margin: 0 0 8px;
+        font-size: 1.45rem;
+        letter-spacing: -.04em;
+    }
+
+    .robot-pane-copy{
+        margin: 0 0 18px;
+        color: rgba(16,25,21,.68);
+        line-height: 1.65;
+    }
+
+    .guard-profile-card{
+        width: 100%;
+        max-width: 920px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 18px;
+        align-items: center;
+        padding: 22px 24px;
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at top right, rgba(84,222,113,.14), transparent 30%),
+          linear-gradient(180deg, rgba(255,255,255,.9), rgba(247,251,248,.82));
+        border: 1px solid rgba(255,255,255,.84);
+        box-shadow: 0 20px 36px rgba(16,25,21,.08), inset 0 1px 0 rgba(255,255,255,.76);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    .guard-profile-avatar{
+        width: 68px;
+        height: 68px;
+        border-radius: 20px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(180deg, rgba(9,176,44,.96), rgba(8,155,39,.96));
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        box-shadow: 0 14px 28px rgba(9,176,44,.22);
+    }
+
+    .guard-profile-meta{
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .guard-profile-kicker{
+        font-size: .74rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #0a7f26;
+    }
+
+    .guard-profile-name{
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: -.04em;
+        color: var(--ink);
+    }
+
+    .guard-profile-copy{
+        margin: 0;
+        color: rgba(16,25,21,.68);
+        line-height: 1.58;
+    }
+
+    .guard-profile-tags{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .guard-profile-tag{
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(16,25,21,.05);
+        border: 1px solid rgba(16,25,21,.08);
+        color: rgba(16,25,21,.74);
+        font-size: .84rem;
+        font-weight: 800;
+    }
+
+    .dashboard-hero-card{
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: 30px;
+        background:
+          radial-gradient(circle at 14% 18%, rgba(255,255,255,.36), rgba(255,255,255,0) 30%),
+          radial-gradient(circle at 82% 24%, rgba(9,176,44,.18), rgba(9,176,44,0) 34%),
+          linear-gradient(180deg, rgba(255,255,255,.88), rgba(244,250,246,.78));
+        border: 1px solid rgba(255,255,255,.82);
+        box-shadow: 0 28px 60px rgba(16,25,21,.09), inset 0 1px 0 rgba(255,255,255,.7);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        margin-bottom: 22px;
+    }
+
+    .dashboard-hero-grid{
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+        gap: 22px;
+        align-items: stretch;
+    }
+
+    .dashboard-hero-copy{
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .dashboard-hero-copy .page-kicker{
+        margin-bottom: -2px;
+    }
+
+    .dashboard-hero-copy h1{
+        margin: 0;
+        font-size: clamp(2.4rem, 5vw, 4.3rem);
+        line-height: .96;
+        letter-spacing: -.075em;
+        max-width: 10ch;
+        color: var(--ink);
+    }
+
+    .dashboard-hero-copy p{
+        margin: 0;
+        max-width: 52ch;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.75;
+    }
+
+    .dashboard-hero-stats{
+        display: grid;
+        gap: 14px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-stat-card{
+        border-radius: 24px;
+        padding: 20px;
+        background: rgba(255,255,255,.76);
+        border: 1px solid rgba(255,255,255,.84);
+        box-shadow: 0 16px 32px rgba(16,25,21,.06);
+        min-height: 100%;
+    }
+
+    .dashboard-glucose-card{
+        position: relative;
+        overflow: hidden;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 10% 14%, rgba(255,255,255,.4), rgba(255,255,255,0) 28%),
+          radial-gradient(circle at 88% 12%, rgba(9,176,44,.16), rgba(9,176,44,0) 36%),
+          linear-gradient(180deg, rgba(255,255,255,.92), rgba(244,250,246,.84));
+        border: 1px solid rgba(255,255,255,.9);
+        box-shadow: 0 22px 42px rgba(16,25,21,.08), inset 0 1px 0 rgba(255,255,255,.72);
+    }
+
+    .dashboard-glucose-card::after{
+        content: "";
+        position: absolute;
+        inset: auto -12% -28% auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(9,176,44,.12), rgba(9,176,44,0) 72%);
+        pointer-events: none;
+    }
+
+    .dashboard-glucose-head{
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .dashboard-glucose-copy{
+        margin: 0;
+        max-width: 34ch;
+        color: rgba(16,25,21,.68);
+        line-height: 1.55;
+        font-size: .97rem;
+    }
+
+    .dashboard-glucose-badge{
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(9,176,44,.1);
+        border: 1px solid rgba(9,176,44,.16);
+        color: #0a7f26;
+        font-size: .82rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .dashboard-glucose-badge::before{
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #09b02c;
+        box-shadow: 0 0 0 6px rgba(9,176,44,.14);
+    }
+
+    .dashboard-glucose-reading{
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 18px;
+    }
+
+    .dashboard-stat-label{
+        display: block;
+        font-size: .76rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #0a7f26;
+        margin-bottom: 10px;
+    }
+
+    .dashboard-stat-value{
+        margin: 0;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-width: 0;
+        font-size: clamp(2.8rem, 6.2vw, 4.8rem);
+        line-height: .84;
+        letter-spacing: -.1em;
+        color: var(--ink);
+    }
+
+    .dashboard-stat-value span{
+        font-variant-numeric: tabular-nums;
+    }
+
+    .dashboard-stat-value small{
+        font-size: .92rem;
+        letter-spacing: .08em;
+        color: rgba(16,25,21,.52);
+        font-weight: 800;
+        margin-left: 0;
+        padding-bottom: .65rem;
+        text-transform: uppercase;
+    }
+
+    .dashboard-stat-meta{
+        position: relative;
+        z-index: 1;
+        margin-top: 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        color: rgba(16,25,21,.72);
+        line-height: 1.35;
+    }
+
+    .dashboard-stat-meta p{
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(255,255,255,.86);
+        box-shadow: 0 10px 20px rgba(16,25,21,.05);
+        font-size: .92rem;
+        font-weight: 700;
+    }
+
+    .dashboard-status-value{
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 900;
+        letter-spacing: -.03em;
+    }
+
+    .dashboard-status-note{
+        margin-top: 12px;
+        color: rgba(16,25,21,.68);
+        line-height: 1.55;
+    }
+
+    .dashboard-feature-card{
+        position: relative;
+        overflow: hidden;
+        border-radius: 32px;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 12% 14%, rgba(255,255,255,.34), rgba(255,255,255,0) 30%),
+          radial-gradient(circle at 84% 18%, rgba(9,176,44,.14), rgba(9,176,44,0) 34%),
+          linear-gradient(180deg, rgba(255,255,255,.9), rgba(246,250,247,.78));
+        border: 1px solid rgba(255,255,255,.82);
+        box-shadow: 0 22px 44px rgba(16,25,21,.08), inset 0 1px 0 rgba(255,255,255,.7);
+    }
+
+    .dashboard-feature-card::after{
+        content: "";
+        position: absolute;
+        inset: auto -18% -38% auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(9,176,44,.11), rgba(9,176,44,0) 72%);
+        pointer-events: none;
+    }
+
+    .dashboard-feature-card-soft{
+        background:
+          radial-gradient(circle at 16% 18%, rgba(255,255,255,.32), rgba(255,255,255,0) 28%),
+          radial-gradient(circle at 84% 18%, rgba(16,25,21,.06), rgba(16,25,21,0) 34%),
+          linear-gradient(180deg, rgba(255,255,255,.88), rgba(243,248,245,.8));
+    }
+
+    .dashboard-feature-header{
+        position: relative;
+        z-index: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .dashboard-feature-kicker{
+        display: block;
+        margin-bottom: 10px;
+        font-size: .74rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #0a7f26;
+    }
+
+    .dashboard-feature-title{
+        margin: 0;
+        font-size: 1.3rem;
+        line-height: 1.02;
+        letter-spacing: -.05em;
+        color: var(--ink);
+    }
+
+    .dashboard-feature-copy{
+        margin: 8px 0 0;
+        max-width: 38ch;
+        color: var(--muted);
+        line-height: 1.65;
+    }
+
+    .dashboard-feature-stack{
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .dashboard-feature-stat{
+        border-radius: 22px;
+        padding: 16px 18px;
+        background: rgba(255,255,255,.74);
+        border: 1px solid rgba(255,255,255,.84);
+        box-shadow: 0 16px 32px rgba(16,25,21,.05);
+    }
+
+    .dashboard-feature-stat-label{
+        display: block;
+        margin-bottom: 10px;
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #0a7f26;
+    }
+
+    .dashboard-feature-stat-value{
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: -.03em;
+        line-height: 1.4;
+        color: var(--ink);
+    }
+
+    .dashboard-feature-note{
+        margin: 12px 0 0;
+        color: rgba(16,25,21,.68);
+        line-height: 1.6;
+    }
+
+    .dashboard-feature-footer{
+        position: relative;
+        z-index: 1;
+        margin: 14px 0 0;
+        color: rgba(16,25,21,.62);
+        font-size: .92rem;
+        line-height: 1.55;
+    }
+
+    .dashboard-threshold-pillset{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .threshold-chip{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-weight: 900;
+        letter-spacing: -.02em;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+    }
+
+    .threshold-chip-low{
+        background: rgba(72,132,255,.12);
+        color: #2e60d4;
+        border: 1px solid rgba(72,132,255,.18);
+    }
+
+    .threshold-chip-high{
+        background: rgba(255,176,9,.14);
+        color: #b36a05;
+        border: 1px solid rgba(255,176,9,.24);
+    }
+
     .dashboard{
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        max-width: 1100px;
+        grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+        gap: 18px;
+        width: 100%;
         justify-content: center;
     }
 
@@ -1219,7 +1731,7 @@
     }
 
     .chart-card{
-        padding: 18px;
+        padding: 22px;
     }
 
     .chart-container{
@@ -1232,7 +1744,7 @@
         justify-content: space-between;
         align-items: baseline;
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 14px;
     }
 
     .chart-sub{
@@ -1254,16 +1766,26 @@
     }
 
     .analysis-debug{
-        margin-top: 8px;
-        font-size: .85rem;
-        opacity: .85;
+        position: relative;
+        z-index: 1;
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.56);
+        border: 1px dashed rgba(120,130,125,.28);
+        font-size: .82rem;
+        color: rgba(16,25,21,.68);
         white-space: pre-wrap;
+    }
+
+    .analysis-debug:empty{
+        display: none;
     }
 
     .chart-controls{
         display: flex;
         gap: 10px;
-        margin-top: 12px;
+        margin-top: 16px;
         flex-wrap: wrap;
     }
 
@@ -1291,10 +1813,10 @@
     #setup{
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         justify-content: center;
         gap: 1rem;
-        padding: 8px 0 0 0;
+        padding: 0;
     }
 
     .setup-card{
@@ -1316,17 +1838,16 @@
     .setup-shell{
         width: 100%;
         display: grid;
-        grid-template-columns: minmax(0, 1.18fr) minmax(320px, .82fr);
-        gap: 24px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
         align-items: stretch;
-        padding: 18px;
-        border-radius: 32px;
-        background:
-          radial-gradient(circle at top left, rgba(84,222,113,.14), transparent 30%),
-          radial-gradient(circle at bottom right, rgba(16,25,21,.08), transparent 38%),
-          linear-gradient(180deg, rgba(255,255,255,.58), rgba(244,250,246,.44));
-        border: 1px solid rgba(255,255,255,.62);
-        box-shadow: 0 24px 54px rgba(16,25,21,.08), inset 0 1px 0 rgba(255,255,255,.54);
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        max-width: 920px;
+        margin: 0 auto;
     }
 
     .setup-main-card,
@@ -1345,7 +1866,16 @@
     .setup-main-card{
         display: flex;
         flex-direction: column;
-        gap: 28px;
+        gap: 22px;
+        padding: 30px;
+        border-radius: 30px;
+        background:
+          radial-gradient(circle at top right, rgba(84,222,113,.12), transparent 34%),
+          linear-gradient(180deg, rgba(255,255,255,.92), rgba(247,251,248,.82));
+        border: 1px solid rgba(255,255,255,.84);
+        box-shadow: 0 24px 44px rgba(16,25,21,.08), inset 0 1px 0 rgba(255,255,255,.78);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
     }
 
     .setup-side-card{
@@ -1375,6 +1905,8 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(16,25,21,.08);
     }
 
     .setup-hero h2{
@@ -1395,11 +1927,11 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        padding: 20px;
-        border-radius: 20px;
-        background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(248,251,249,.68));
-        border: 1px solid rgba(255,255,255,.7);
-        box-shadow: 0 14px 28px rgba(16,25,21,.05);
+        padding: 18px;
+        border-radius: 18px;
+        background: rgba(255,255,255,.68);
+        border: 1px solid rgba(255,255,255,.72);
+        box-shadow: 0 10px 22px rgba(16,25,21,.05);
     }
 
     .setup-step-card h3{
@@ -1422,11 +1954,11 @@
     }
 
     .setup-action-card{
-        padding: 28px;
-        border-radius: 24px;
-        background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,252,248,.88));
-        border: 1px solid rgba(255,255,255,.82);
-        box-shadow: 0 20px 42px rgba(16,25,21,.08);
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
     }
 
     .setup-action-card h3,
@@ -1491,21 +2023,31 @@
         background: rgba(16,25,21,.09);
     }
 
+    .setup-nav-row{
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .setup-nav-row .smallbtn{
+        width: auto;
+        min-width: 170px;
+    }
+
     .setup-wifi-fields{
         display: none;
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid rgba(16,25,21,.08);
+        margin-top: 18px;
     }
 
     .setup-wifi-block{
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 14px;
-        border-radius: 16px;
-        background: rgba(16,25,21,.045);
-        border: 1px solid rgba(16,25,21,.06);
+        gap: 12px;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: none;
     }
 
     .setup-wifi-head{
@@ -1538,6 +2080,24 @@
         font-size: .82rem;
         font-weight: 800 !important;
         white-space: nowrap;
+    }
+
+    .setup-micro-toggle{
+        min-height: 30px !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        font-size: .75rem;
+        font-weight: 800 !important;
+        letter-spacing: .01em;
+        white-space: nowrap;
+        background: rgba(16,25,21,.04) !important;
+        border: 1px solid rgba(16,25,21,.08) !important;
+        color: rgba(16,25,21,.74) !important;
+        box-shadow: none !important;
+    }
+
+    .setup-backup-toggle-row{
+        margin-top: 2px;
     }
 
     .setup-wifi-divider{
@@ -1616,10 +2176,84 @@
         color: rgba(16,25,21,.78);
         line-height: 1.6;
         font-size: .95rem;
+        max-width: 58ch;
     }
 
     .setup-note strong{
         color: var(--ink);
+    }
+
+    .setup-reset-card{
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(16,25,21,.08);
+    }
+
+    .setup-reset-card[hidden]{
+        display: none !important;
+    }
+
+    .setup-reset-toggle{
+        background: rgba(16,25,21,.04) !important;
+        color: rgba(16,25,21,.68) !important;
+        border: 1px solid rgba(16,25,21,.08) !important;
+    }
+
+    .setup-reset-panel{
+        margin-top: 12px;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(181,23,23,.04);
+        border: 1px solid rgba(181,23,23,.12);
+    }
+
+    .setup-reset-panel[hidden]{
+        display: none !important;
+    }
+
+    .setup-reset-copy{
+        margin: 0;
+        color: rgba(16,25,21,.74);
+        line-height: 1.58;
+    }
+
+    .setup-reset-actions{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .setup-reset-danger{
+        background: #b42318 !important;
+        color: white !important;
+        border-color: #b42318 !important;
+    }
+
+    .setup-reset-danger:hover{
+        background: #9b1c14 !important;
+        border-color: #9b1c14 !important;
+    }
+
+    .setup-reset-state{
+        margin: 12px 0 0;
+        font-size: .95rem;
+        line-height: 1.55;
+        color: rgba(16,25,21,.66);
+    }
+
+    .setup-inline-claim{
+        display: none;
+        margin-top: 16px;
+        padding: 20px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(15,24,20,.98), rgba(25,40,33,.95));
+        color: white;
+        box-shadow: 0 18px 34px rgba(16,25,21,.18);
+    }
+
+    .setup-inline-claim.is-visible{
+        display: block;
     }
 
     .setup-claim-card{
@@ -1700,6 +2334,16 @@
         color: rgba(255,255,255,.82);
     }
 
+    .setup-claim-fallback{
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255,255,255,.12);
+    }
+
+    .setup-claim-fallback[hidden]{
+        display: none;
+    }
+
     .setup-mini-list{
         display: flex;
         flex-direction: column;
@@ -1758,23 +2402,208 @@
     }
 
     .page-title{
-        width: min(420px, 92vw);
-        margin-bottom: 12px;
+        width: 100%;
+        margin: 0;
     }
 
-    #settings .column{
-        width: min(420px, 92vw);
+    .page-intro-card{
+        width: 100%;
+        margin-bottom: 18px;
+        padding: 26px 28px;
+        border-radius: 30px;
+        background:
+          radial-gradient(circle at top right, rgba(84,222,113,.16), transparent 34%),
+          linear-gradient(180deg, rgba(255,255,255,.88), rgba(246,250,247,.8));
+        border: 1px solid rgba(255,255,255,.82);
+        box-shadow: 0 24px 48px rgba(16,25,21,.08), inset 0 1px 0 rgba(255,255,255,.78);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .page-kicker{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(9,176,44,.12);
+        color: #0a7f26;
+        font-size: .74rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .page-subtitle{
+        margin: 10px 0 0;
+        max-width: 60ch;
+        color: rgba(16,25,21,.7);
+        line-height: 1.68;
+        font-size: 1rem;
+    }
+
+    .product-status-banner{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 18px;
+        padding: 18px 20px;
+        border-radius: 20px;
+        background: rgba(255,255,255,.66);
+        border: 1px solid rgba(255,255,255,.76);
+        box-shadow: 0 18px 32px rgba(16,25,21,.06);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .product-status-banner[data-tone="success"]{
+        background: linear-gradient(180deg, rgba(238,251,241,.92), rgba(255,255,255,.82));
+    }
+
+    .product-status-banner[data-tone="warning"]{
+        background: linear-gradient(180deg, rgba(255,248,235,.94), rgba(255,255,255,.84));
+    }
+
+    .product-status-banner[data-tone="error"]{
+        background: linear-gradient(180deg, rgba(255,241,239,.94), rgba(255,255,255,.84));
+    }
+
+    .product-status-meta{
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .product-status-kicker{
+        font-size: .74rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #0a7f26;
+    }
+
+    .product-status-title{
+        margin: 0;
+        font-size: 1.04rem;
+        font-weight: 800;
+        letter-spacing: -.02em;
+        color: var(--ink);
+    }
+
+    .product-status-copy{
+        margin: 0;
+        color: rgba(16,25,21,.68);
+        line-height: 1.58;
+    }
+
+    .product-status-pill{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 112px;
+        min-height: 42px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(9,176,44,.1);
+        border: 1px solid rgba(9,176,44,.12);
+        font-weight: 900;
+        letter-spacing: -.01em;
+        white-space: nowrap;
+    }
+
+    .settings-page{
+        width: min(980px, 96vw);
+        margin: 0 auto;
+        align-items: stretch;
+    }
+
+    .settings-page .column{
+        width: 100%;
+        max-width: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .settings-card{
+        padding: 22px;
+        border-radius: 24px;
+    }
+
+    .settings-span-2{
+        grid-column: 1 / -1;
+    }
+
+    .settings-card-title{
+        display: block;
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 800;
+        letter-spacing: -.03em;
+        color: var(--ink);
+    }
+
+    .settings-card-kicker{
+        display: inline-flex;
+        margin-bottom: 10px;
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: rgba(9,176,44,.11);
+        color: #0a7f26;
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .settings-card-copy{
+        margin: 10px 0 0;
+        color: rgba(16,25,21,.72);
+        line-height: 1.62;
+    }
+
+    .settings-form-grid{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .settings-form-grid button{
+        grid-column: 1 / -1;
+    }
+
+    .settings-account-card{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .settings-account-copy{
+        color: rgba(16,25,21,.7);
+        line-height: 1.6;
+        max-width: 42ch;
+    }
+
+    .settings-account-card .smallbtn{
+        width: auto;
+        min-width: 160px;
     }
 
     /* =========================
         ROBOT / MODEL WHEEL
         ========================= */
     #robot{
-        display: none;
+        display: flex;
         flex-direction: column;
         gap: 14px;
         width: 100%;
         align-items: stretch;
+        margin-top: 28px;
     }
 
     .model-wheel-wrap{
@@ -1892,12 +2721,20 @@
         outline-offset: 3px;
     }
 
+    .model-wheel-note{
+        margin: 8px 0 0;
+        text-align: left;
+        font-size: .9rem;
+        color: rgba(16,25,21,.58);
+    }
+
     .robot-card{
         width: 100%;
         max-width: 100%;
         height: auto;
         min-height: 0;
         overflow: visible;
+        padding: 24px;
     }
 
     .model-head{
@@ -2112,8 +2949,8 @@
         box-shadow: 0 16px 40px rgba(0,0,0,.14);
         backdrop-filter: var(--blur);
         -webkit-backdrop-filter: var(--blur);
-        padding: 8px 18px;
-        border-radius: 999px;
+        padding: 10px 12px;
+        border-radius: 22px;
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -2128,19 +2965,46 @@
 
     .footer-wrap{
         display: flex;
-        gap: 12px;
+        gap: 8px;
     }
 
     .foot-card{
-        width: 42px;
-        height: 36px;
+        min-width: 92px;
+        min-height: 54px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 16px;
         background: rgba(255,255,255,.55);
         border: 1px solid rgba(255,255,255,.55);
         cursor: pointer;
+        color: rgba(16,25,21,.78);
+        transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .foot-card:hover{
+        transform: translateY(-1px);
+        background: rgba(255,255,255,.72);
+    }
+
+    .foot-card.is-active{
+        background: linear-gradient(180deg, rgba(9,176,44,.96), rgba(8,155,39,.96));
+        border-color: rgba(9,176,44,.9);
+        color: white;
+        box-shadow: 0 12px 24px rgba(9,176,44,.2);
+    }
+
+    .foot-icon{
+        font-size: 1.05rem;
+        line-height: 1;
+    }
+
+    .foot-label{
+        font-size: .86rem;
+        font-weight: 800;
+        letter-spacing: -.01em;
     }
 
     /* =========================
@@ -2406,6 +3270,10 @@
         grid-template-columns: 1fr;
         }
 
+        .dashboard-hero-grid{
+        grid-template-columns: 1fr;
+        }
+
         .setup-shell{
         grid-template-columns: 1fr;
         padding: 14px;
@@ -2419,6 +3287,48 @@
 
         .setup-card{
         grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 700px){
+        .dashboard-hero-card{
+        padding: 22px;
+        border-radius: 26px;
+        }
+
+        .dashboard-hero-copy h1{
+        max-width: none;
+        }
+
+        .dashboard-hero-stats{
+        grid-template-columns: 1fr;
+        }
+
+        .dashboard-glucose-head,
+        .dashboard-glucose-reading{
+        flex-direction: column;
+        align-items: flex-start;
+        }
+
+        .dashboard-stat-value{
+        font-size: clamp(2.4rem, 12vw, 3.6rem);
+        }
+
+        .dashboard-stat-value small{
+        padding-bottom: .25rem;
+        }
+
+        .dashboard-feature-card{
+        padding: 20px;
+        border-radius: 26px;
+        }
+
+        .dashboard-feature-header{
+        flex-direction: column;
+        }
+
+        .dashboard-threshold-pillset{
+        flex-direction: column;
         }
     }
 
@@ -2567,6 +3477,35 @@
         border-radius: 20px;
         }
 
+        .page-intro-card{
+        padding: 20px;
+        border-radius: 22px;
+        }
+
+        .settings-page .column,
+        .settings-form-grid{
+        grid-template-columns: 1fr;
+        }
+
+        .settings-account-card{
+        align-items: flex-start;
+        }
+
+        .settings-account-card .smallbtn{
+        width: 100%;
+        min-width: 0;
+        }
+
+        .guard-profile-card{
+        grid-template-columns: 1fr;
+        justify-items: start;
+        text-align: left;
+        }
+
+        .robot-pane-copy{
+        margin-bottom: 14px;
+        }
+
         .setup-hero h2{
         font-size: 1.7rem;
         }
@@ -2676,8 +3615,14 @@
         }
 
         .foot-card{
-        width: 46px;
-        height: 40px;
+        min-width: 0;
+        flex: 1 1 0;
+        height: auto;
+        padding: 10px 12px;
+        }
+
+        .foot-label{
+        font-size: .8rem;
         }
 
         .guard-footer{
@@ -3199,14 +4144,14 @@
       </div>
 
       <div id="deviceClaimCard" class="card login-card" style="display:none;">
-        <strong>Claim Your GUARD</strong>
+        <strong>Finish Pairing</strong>
         <p id="device-claim-help" style="opacity:.75;">
-          Power on your GUARD, send it Wi-Fi from Guardian over Bluetooth, and enter the pairing code shown during setup.
+          Guardian usually finishes pairing automatically. If a fallback code is needed, it will appear here.
         </p>
         <form onsubmit="claimDeviceFromCode(); return false;"
               style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
-          <input id="claimCodeInput" placeholder="Pairing code" autocomplete="one-time-code">
-          <button type="submit">Claim Device</button>
+          <input id="claimCodeInput" placeholder="Fallback code" autocomplete="one-time-code">
+          <button type="submit">Use Fallback Code</button>
         </form>
         <p id="device-claim-state" style="margin-top:10px; opacity:.75;"></p>
       </div>
@@ -3215,57 +4160,85 @@
   </div>
 
       <!-- DASHBOARD -->
-      <div id="content" class="page">
-        <h1 id="dashboardTitle" style="margin-bottom:12px;">Dashboard</h1>
+      <div id="content" class="page dashboard-page">
+        <section class="dashboard-hero-card">
+          <div class="dashboard-hero-grid">
+            <div class="dashboard-hero-copy">
+              <span class="page-kicker">Live overview</span>
+              <h1 id="dashboardTitle">Today</h1>
+              <p>
+                See the current glucose picture, urgency, and robot connection in one calmer view.
+                Guardian keeps the essentials close without turning the page into a control panel.
+              </p>
 
-        <div id="deviceClaimDashboardCard" class="card" style="display:block; margin-bottom:18px;">
-          <strong>Claim Your GUARD</strong>
-          <p id="dashboard-device-claim-help" style="opacity:.75; margin-top:8px;">
-            Have a pairing code from your robot? Enter it here to link your GUARD to this account.
-          </p>
-          <form onsubmit="claimDeviceFromCode('dashboardClaimCodeInput', 'dashboard-device-claim-state'); return false;"
-                style="display:flex;flex-direction:column;gap:10px;margin-top:12px;max-width:420px;">
-            <input id="dashboardClaimCodeInput" placeholder="Pairing code" autocomplete="one-time-code">
-            <button type="submit">Claim Device</button>
-          </form>
-          <p id="dashboard-device-claim-state" style="margin-top:10px; opacity:.75;"></p>
-        </div>
+              <div class="product-status-banner" data-guard-banner data-tone="neutral">
+                <div class="product-status-meta">
+                  <span class="product-status-kicker">GUARD right now</span>
+                  <p class="product-status-title" data-guard-state-title>Checking on GUARD…</p>
+                  <p class="product-status-copy" data-guard-state-copy>Guardian will keep this updated automatically.</p>
+                </div>
+                <span class="product-status-pill" data-guard-status>Checking…</span>
+              </div>
+            </div>
+
+            <div class="dashboard-hero-stats">
+              <div class="dashboard-stat-card dashboard-glucose-card">
+                <div class="dashboard-glucose-head">
+                  <div>
+                    <span class="dashboard-stat-label">Latest Glucose</span>
+                    <p class="dashboard-glucose-copy">Your most recent reading, refreshed automatically as Guardian checks in.</p>
+                  </div>
+                  <span class="dashboard-glucose-badge">Live</span>
+                </div>
+                <div class="dashboard-glucose-reading">
+                  <p class="dashboard-stat-value"><span id="glucose-value">—</span><small>mg/dL</small></p>
+                </div>
+                <div class="dashboard-stat-meta">
+                  <p id="glucose-trend">Trend: —</p>
+                  <p id="glucose-time">—</p>
+                  <p id="glucose-age">—</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div class="dashboard">
           <div class="column">
-            <div class="card">
-              <strong>Dexcom Poll</strong>
-              <p id="poll-status" style="opacity:.75;">Not started</p>
-              <button class="smallbtn" onclick="pollDexcomNow()">Poll Dexcom Now</button>
-            </div>
-
-            <div class="card">
-              <strong>Latest Glucose</strong>
-              <p><span id="glucose-value">—</span> mg/dL</p>
-              <p id="glucose-trend" style="opacity:.75;">Trend: —</p>
-              <p id="glucose-time" style="opacity:.65;font-size:.9rem;">—</p>
-              <p id="glucose-age" style="opacity:.65;font-size:.9rem;margin-top:6px;">—</p>
-            </div>
-
-            <!-- ✅ Analysis will NEVER be blank now -->
-            <div class="card">
-              <strong>Analysis</strong>
-              <div style="margin-top:8px; opacity:.75;">
-                <div id="avgchg">Average change (1h): waiting for data…</div>
-                <div id="Urgency">Urgency: waiting for data…</div>
-                <div id="analysis-debug" class="analysis-debug"></div>
+            <div class="card dashboard-card dashboard-feature-card">
+              <div class="dashboard-feature-header">
+                <div>
+                  <span class="dashboard-feature-kicker">Live Pattern Read</span>
+                  <h2 class="dashboard-feature-title">Analysis</h2>
+                  <p class="dashboard-feature-copy">
+                    A softer read on how the last hour is moving, so trend changes feel obvious at a glance.
+                  </p>
+                </div>
+                <span class="pill">Auto</span>
               </div>
-              <p style="margin-top:8px; opacity:.75;">
-                Demo only. Not medical advice.
-              </p>
+
+              <div class="dashboard-feature-stack">
+                <div class="dashboard-feature-stat">
+                  <span class="dashboard-feature-stat-label">Average change</span>
+                  <p id="avgchg" class="dashboard-feature-stat-value">Waiting for data…</p>
+                </div>
+                <div class="dashboard-feature-stat">
+                  <span class="dashboard-feature-stat-label">Urgency</span>
+                  <p id="Urgency" class="dashboard-feature-stat-value">Waiting for data…</p>
+                </div>
+              </div>
+
+              <div id="analysis-debug" class="analysis-debug"></div>
+              <p class="dashboard-feature-footer">Demo only. Not medical advice.</p>
             </div>
+
           </div>
 
           <div class="column">
-            <div class="card chart-card">
+            <div class="card dashboard-card chart-card">
               <div class="chart-head">
                 <strong style="margin:0;">Glucose (last 60 min)</strong>
-                <div class="chart-sub" id="threshold-labels">Low — • High —</div>
+                <div class="chart-sub">Live trend view</div>
               </div>
 
               <div class="chart-container">
@@ -3287,62 +4260,32 @@
         </div>
       </div>
 
-      <div id="home" class="page">
-        <h1 class="page-title">Home</h1>
+      <div id="home" class="page home-page">
+        <section class="page-intro-card">
+          <span class="page-kicker">Device</span>
+          <h1 class="page-title home-page-title">Home</h1>
+          <p class="page-subtitle">
+            Set up GUARD once, then let it reconnect quietly in the background while you keep an eye on the robot side here.
+          </p>
+        </section>
 
         <div class="card home-card">
           <!-- SETUP -->
-          <div id="setup">
+          <div id="setup" class="home-flow-pane">
             <div class="setup-shell">
               <div class="setup-main-card">
                 <div class="setup-hero">
-                  <span class="setup-kicker">Robot Setup</span>
-                  <h2>Pair your GUARD in a few calm steps.</h2>
+                  <h2>Set up your GUARD.</h2>
                   <p>
-                    Keep GUARD nearby, connect over Bluetooth, and if it is already on Wi-Fi Guardian will finish the pairing automatically.
-                    First-time setup is the only time you should need to enter Wi-Fi.
+                    Enter the main Wi-Fi GUARD should use. Guardian handles the local setup in the background during first-time setup.
                   </p>
-                </div>
-
-                <div class="setup-card">
-                  <div class="setup-step-card">
-                    <h3>Power on GUARD</h3>
-                    <p>Keep the robot nearby and leave this page open while you connect.</p>
-                    <strong>If it does not appear right away, wait a moment and scan again.</strong>
-                  </div>
-
-                  <div class="setup-step-card">
-                    <h3>Connect over Bluetooth</h3>
-                    <p>Use the main connect button for normal pairing. Open Wi-Fi only for first-time setup or a network change.</p>
-                    <strong>Chrome or Edge works best here.</strong>
-                  </div>
-
-                  <div class="setup-step-card">
-                    <h3>Finish with the pairing code</h3>
-                    <p>The code appears here as soon as Guardian sees the robot. Claim it once to finish linking your account.</p>
-                    <strong>After that, GUARD should reconnect on its own.</strong>
-                  </div>
                 </div>
 
                 <div class="setup-action-card">
-                  <h3>Connect nearby GUARD</h3>
+                  <h3>First-time setup</h3>
                   <p class="setup-action-copy">
-                    This is the easy path. If GUARD already knows Wi-Fi, just connect over Bluetooth and let Guardian finish the rest.
+                    GUARD will remember this network and reconnect on its own after the first setup.
                   </p>
-
-                  <div class="setup-comfort-strip">
-                    <div class="setup-comfort-pill">Bluetooth for setup</div>
-                    <div class="setup-comfort-pill">Wi-Fi usually only once</div>
-                    <div class="setup-comfort-pill">Backup networks are optional</div>
-                  </div>
-
-                  <div class="setup-primary-actions">
-                    <button id="bleConnectButton" type="button" onclick="startGuardBluetoothSetup(false)">Connect Nearby GUARD</button>
-                  </div>
-
-                  <div class="setup-secondary-row">
-                    <button id="bleWifiToggleButton" type="button" class="smallbtn" onclick="toggleBleWifiFields()">Set up or change Wi-Fi</button>
-                  </div>
 
                   <div id="bleWifiFields" class="setup-wifi-fields">
                     <form onsubmit="startGuardBluetoothSetup(true); return false;"
@@ -3350,71 +4293,72 @@
                       <div class="setup-wifi-block">
                         <div class="setup-wifi-head">
                           <div>
-                            <div class="setup-wifi-label">Main Wi-Fi</div>
-                            <div class="setup-wifi-copy">This is the network GUARD should prefer whenever it can.</div>
+                            <div class="setup-wifi-label">Wi-Fi</div>
+                            <div class="setup-wifi-copy">Use the main network GUARD should prefer.</div>
                           </div>
-                          <button id="bleExtraWifiToggleButton" type="button" class="smallbtn setup-tiny-toggle" onclick="toggleBleExtraWifiPanel()">Add backup Wi-Fi</button>
                         </div>
                         <input id="bleWifiSsid" placeholder="Home Wi-Fi name (SSID)" autocomplete="off">
                         <input id="bleWifiPassword" type="password" placeholder="Home Wi-Fi password" autocomplete="current-password">
-                        <div class="setup-wifi-copy">Most people only need this one network.</div>
+                        <div class="setup-wifi-copy">You can add travel or backup networks later from Settings.</div>
                       </div>
 
-                      <div id="bleExtraWifiPanel" class="setup-extra-wifi-panel" hidden>
-                        <div class="setup-wifi-divider">
-                          <strong>Backup networks</strong>
-                          <span>Add a hotspot or travel network if you want GUARD to keep working away from home. GUARD will return to your main Wi-Fi when it sees it again.</span>
-                        </div>
-
-                        <div id="bleExtraWifiList" class="setup-extra-wifi-list"></div>
-
-                        <div class="setup-secondary-row setup-inline-row">
-                          <button id="bleAddWifiNetworkButton" type="button" class="smallbtn" onclick="addBleWifiNetworkRow()">Add backup Wi-Fi</button>
-                        </div>
-                      </div>
-
-                      <button id="bleSetupButton" type="submit">Save Wi-Fi on GUARD</button>
+                      <button id="bleSetupButton" type="submit">Set up GUARD</button>
                     </form>
+
                   </div>
 
-                  <p id="bleSetupState" class="setup-note"><strong>Tip:</strong> If GUARD is already online, you usually only need the main connect button above.</p>
+                  <p id="bleSetupState" class="setup-note"><strong>Tip:</strong> Leave GUARD powered on nearby while Guardian finishes the first setup.</p>
                   <p id="bleSetupFallback" style="margin-top:12px; opacity:.68;">
-                    Bluetooth setup needs a browser with Web Bluetooth support. Safari/iPhone does not currently support this setup flow.
+                    First-time setup currently needs Chrome or Edge. Safari/iPhone does not currently support this setup flow.
                   </p>
-                </div>
-              </div>
 
-              <div class="setup-side-card">
-                <div class="setup-claim-card">
-                  <h3>Pairing Code</h3>
-                  <p class="setup-claim-subtitle">When GUARD reaches Guardian, the code will appear here automatically. Enter it once to finish linking this robot.</p>
+                  <div id="setupClaimCard" class="setup-inline-claim" hidden>
+                    <h3>Manual Pairing Fallback</h3>
+                    <p class="setup-claim-subtitle">Guardian only shows this if automatic pairing needs extra help.</p>
 
-                  <div class="setup-claim-code">
-                    <div>
-                      <div class="label">Code</div>
-                      <div id="setupClaimCodePreview" class="value">Waiting…</div>
+                    <div class="setup-claim-code">
+                      <div>
+                        <div id="setupClaimCodeLabel" class="label">Fallback code</div>
+                        <div id="setupClaimCodePreview" class="value setup-claim-empty">Waiting for fallback code</div>
+                      </div>
+                    </div>
+
+                    <p id="bleSetupClaim" class="setup-claim-status">If Guardian exposes a fallback code, enter it here once.</p>
+
+                    <div id="setupClaimFallback" class="setup-claim-fallback" hidden>
+                      <form class="setup-claim-form" onsubmit="claimDeviceFromCode('setupClaimCodeInput', 'setup-device-claim-state'); return false;">
+                        <input id="setupClaimCodeInput" placeholder="Enter fallback code" autocomplete="one-time-code">
+                        <button type="submit">Use Fallback Code</button>
+                      </form>
+                      <p id="setup-device-claim-state" class="setup-claim-feedback"></p>
                     </div>
                   </div>
 
-                  <p id="bleSetupClaim" class="setup-claim-status"></p>
-
-                  <form class="setup-claim-form" onsubmit="claimDeviceFromCode('setupClaimCodeInput', 'setup-device-claim-state'); return false;">
-                    <input id="setupClaimCodeInput" placeholder="Enter pairing code" autocomplete="one-time-code">
-                    <button type="submit">Claim This GUARD</button>
-                  </form>
-                  <p class="setup-claim-hint">Leave this page open for a moment while GUARD finishes checking in.</p>
-                  <p id="setup-device-claim-state" class="setup-claim-feedback"></p>
+                  <div class="setup-nav-row">
+                    <button type="button" class="smallbtn" onclick="setHomeFlowStep(2)">Next: Models</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div id="robot">
-            <h2>Robot <button class="info-btn" type="button" onclick="info()">ⓘ</button></h2>
+          <div id="robot" class="home-flow-pane robot-pane" hidden>
+            <div>
+              <h2>Robot</h2>
+              <p class="robot-pane-copy">Preview the companion design and check how GUARD is doing right now.</p>
+            </div>
 
-            <div class="card">
-              <strong>GUARD Connection</strong>
-              <p id="wifi-status">Checking…</p>
+            <div class="guard-profile-card">
+              <div class="guard-profile-avatar" data-guard-model-icon>AG</div>
+              <div class="guard-profile-meta">
+                <span class="guard-profile-kicker">GUARD profile</span>
+                <p class="guard-profile-name" data-guard-model-name>Argos</p>
+                <p class="guard-profile-copy" data-guard-model-copy>Heavy guard companion with a calm bedside presence.</p>
+                <div class="guard-profile-tags">
+                  <span class="guard-profile-tag" data-guard-device-id>Device ID pending</span>
+                  <span class="guard-profile-tag" data-guard-model-tag>Model ready</span>
+                </div>
+              </div>
             </div>
 
             <div class="card robot-card">
@@ -3445,6 +4389,8 @@
                   </div>
                 </div>
 
+                <p class="model-wheel-note">Argos is rendered now. Osprey and Aegis stay as concept cards until their model files are ready.</p>
+
 
 
               <div id="robotModelViewer"></div>
@@ -3453,24 +4399,98 @@
                 Preview of the GUARD robotic companion design.
               </p>
             </div>
+
+            <div class="setup-nav-row">
+              <button type="button" class="smallbtn" onclick="setHomeFlowStep(1)">Back to Setup</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div id="settings" class="page">
-        <h1 class="page-title">Settings</h1>
+      <div id="settings" class="page settings-page">
+        <section class="page-intro-card">
+          <span class="page-kicker">Preferences</span>
+          <h1 class="page-title">Settings</h1>
+          <p class="page-subtitle">
+            Choose the comfort range GUARD should watch, add extra networks for roaming, and keep reset tucked away for true start-over moments.
+          </p>
+        </section>
         <div class="column">
-          <div class="card">
-            <strong>Urgency</strong>
-            <form id="settingsForm" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+          <div class="card settings-card settings-span-2">
+            <span class="settings-card-kicker">Everyday</span>
+            <strong class="settings-card-title">Glucose comfort range</strong>
+            <p class="settings-card-copy">
+              Guardian uses this range to frame your live chart and urgency so the experience feels closer to your real comfort zone.
+            </p>
+            <form id="settingsForm" class="settings-form-grid">
               <input id="lowInput" type="number" placeholder="Low threshold (mg/dL)">
               <input id="highInput" type="number" placeholder="High threshold (mg/dL)">
-              <button type="submit">Save thresholds</button>
+              <button type="submit">Save range</button>
             </form>
             <p id="settingsStatus" style="margin-top:10px; opacity:.75;"></p>
           </div>
 
-          <div class="card">
+          <div id="guardBackupWifiCard" class="card settings-card">
+            <span class="settings-card-kicker">Network</span>
+            <strong class="settings-card-title">Backup Wi-Fi</strong>
+            <p class="settings-card-copy">
+              Add extra networks for travel or a hotspot. GUARD will prefer the main network from setup when it sees it again.
+            </p>
+            <div class="setup-reset-actions">
+              <button id="settingsBackupWifiToggle" type="button" class="smallbtn setup-reset-toggle" onclick="toggleSettingsBackupWifiPanel()">
+                Add backup Wi-Fi
+              </button>
+            </div>
+
+            <div id="settingsBackupWifiPanel" class="setup-reset-panel" hidden>
+              <form onsubmit="startGuardBackupWifiSetup(); return false;" style="display:flex;flex-direction:column;gap:10px;">
+                <input id="settingsBackupWifiSsid" placeholder="Backup Wi-Fi name (SSID)" autocomplete="off">
+                <input id="settingsBackupWifiPassword" type="password" placeholder="Backup Wi-Fi password" autocomplete="off">
+                <div id="settingsBackupWifiList" class="setup-extra-wifi-list"></div>
+                <div class="setup-reset-actions">
+                  <button id="settingsAddWifiNetworkButton" type="button" class="smallbtn" onclick="addSettingsBackupWifiNetworkRow()">Add another backup Wi-Fi</button>
+                  <button id="settingsSaveBackupWifiButton" type="submit" class="smallbtn">Save backup Wi-Fi</button>
+                </div>
+              </form>
+              <p id="settingsBackupWifiState" class="setup-reset-state">
+                If GUARD is already online, Guardian may briefly wake local setup so you can save this network.
+              </p>
+            </div>
+          </div>
+
+          <div id="guardFactoryResetCard" class="card settings-card">
+            <span class="settings-card-kicker">Advanced</span>
+            <strong class="settings-card-title">Factory Reset GUARD</strong>
+            <p class="settings-card-copy">
+              Erases saved Wi-Fi and pairing on GUARD, then starts setup again from the beginning.
+            </p>
+            <div class="setup-reset-actions">
+              <button id="guardFactoryResetToggle" type="button" class="smallbtn setup-reset-toggle" onclick="toggleGuardFactoryResetPanel()">
+                Need to start over?
+              </button>
+            </div>
+            <p id="guardFactoryResetAvailability" class="setup-reset-state">
+              Factory reset becomes available when GUARD is connected.
+            </p>
+
+            <div id="guardFactoryResetPanel" class="setup-reset-panel" hidden>
+              <p class="setup-reset-copy">
+                This clears GUARD completely so it can be paired again from the beginning.
+              </p>
+              <div class="setup-reset-actions">
+                <button type="button" class="smallbtn" onclick="toggleGuardFactoryResetPanel(false)">Cancel</button>
+                <button id="guardFactoryResetButton" type="button" class="smallbtn setup-reset-danger" onclick="factoryResetGuard()">Factory Reset GUARD</button>
+              </div>
+              <p id="guardFactoryResetState" class="setup-reset-state"></p>
+            </div>
+          </div>
+
+          <div class="card settings-card settings-span-2 settings-account-card">
+            <div>
+              <span class="settings-card-kicker">Session</span>
+              <strong class="settings-card-title">Account</strong>
+              <p class="settings-account-copy">Sign out when you want to disconnect this browser from your Dexcom and GUARD session.</p>
+            </div>
             <button class="smallbtn" onclick="openlogin(); logout();">Logout</button>
           </div>
         </div>
@@ -3478,9 +4498,18 @@
 
       <footer id="footerbuttons" class="footer">
         <div class="footer-wrap">
-          <button onclick="home()" class="foot-card">🏠</button>
-          <button onclick="data()" class="foot-card">📊</button>
-          <button onclick="settings()" class="foot-card">⚙️</button>
+          <button onclick="home()" class="foot-card" data-nav-page="home">
+            <span class="foot-icon">🏠</span>
+            <span class="foot-label">Home</span>
+          </button>
+          <button onclick="data()" class="foot-card" data-nav-page="content">
+            <span class="foot-icon">📈</span>
+            <span class="foot-label">Today</span>
+          </button>
+          <button onclick="settings()" class="foot-card" data-nav-page="settings">
+            <span class="foot-icon">⚙️</span>
+            <span class="foot-label">Settings</span>
+          </button>
         </div>
       </footer>
     </div>
@@ -3651,8 +4680,8 @@ and send your local Wi-Fi name and password directly to the robot.
 
 <h3>Step 3 – Complete Setup</h3>
 <p>
-Guardian will show a pairing code after the device reaches Wi-Fi.
-Claim that code in your account and the robot will finish pairing.
+Guardian will usually finish pairing automatically after the device reaches Wi-Fi.
+If automatic pairing needs help, Guardian will show a fallback code.
 </p>
 
 <h3>Browser Support</h3>
@@ -4167,7 +5196,29 @@ contactguardiansupport@gmail.com
       hardwareId: "",
       wifiFailureState: false,
     };
-    let guardBleExpectedDisconnectState = null;
+let guardBleExpectedDisconnectState = null;
+let guardBlePendingWakeUntil = 0;
+let guardResetConnectionState = { paired: false, online: false, bluetooth: false };
+const GUARD_MODEL_META = {
+  dog: {
+    name: "Argos",
+    icon: "AG",
+    copy: "Heavy guard companion with a calm bedside presence.",
+    tag: "Rendered model",
+  },
+  bird: {
+    name: "Osprey",
+    icon: "OS",
+    copy: "Light scout concept designed for quicker check-ins and travel.",
+    tag: "Concept model",
+  },
+  turtle: {
+    name: "Aegis",
+    icon: "AE",
+    copy: "Pocket-sized concept focused on a softer everyday carry feel.",
+    tag: "Concept model",
+  },
+};
 
     function getCurrentDeviceId() {
       if (currentDeviceId) return currentDeviceId;
@@ -4181,8 +5232,8 @@ contactguardiansupport@gmail.com
       return currentDeviceId;
     }
 
-    function setCurrentDeviceId(deviceId) {
-      currentDeviceId = String(deviceId || "").trim().toLowerCase();
+function setCurrentDeviceId(deviceId) {
+  currentDeviceId = String(deviceId || "").trim().toLowerCase();
 
       try {
         if (currentDeviceId) {
@@ -4190,10 +5241,32 @@ contactguardiansupport@gmail.com
         } else {
           localStorage.removeItem(DEVICE_ID_KEY);
         }
-      } catch {}
+  } catch {}
 
-      return currentDeviceId;
-    }
+  updateGuardIdentityCard();
+  return currentDeviceId;
+}
+
+function updateGuardIdentityCard() {
+  const meta = GUARD_MODEL_META[currentRobotAnimal] || GUARD_MODEL_META.dog;
+  const idText = getCurrentDeviceId() ? "ID " + getCurrentDeviceId().slice(0, 12) : "Setup not finished";
+
+  document.querySelectorAll("[data-guard-model-icon]").forEach((el) => {
+    el.textContent = meta.icon;
+  });
+  document.querySelectorAll("[data-guard-model-name]").forEach((el) => {
+    el.textContent = meta.name;
+  });
+  document.querySelectorAll("[data-guard-model-copy]").forEach((el) => {
+    el.textContent = meta.copy;
+  });
+  document.querySelectorAll("[data-guard-model-tag]").forEach((el) => {
+    el.textContent = meta.tag;
+  });
+  document.querySelectorAll("[data-guard-device-id]").forEach((el) => {
+    el.textContent = idText;
+  });
+}
 
     function buildDeviceApiUrl(path, options = {}) {
       const url = new URL((API_BASE || "") + path, window.location.origin);
@@ -4371,6 +5444,275 @@ function setBleFallbackText(message) {
   el.textContent = message || "";
 }
 
+function getBleConnectButtonLabel() {
+  if (hasRecentGuardBlePendingWake()) {
+    return "Choose GUARD";
+  }
+
+  if (getCurrentDeviceId() && hasServerSession) {
+    return "Wake GUARD Bluetooth";
+  }
+
+  return "Connect Nearby GUARD";
+}
+
+function updateBleConnectButton() {
+  const connectBtn = document.getElementById("bleConnectButton");
+  if (!connectBtn || connectBtn.disabled) return;
+  connectBtn.textContent = getBleConnectButtonLabel();
+}
+
+function setGuardFactoryResetState(message = "", tone = "neutral") {
+  const el = document.getElementById("guardFactoryResetState");
+  if (!el) return;
+
+  el.textContent = message || "";
+  if (tone === "error") {
+    el.style.color = "#b42318";
+    return;
+  }
+  if (tone === "success") {
+    el.style.color = "#0b8f2f";
+    return;
+  }
+  el.style.color = "rgba(16,25,21,.66)";
+}
+
+function setGuardFactoryResetAvailability(message = "", tone = "neutral") {
+  const el = document.getElementById("guardFactoryResetAvailability");
+  if (!el) return;
+
+  el.textContent = message || "";
+  if (tone === "error") {
+    el.style.color = "#b42318";
+    return;
+  }
+  if (tone === "success") {
+    el.style.color = "#0b8f2f";
+    return;
+  }
+  el.style.color = "rgba(16,25,21,.66)";
+}
+
+function setSettingsBackupWifiState(message = "", tone = "neutral") {
+  const el = document.getElementById("settingsBackupWifiState");
+  if (!el) return;
+
+  el.textContent = message || "";
+  if (tone === "error") {
+    el.style.color = "#b42318";
+    return;
+  }
+  if (tone === "success") {
+    el.style.color = "#0b8f2f";
+    return;
+  }
+  el.style.color = "rgba(16,25,21,.66)";
+}
+
+function setSettingsBackupWifiPanelOpen(forceOpen) {
+  const panel = document.getElementById("settingsBackupWifiPanel");
+  const toggle = document.getElementById("settingsBackupWifiToggle");
+  if (!panel) return;
+
+  const shouldOpen = !!forceOpen;
+  if (shouldOpen) {
+    panel.removeAttribute("hidden");
+  } else {
+    panel.setAttribute("hidden", "hidden");
+  }
+
+  if (toggle) {
+    toggle.textContent = shouldOpen ? "Hide backup Wi-Fi" : "Add backup Wi-Fi";
+    toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  }
+}
+
+function toggleSettingsBackupWifiPanel(forceOpen = null) {
+  const panel = document.getElementById("settingsBackupWifiPanel");
+  if (!panel) return;
+  const isOpen = !panel.hasAttribute("hidden");
+  setSettingsBackupWifiPanelOpen(forceOpen === null ? !isOpen : !!forceOpen);
+}
+
+function isGuardBleConnected() {
+  return !!(
+    guardBleSession?.device?.gatt?.connected &&
+    guardBleSession?.service &&
+    guardBleSession?.endpoints?.["prov-session"] &&
+    guardBleSession?.endpoints?.["prov-config"]
+  );
+}
+
+function toggleGuardFactoryResetPanel(forceOpen = null) {
+  const panel = document.getElementById("guardFactoryResetPanel");
+  const toggle = document.getElementById("guardFactoryResetToggle");
+  if (!panel) return;
+
+  const isOpen = !panel.hasAttribute("hidden");
+  const shouldOpen = forceOpen === null ? !isOpen : !!forceOpen;
+
+  if (shouldOpen) {
+    panel.removeAttribute("hidden");
+  } else {
+    panel.setAttribute("hidden", "hidden");
+  }
+
+  if (toggle) {
+    toggle.textContent = shouldOpen ? "Hide reset options" : "Need to start over?";
+    toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  }
+
+  if (!shouldOpen) {
+    setGuardFactoryResetState("");
+  }
+}
+
+function updateGuardFactoryResetUI() {
+  const card = document.getElementById("guardFactoryResetCard");
+  const toggle = document.getElementById("guardFactoryResetToggle");
+  const confirm = document.getElementById("guardFactoryResetButton");
+  if (!card) return;
+
+  const shouldShow = hasServerSession;
+  card.hidden = !shouldShow;
+
+  if (!shouldShow) {
+    if (toggle) toggle.disabled = true;
+    if (confirm) confirm.disabled = true;
+    toggleGuardFactoryResetPanel(false);
+    return;
+  }
+
+  const paired = !!guardResetConnectionState.paired || !!getCurrentDeviceId();
+  const online = !!guardResetConnectionState.online;
+  const bluetooth = !!guardResetConnectionState.bluetooth || isGuardBleConnected();
+  const canReset = paired && (online || bluetooth);
+
+  if (toggle) toggle.disabled = !canReset;
+  if (confirm) confirm.disabled = !canReset;
+
+  if (!paired) {
+    setGuardFactoryResetAvailability("Finish setup first before using factory reset.");
+    toggleGuardFactoryResetPanel(false);
+    return;
+  }
+
+  if (!online) {
+    if (bluetooth) {
+      setGuardFactoryResetAvailability("GUARD is nearby and ready if you need a fresh start.");
+      return;
+    }
+    setGuardFactoryResetAvailability("Factory reset unlocks when GUARD is online or nearby.");
+    toggleGuardFactoryResetPanel(false);
+    return;
+  }
+
+  setGuardFactoryResetAvailability("GUARD is online and ready if you need a fresh start.");
+}
+
+function setGuardFactoryResetBusy(busy) {
+  const toggle = document.getElementById("guardFactoryResetToggle");
+  const confirm = document.getElementById("guardFactoryResetButton");
+  const cancel = document.querySelector("#guardFactoryResetPanel button:not(#guardFactoryResetButton)");
+
+  if (toggle) toggle.disabled = !!busy;
+  if (cancel) cancel.disabled = !!busy;
+  if (confirm) {
+    confirm.disabled = !!busy;
+    confirm.textContent = busy ? "Resetting…" : "Factory Reset GUARD";
+  }
+}
+
+async function requestGuardBleFactoryReset(session, commandId) {
+  if (!session || !isGuardBleConnected()) {
+    throw new Error("Reconnect to GUARD over Bluetooth before trying factory reset again.");
+  }
+
+  setGuardBleExpectedDisconnect(
+    "GUARD is resetting now. It should come back in Bluetooth setup in about 10-20 seconds.",
+    "success"
+  );
+
+  const result = await callGuardBleCustomJson(
+    session,
+    {
+      type: "factory-reset",
+      command_id: commandId || ("ble-factory-" + Date.now()),
+    },
+    { maxReads: 8 }
+  );
+
+  if (!result?.ok) {
+    setGuardBleExpectedDisconnect("");
+    throw new Error(result?.error || "GUARD did not accept the Bluetooth reset request.");
+  }
+
+  return result;
+}
+
+async function factoryResetGuard() {
+  const bleConnected = isGuardBleConnected();
+  if (!hasServerSession || !getCurrentDeviceId() || (!guardResetConnectionState.online && !bleConnected)) {
+    setGuardFactoryResetState("GUARD needs to be paired and connected before Guardian can factory reset it.", "error");
+    return;
+  }
+
+  setGuardFactoryResetBusy(true);
+  setGuardFactoryResetState("Sending the factory reset to GUARD…");
+
+  try {
+    const res = await fetch("/device/factory-reset", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({}),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Guardian could not factory reset GUARD.");
+    }
+
+    if (bleConnected) {
+      await requestGuardBleFactoryReset(guardBleSession, data.reset_command);
+    }
+
+    clearPendingClaimCode();
+    clearPendingHardwareId();
+    clearPendingCloudHandoffAt();
+    clearGuardBlePendingWake();
+    if (!bleConnected) {
+      await resetGuardBleSession();
+    }
+    guardBleKnownDevice = null;
+    setCurrentDeviceId("");
+    guardResetConnectionState = { paired: false, online: false, bluetooth: false };
+    updateBleConnectButton();
+    updateGuardFactoryResetUI();
+    await refreshSessionState();
+
+    toggleGuardFactoryResetPanel(false);
+    setGuardFactoryResetAvailability(
+      "Factory reset sent. GUARD should come back in Bluetooth setup in about 10-20 seconds.",
+      "success"
+    );
+    setBleSetupState(
+      "GUARD is resetting. In about 10-20 seconds it should come back in Bluetooth setup.",
+      "success"
+    );
+  } catch (err) {
+    setGuardFactoryResetState(err?.message || "Guardian could not factory reset GUARD.", "error");
+  } finally {
+    setGuardFactoryResetBusy(false);
+    updateGuardFactoryResetUI();
+    updateBleConnectButton();
+  }
+}
+
 function setGuardBleExpectedDisconnect(message = "", tone = "muted") {
   guardBleExpectedDisconnectState = message
     ? { message, tone }
@@ -4397,12 +5739,12 @@ function setBleSetupBusy(busy) {
 
   if (connectBtn) {
     connectBtn.disabled = !!busy;
-    connectBtn.textContent = busy ? "Connecting..." : "Connect Nearby GUARD";
+    connectBtn.textContent = busy ? "Connecting..." : getBleConnectButtonLabel();
   }
 
   if (wifiBtn) {
     wifiBtn.disabled = !!busy;
-    wifiBtn.textContent = busy ? "Saving..." : "Save Wi-Fi on GUARD";
+    wifiBtn.textContent = busy ? "Setting up..." : "Set up GUARD";
   }
 
   if (toggleBtn) {
@@ -4415,6 +5757,23 @@ function setBleSetupBusy(busy) {
 
   if (extraToggleBtn) {
     extraToggleBtn.disabled = !!busy;
+  }
+}
+
+function setSettingsBackupWifiBusy(busy) {
+  const toggleBtn = document.getElementById("settingsBackupWifiToggle");
+  const addBtn = document.getElementById("settingsAddWifiNetworkButton");
+  const saveBtn = document.getElementById("settingsSaveBackupWifiButton");
+
+  if (toggleBtn) {
+    toggleBtn.disabled = !!busy;
+  }
+  if (addBtn) {
+    addBtn.disabled = !!busy || collectSettingsBackupWifiNetworks().length >= GUARD_BLE_MAX_WIFI_NETWORKS;
+  }
+  if (saveBtn) {
+    saveBtn.disabled = !!busy;
+    saveBtn.textContent = busy ? "Saving..." : "Save backup Wi-Fi";
   }
 }
 
@@ -4566,28 +5925,129 @@ function collectGuardBleWifiNetworks() {
   return networks.slice(0, GUARD_BLE_MAX_WIFI_NETWORKS);
 }
 
+function updateSettingsBackupWifiAddButton() {
+  const button = document.getElementById("settingsAddWifiNetworkButton");
+  const list = document.getElementById("settingsBackupWifiList");
+  const primarySsid = document.getElementById("settingsBackupWifiSsid")?.value.trim() || "";
+  const currentCount = (primarySsid ? 1 : 0) + (list ? list.children.length : 0);
+  if (!button) return;
+
+  button.disabled = currentCount >= GUARD_BLE_MAX_WIFI_NETWORKS;
+  button.textContent = button.disabled ? "Maximum saved networks reached" : "Add another backup Wi-Fi";
+}
+
+function renumberSettingsBackupWifiNetworkRows() {
+  const list = document.getElementById("settingsBackupWifiList");
+  if (!list) return;
+
+  Array.from(list.children).forEach((row, index) => {
+    const title = row.querySelector("[data-settings-wifi-title]");
+    if (title) {
+      title.textContent = "Backup network " + (index + 2);
+    }
+  });
+}
+
+function addSettingsBackupWifiNetworkRow(values = {}) {
+  const list = document.getElementById("settingsBackupWifiList");
+  if (!list) return null;
+
+  setSettingsBackupWifiPanelOpen(true);
+  if (collectSettingsBackupWifiNetworks().length >= GUARD_BLE_MAX_WIFI_NETWORKS) {
+    updateSettingsBackupWifiAddButton();
+    return null;
+  }
+
+  const row = document.createElement("div");
+  row.className = "setup-extra-wifi-card";
+  row.innerHTML = `
+    <div class="setup-extra-wifi-head">
+      <strong data-settings-wifi-title>Backup network</strong>
+      <button type="button" class="smallbtn">Remove</button>
+    </div>
+    <input class="settings-extra-ssid" placeholder="Backup Wi-Fi name (SSID)" autocomplete="off">
+    <input class="settings-extra-password" type="password" placeholder="Backup Wi-Fi password" autocomplete="off">
+  `;
+
+  row.querySelector("button")?.addEventListener("click", () => {
+    row.remove();
+    renumberSettingsBackupWifiNetworkRows();
+    updateSettingsBackupWifiAddButton();
+  });
+
+  const ssidInput = row.querySelector(".settings-extra-ssid");
+  const passwordInput = row.querySelector(".settings-extra-password");
+  if (ssidInput) ssidInput.value = values.ssid || "";
+  if (passwordInput) passwordInput.value = values.password || "";
+
+  list.appendChild(row);
+  renumberSettingsBackupWifiNetworkRows();
+  updateSettingsBackupWifiAddButton();
+  return row;
+}
+
+function collectSettingsBackupWifiNetworks() {
+  const networks = [];
+  const seen = new Set();
+
+  const pushNetwork = (ssidRaw, passwordRaw) => {
+    const ssid = String(ssidRaw || "");
+    const password = String(passwordRaw || "");
+    const normalized = ssid.trim();
+    if (!normalized) return;
+
+    const dedupeKey = normalized.toLowerCase();
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
+
+    networks.push({
+      ssid,
+      password,
+      preferred: false,
+    });
+  };
+
+  pushNetwork(
+    document.getElementById("settingsBackupWifiSsid")?.value || "",
+    document.getElementById("settingsBackupWifiPassword")?.value || ""
+  );
+
+  document.querySelectorAll("#settingsBackupWifiList .setup-extra-wifi-card").forEach((row) => {
+    pushNetwork(
+      row.querySelector(".settings-extra-ssid")?.value || "",
+      row.querySelector(".settings-extra-password")?.value || ""
+    );
+  });
+
+  return networks.slice(0, GUARD_BLE_MAX_WIFI_NETWORKS);
+}
+
 function buildGuardBleCommandToken(prefix = "ble") {
   const randomPart = Math.random().toString(36).slice(2, 8);
   return prefix + "-" + Date.now().toString(36) + "-" + randomPart;
 }
 
+async function sendGuardBleSetupRequest() {
+  const commandToken = buildGuardBleCommandToken("reopen");
+  await setMailbox({
+    control_reenter_ble_setup: commandToken,
+    message: "Re-enter Bluetooth setup requested",
+  });
+  return commandToken;
+}
+
 async function requestGuardBleSetupMode() {
-  if (!getCurrentDeviceId()) {
-    setBleSetupState("Pair GUARD to this account before asking it to reopen Bluetooth setup.", "error");
-    return;
+    if (!getCurrentDeviceId()) {
+      setBleSetupState("Pair GUARD to this account before asking it to reopen Bluetooth setup.", "error");
+      return;
   }
 
-  setBleSetupBusy(true);
-  try {
-    const commandToken = buildGuardBleCommandToken("reopen");
-    await setMailbox({
-      control_reenter_ble_setup: commandToken,
-      message: "Re-enter Bluetooth setup requested",
-    });
-
-    toggleBleWifiFields(true);
-    setBleSetupState(
-      "Guardian asked GUARD to reopen Bluetooth setup. Wait about 10-20 seconds, then tap Connect Nearby GUARD again.",
+    setBleSetupBusy(true);
+    try {
+      await sendGuardBleSetupRequest();
+      toggleBleWifiFields(true);
+      setBleSetupState(
+      "GUARD is reopening nearby setup. Give it 10-20 seconds, then try again.",
       "success"
     );
   } catch (err) {
@@ -4595,6 +6055,62 @@ async function requestGuardBleSetupMode() {
   } finally {
     setBleSetupBusy(false);
   }
+}
+
+function rememberGuardBlePendingWake(durationMs = 20000) {
+  guardBlePendingWakeUntil = Date.now() + Math.max(1000, Number(durationMs || 0));
+  return guardBlePendingWakeUntil;
+}
+
+function hasRecentGuardBlePendingWake() {
+  return !!guardBlePendingWakeUntil && Date.now() < guardBlePendingWakeUntil;
+}
+
+function clearGuardBlePendingWake() {
+  guardBlePendingWakeUntil = 0;
+  updateBleConnectButton();
+}
+
+async function prepareGuardBluetoothConnect(requireWifi, allowPicker) {
+  if (requireWifi || !allowPicker) {
+    return "ready";
+  }
+
+  if (!getCurrentDeviceId() || !hasServerSession) {
+    return "ready";
+  }
+
+  if (guardBleSession?.device?.gatt?.connected) {
+    clearGuardBlePendingWake();
+    return "ready";
+  }
+
+  if (hasRecentGuardBlePendingWake()) {
+    setBleSetupState("Looking for GUARD nearby…", "neutral");
+    return "ready";
+  }
+
+  setBleSetupState("Waking nearby setup on GUARD…", "neutral");
+
+  try {
+    await sendGuardBleSetupRequest();
+  } catch {
+    return "ready";
+  }
+
+  rememberGuardBlePendingWake();
+
+  if (!guardBleKnownDevice) {
+    setBleSetupState(
+      "GUARD is reopening nearby setup. Give it about 10 seconds, then try again.",
+      "success"
+    );
+    return "deferred";
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 9000));
+  setBleSetupState("Reconnecting to GUARD nearby…", "neutral");
+  return "ready";
 }
 
 function getPendingClaimCode() {
@@ -4612,19 +6128,41 @@ function syncPendingClaimCodeUI() {
   const code = getPendingClaimCode();
   const claimEl = document.getElementById("bleSetupClaim");
   const previewEl = document.getElementById("setupClaimCodePreview");
+  const labelEl = document.getElementById("setupClaimCodeLabel");
+  const fallbackEl = document.getElementById("setupClaimFallback");
+  const setupCardEl = document.getElementById("setupClaimCard");
+  const loginCard = document.getElementById("deviceClaimCard");
   const inputs = [
     document.getElementById("claimCodeInput"),
-    document.getElementById("dashboardClaimCodeInput"),
     document.getElementById("setupClaimCodeInput"),
   ];
 
   if (claimEl) {
-    claimEl.textContent = code ? "Guardian found a pairing code for this robot." : "";
+    claimEl.textContent = code
+      ? "Guardian exposed a fallback code in case automatic pairing needs help."
+      : "If Guardian ever needs a manual fallback, it will appear here.";
+  }
+
+  if (labelEl) {
+    labelEl.textContent = "Fallback code";
   }
 
   if (previewEl) {
-    previewEl.textContent = code || "Waiting for code";
+    previewEl.textContent = code || "Waiting for fallback code";
     previewEl.classList.toggle("setup-claim-empty", !code);
+  }
+
+  if (fallbackEl) {
+    fallbackEl.hidden = !code;
+  }
+
+  if (setupCardEl) {
+    setupCardEl.hidden = !code;
+    setupCardEl.classList.toggle("is-visible", !!code);
+  }
+
+  if (loginCard && !code) {
+    loginCard.style.display = "none";
   }
 
   for (const input of inputs) {
@@ -4911,6 +6449,8 @@ function handleGuardBleDisconnect(event) {
     hardwareId: "",
     wifiFailureState: false,
   };
+  void updateStatus();
+  updateGuardFactoryResetUI();
 
   if (disconnectState?.message) {
     setBleSetupState(disconnectState.message, disconnectState.tone || "muted");
@@ -4957,6 +6497,8 @@ async function resetGuardBleSession() {
     wifiFailureState: false,
   };
 
+  void updateStatus();
+  updateGuardFactoryResetUI();
   await new Promise((resolve) => setTimeout(resolve, 200));
 }
 
@@ -5593,7 +7135,7 @@ async function tryFinishPendingBlePairing(hardwareId, options = {}) {
   if (!hasServerSession) {
     setBleSetupState("Wi-Fi is saved. Log in to Guardian to finish pairing this robot.", "success");
     setClaimCardVisible(true, {
-      help: "Log in, then Guardian can finish pairing the GUARD you just provisioned over Bluetooth.",
+      help: "Log in, then Guardian can try to finish pairing automatically. If needed, a fallback code will appear here.",
       state: "",
     });
     return null;
@@ -5613,7 +7155,7 @@ async function tryFinishPendingBlePairing(hardwareId, options = {}) {
         setBleSetupState("GUARD joined Wi-Fi. Waiting for it to reach Guardian…", "neutral");
       } else if (status.state === "pending" && status.claim_code) {
         const claimCode = rememberPendingClaimCode(status.claim_code);
-        setBleSetupState("Pairing code received. Finishing claim…", "neutral");
+        setBleSetupState("Guardian found this robot. Finishing pairing automatically…", "neutral");
         await submitClaimCode(claimCode);
         clearPendingCloudHandoffAt();
         setBleSetupState("GUARD is paired and ready.", "success");
@@ -5846,6 +7388,8 @@ async function connectGuardBluetooth(options = {}) {
 
   setGuardBleExpectedDisconnect("");
   setBleSetupState("Connected to " + (device.name || "GUARD") + ". Provisioning service ready.", "neutral");
+  void updateStatus();
+  updateGuardFactoryResetUI();
 
   return guardBleSession;
 }
@@ -5854,6 +7398,7 @@ async function startGuardBluetoothSetup(requireWifi = false, retryingAfterSecuri
   const ssid = document.getElementById("bleWifiSsid")?.value.trim() || "";
   const password = document.getElementById("bleWifiPassword")?.value || "";
   const requestedNetworks = collectGuardBleWifiNetworks();
+  const alreadyLinkedGuard = !!getCurrentDeviceId();
 
   clearPendingClaimCode();
   setBleSetupBusy(true);
@@ -5865,16 +7410,27 @@ async function startGuardBluetoothSetup(requireWifi = false, retryingAfterSecuri
       await resetGuardBleSession();
     }
 
+    const connectPreparation = await prepareGuardBluetoothConnect(requireWifi, allowPicker);
+    if (connectPreparation === "deferred") {
+      return;
+    }
     const session = await connectGuardBluetooth({ allowPicker });
+    clearGuardBlePendingWake();
     await ensureGuardBleSession(session);
 
-    // Default customer flow: if the robot already has saved Wi-Fi, Bluetooth
-    // only needs to discover the robot identity and finish the pairing flow.
-    if (!requireWifi && !ssid) {
+    // "Connect Nearby GUARD" is always Bluetooth-only. The Wi-Fi fields may
+    // still contain old text from an earlier setup, but they should never turn
+    // a plain reconnect into a provisioning attempt.
+    if (!requireWifi) {
       const deviceInfo = await readGuardBleDeviceInfo(session);
       const hardwareId = session.hardwareId || deviceInfo?.hardware_id || getPendingHardwareId();
       if (!hardwareId) {
         throw new Error("Guardian connected to GUARD, but the robot did not report a pairing identity yet.");
+      }
+
+      if (alreadyLinkedGuard) {
+        setBleSetupState("Connected to GUARD over Bluetooth.", "success");
+        return;
       }
 
       setBleSetupState("Connected to GUARD. Checking whether it is already online…", "neutral");
@@ -5933,7 +7489,7 @@ async function startGuardBluetoothSetup(requireWifi = false, retryingAfterSecuri
       await tryFinishPendingBlePairing(hardwareId || getPendingHardwareId());
     } else {
       setBleSetupState(
-        "Wi-Fi is saved. GUARD may disconnect from Bluetooth now while it reaches Guardian. If a pairing code does not appear shortly, reconnect once more.",
+        "Wi-Fi is saved. GUARD may disconnect from Bluetooth now while Guardian finishes pairing in the background.",
         "success"
       );
     }
@@ -5962,11 +7518,70 @@ async function startGuardBluetoothSetup(requireWifi = false, retryingAfterSecuri
     }
   } finally {
     setBleSetupBusy(false);
+    updateBleConnectButton();
+  }
+}
+
+async function startGuardBackupWifiSetup() {
+  const networks = collectSettingsBackupWifiNetworks();
+
+  if (!networks.length) {
+    setSettingsBackupWifiState("Enter at least one backup network to save on GUARD.", "error");
+    setSettingsBackupWifiPanelOpen(true);
+    return;
+  }
+
+  setSettingsBackupWifiBusy(true);
+  setSettingsBackupWifiState("Getting GUARD ready…");
+
+  try {
+    const connectPreparation = await prepareGuardBluetoothConnect(false, true);
+    if (connectPreparation === "deferred") {
+      setSettingsBackupWifiState(
+        "GUARD is reopening nearby setup. Give it 10-20 seconds, then save this network again.",
+        "success"
+      );
+      return;
+    }
+
+    const session = await connectGuardBluetooth({ allowPicker: true });
+    clearGuardBlePendingWake();
+    await ensureGuardBleSession(session);
+
+    setSettingsBackupWifiState("Saving this network on GUARD…");
+    for (const network of networks) {
+      await saveGuardBleWifiNetwork(session, {
+        ssid: network.ssid,
+        password: network.password,
+        preferred: false,
+      });
+    }
+
+    const primarySsid = document.getElementById("settingsBackupWifiSsid");
+    const primaryPassword = document.getElementById("settingsBackupWifiPassword");
+    const list = document.getElementById("settingsBackupWifiList");
+    if (primarySsid) primarySsid.value = "";
+    if (primaryPassword) primaryPassword.value = "";
+    if (list) list.innerHTML = "";
+    renumberSettingsBackupWifiNetworkRows();
+    updateSettingsBackupWifiAddButton();
+
+    setSettingsBackupWifiState(
+      "Backup network saved. GUARD can use it whenever your main Wi-Fi is unavailable.",
+      "success"
+    );
+  } catch (err) {
+    setSettingsBackupWifiState(err?.message || "Guardian could not save backup Wi-Fi.", "error");
+  } finally {
+    setSettingsBackupWifiBusy(false);
+    updateBleConnectButton();
   }
 }
 
 function initGuardBluetoothSetup() {
   syncPendingClaimCodeUI();
+  updateBleConnectButton();
+  updateGuardFactoryResetUI();
 
   if (!hasWebBluetoothSupport()) {
     setBleSetupState(
@@ -5980,23 +7595,27 @@ function initGuardBluetoothSetup() {
   }
 
   setBleSetupState(
-    "Connect nearby over Bluetooth here. Most people only need to save one home Wi-Fi. Backup networks are there if you want GUARD to roam later.",
+    "Enter the main Wi-Fi GUARD should use first. Guardian handles the local setup in the background.",
     "muted"
   );
     setBleFallbackText(
-      "Use Chrome or Edge and keep the robot nearby while pairing."
+      "Use Chrome or Edge and keep the robot nearby during first-time setup."
     );
   updateBleWifiAddButton();
+  updateSettingsBackupWifiAddButton();
   if (hasRecentPendingCloudHandoff()) {
     setBleSetupState("GUARD saved Wi-Fi. Waiting for its first cloud check-in…", "neutral");
     void monitorGuardBleCloudHandoff();
   }
-  toggleBleWifiFields(false);
+  toggleBleWifiFields(true);
   setBleExtraWifiPanelOpen(false);
+  setSettingsBackupWifiPanelOpen(false);
 }
 
 window.addBleWifiNetworkRow = addBleWifiNetworkRow;
+window.addSettingsBackupWifiNetworkRow = addSettingsBackupWifiNetworkRow;
 window.startGuardBluetoothSetup = startGuardBluetoothSetup;
+window.startGuardBackupWifiSetup = startGuardBackupWifiSetup;
 
 /*
   DEVICE HELPERS
@@ -6052,23 +7671,16 @@ window.rotateDeviceToken = rotateDeviceToken;
 
 function setClaimCardVisible(visible, options = {}) {
   const loginCard = document.getElementById("deviceClaimCard");
-  const dashboardCard = document.getElementById("deviceClaimDashboardCard");
+  const shouldShow = visible && (!!getPendingClaimCode() || !!options.force);
   const helpEls = [
     document.getElementById("device-claim-help"),
-    document.getElementById("dashboard-device-claim-help"),
   ];
   const stateEls = [
     document.getElementById("device-claim-state"),
-    document.getElementById("dashboard-device-claim-state"),
   ];
 
-  // The dashboard claim banner stays visible whenever the user is signed in so
-  // pairing is always discoverable, even if session state is stale.
   if (loginCard) {
-    loginCard.style.display = visible ? "block" : "none";
-  }
-  if (dashboardCard) {
-    dashboardCard.style.display = hasServerSession ? "block" : "none";
+    loginCard.style.display = shouldShow ? "block" : "none";
   }
 
   if (typeof options.help === "string") {
@@ -6099,7 +7711,7 @@ async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device
   const claimCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   if (!claimCode) {
-    if (stateEl) stateEl.textContent = "Enter the pairing code shown after Bluetooth setup.";
+    if (stateEl) stateEl.textContent = "Enter the fallback code only if Guardian asks for one.";
     return;
   }
 
@@ -6107,7 +7719,7 @@ async function claimDeviceFromCode(inputId = "claimCodeInput", stateId = "device
 
   try {
     await submitClaimCode(claimCode, { navigate: false });
-    for (const id of ["claimCodeInput", "dashboardClaimCodeInput", "setupClaimCodeInput"]) {
+    for (const id of ["claimCodeInput", "setupClaimCodeInput"]) {
       const el = document.getElementById(id);
       if (el) {
         el.value = "";
@@ -6355,6 +7967,7 @@ function setRobotAnimal(type) {
 
   currentRobotAnimal = type;
   loadRobotModel(type);
+  updateGuardIdentityCard();
 
   document.querySelectorAll(".model-card").forEach(card => {
     card.classList.toggle("active", card.dataset.animal === type);
@@ -6478,6 +8091,7 @@ function initModelWheel() {
   requestAnimationFrame(() => {
     centerModelWheelOn(currentRobotAnimal, false);
     updateModelWheelSelection();
+    updateGuardIdentityCard();
   });
 }
 
@@ -6521,12 +8135,13 @@ const ROBOT_MODELS = {
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
   },
-    turtle: {
+
+  turtle: {
     path: "/models/Assembly/turtle.glb",
     scale: [1.2, 1.2, 1.2],
     position: [0, -0.6, 0],
     rotation: [0, 0, 0]
-  },
+  }
 };
 /* ============================================================
    ROBOT MODEL LIBRARY
@@ -6771,7 +8386,7 @@ function loadRobotModel(modelKey = "dog") {
       console.error("Model failed to load:", modelKey, error);
 
       if (wrap) {
-        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">' + modelKey + ' model is not available yet.<br>Missing file: ' + config.path + '</div>';
+        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:grey;opacity:.8;text-align:center;padding:16px;">' + modelKey + ' is still a concept view right now.<br>Its full render is not ready yet.</div>';
       }
     }
   );
@@ -6962,7 +8577,7 @@ const HERO_MODEL_TRANSFORM = {
   // Base rig rotation in radians.
   // Math.PI is 180 degrees.
   // x = tilt up/down, y = turn left/right, z = roll
-  rotation: [0, Math.PI + 0.48, 0]
+  rotation: [0, 0, 0]
 };
 
 // Overall material/look controls for the hero model.
@@ -7024,23 +8639,25 @@ const HERO_MODEL_MOTION = {
   // Higher = snappier, lower = floatier.
   scrollBlend: 0.11,
 
+  // Keep the front-page model flat to the horizon.
+  // Scroll should pull it back, let it float slightly, and spin only around Y.
   // How smoothly the orbit angle chases its target.
   orbitLerp: 0.08,
 
   // Starting orbit angle of the camera around the model.
-  orbitStartAngle: -0.9,
+  orbitStartAngle: 0,
 
   // How much the camera orbits as scroll progresses.
-  orbitTurnPerScroll: 1.55,
+  orbitTurnPerScroll: 0,
 
   // Extra rotation applied from scroll.
   // These are added on top of HERO_MODEL_TRANSFORM.rotation.
-  rotateXPerScroll: -0.08,
-  rotateYPerScroll: Math.PI * 1.42,
+  rotateXPerScroll: 0,
+  rotateYPerScroll: Math.PI * 1.85,
   rotateZPerScroll: 0,
 
-  // How much the model moves vertically as scroll progresses.
-  moveYPerScroll: 0.024,
+  // Small upward float as the page scrolls.
+  moveYPerScroll: 0.04,
 
   // How far the model gets pushed back when exploded.
   depthPullOnExplode: 1.18,
@@ -7068,12 +8685,12 @@ const HERO_MODEL_CAMERA = {
   // Extra zoom-out added as the model explodes.
   radiusExplodeBoost: 2.05,
 
-  // Extra zoom-out added as scroll increases.
-  radiusScrollBoost: 0.48,
+  // Stronger zoom-out as scroll increases.
+  radiusScrollBoost: 2.35,
 
   // Vertical camera follow settings.
   heightBaseFactor: 0.28,
-  heightScrollFactor: 0.12,
+  heightScrollFactor: 0.05,
   heightExplodeFactor: 0.08,
 
   // Where the camera looks on the model vertically.
@@ -7109,6 +8726,10 @@ const HERO_MODEL_DEBUG = {
 
 // Explosion controls.
 const HERO_EXPLODE_CONFIG = {
+  // Master explode amount for the front-page hero model.
+  // 0 keeps the assembly fully closed, 1 uses the tuned explode behavior.
+  intensity: 0,
+
   // Scroll progress range where the explosion happens.
   // 0 = very start of the section scroll, 1 = very end.
   start: 0.12,
@@ -7739,7 +9360,7 @@ function applyHeroModelExplosion(progress) {
     HERO_EXPLODE_CONFIG.start,
     HERO_EXPLODE_CONFIG.end
   );
-  const explodeProgress = explodePhase;
+  const explodeProgress = explodePhase * HERO_EXPLODE_CONFIG.intensity;
 
   heroModelExplodeParts.forEach((part) => {
     const liveRule = getHeroExplodeRule(part.partName, part.partId);
@@ -8049,16 +9670,65 @@ function showPage(id){
   });
 
   document.getElementById(id).classList.add("active");
+  updateFooterNavActive(id);
   syncFloatingFooter();
+}
+
+let homeFlowStep = 1;
+let homeRobotPageReady = false;
+
+function ensureHomeRobotPageReady() {
+  initModelWheel();
+  initRobotViewer();
+
+  requestAnimationFrame(() => {
+    resizeRobotViewer();
+    centerModelWheelOn(currentRobotAnimal, false);
+    updateModelWheelSelection();
+  });
+
+  homeRobotPageReady = true;
+}
+
+function setHomeFlowStep(step, options = {}) {
+  const normalizedStep = step === 2 ? 2 : 1;
+  homeFlowStep = normalizedStep;
+
+  const setupEl = document.getElementById("setup");
+  const robotEl = document.getElementById("robot");
+  const setupButton = document.getElementById("homeFlowSetupButton");
+  const robotButton = document.getElementById("homeFlowRobotButton");
+
+  if (setupEl) setupEl.hidden = normalizedStep !== 1;
+  if (robotEl) robotEl.hidden = normalizedStep !== 2;
+
+  if (setupButton) {
+    setupButton.classList.toggle("is-active", normalizedStep === 1);
+    setupButton.setAttribute("aria-current", normalizedStep === 1 ? "step" : "false");
+  }
+
+  if (robotButton) {
+    robotButton.classList.toggle("is-active", normalizedStep === 2);
+    robotButton.setAttribute("aria-current", normalizedStep === 2 ? "step" : "false");
+  }
+
+  if (normalizedStep === 2) {
+    ensureHomeRobotPageReady();
+  }
+
+  if (options.scroll === false) return;
+
+  requestAnimationFrame(() => {
+    const target = normalizedStep === 1 ? setupEl : robotEl;
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 
 
 function home() {
   showPage("home");
-
-  document.getElementById("robot").style.display = "none";
-  document.getElementById("setup").style.display = "flex";
+  setHomeFlowStep(1, { scroll: false });
 }
 
 function data() {
@@ -8072,8 +9742,13 @@ function settings() {
 function openlogin() {
   showPage("user-screen");
 
-  document.getElementById("robot").style.display = "none";
-  document.getElementById("setup").style.display = "flex";
+  setHomeFlowStep(1, { scroll: false });
+}
+
+function updateFooterNavActive(activePageId = "") {
+  document.querySelectorAll("[data-nav-page]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.navPage === activePageId);
+  });
 }
 
 function isSiteFooterNearViewport() {
@@ -8098,6 +9773,7 @@ function syncFloatingFooter() {
   const shouldShow = guardianVisible && appPageVisible && !footerPagesOpen && !isSiteFooterNearViewport();
 
   footerNav.classList.toggle("is-visible", shouldShow);
+  updateFooterNavActive(activePage?.id || "");
 }
 
 window.addEventListener("scroll", syncFloatingFooter, { passive: true });
@@ -8187,7 +9863,7 @@ async function refreshSessionState() {
       setCurrentDeviceId("");
       if (data.logged_in) {
         setClaimCardVisible(true, {
-          help: "Guardian is ready for pairing. Enter the claim code shown after Bluetooth setup.",
+          help: "Guardian is ready for pairing. Bluetooth setup will usually finish automatically, and a fallback code only appears if it is needed.",
           state: ""
         });
         const pendingHardwareId = getPendingHardwareId();
@@ -8196,6 +9872,8 @@ async function refreshSessionState() {
         }
       }
     }
+    updateBleConnectButton();
+    updateGuardFactoryResetUI();
     return {
       ok: !!data.ok,
       logged_in: !!data.logged_in,
@@ -8207,12 +9885,10 @@ async function refreshSessionState() {
   } catch {
     hasServerSession = false;
     setCurrentDeviceId("");
+    updateBleConnectButton();
+    updateGuardFactoryResetUI();
     return { ok: false, logged_in: false, demo: false };
   }
-}
-
-function info() {
-  home();
 }
 
 /* ============================================================
@@ -8237,7 +9913,18 @@ function setEmpty(isEmpty) {
    ============================================================ */
 function setThresholdLabels() {
   const el = document.getElementById("threshold-labels");
-  if (el) el.textContent = "Low " + RANGE_LOW + " • High " + RANGE_HIGH;
+  if (!el) return;
+  el.innerHTML = "";
+
+  const low = document.createElement("span");
+  low.className = "threshold-chip threshold-chip-low";
+  low.textContent = "Low " + RANGE_LOW;
+
+  const high = document.createElement("span");
+  high.className = "threshold-chip threshold-chip-high";
+  high.textContent = "High " + RANGE_HIGH;
+
+  el.append(low, high);
 }
 
 /* ============================================================
@@ -8376,8 +10063,8 @@ function updateAnalysisUI(normalizedPts) {
   const r = avgChangeWindow(normalizedPts, 60);
 
   if (!r.ok) {
-    avgEl.textContent = "Average change (1h): —";
-    urgEl.textContent = "Urgency: —";
+    avgEl.textContent = "Unavailable right now";
+    urgEl.textContent = "Waiting for a clearer read";
     dbg("Analysis failed: " + (r.reason || "unknown"));
     return;
   }
@@ -8385,14 +10072,13 @@ function updateAnalysisUI(normalizedPts) {
   const sign = r.delta >= 0 ? "+" : "-";
   const label = r.minutesUsed >= 59.5 ? "1h" : (r.minutesUsed.toFixed(0) + " min");
 
-  avgEl.textContent =
-    "Average change (" + label + "): " + sign + r.delta.toFixed(0) + " mg/dL";
+  avgEl.textContent = sign + r.delta.toFixed(0) + " mg/dL over " + label;
 
   let u = "Low";
   if (r.ratePerHr <= -60) u = "High";
   else if (r.ratePerHr <= -30) u = "Medium";
 
-  urgEl.textContent = "Urgency: " + u;
+  urgEl.textContent = u + " urgency";
 
   dbg("Analysis OK. Points=" + normalizedPts.length + ". WindowUsed=" + r.minutesUsed.toFixed(1) + " min.");
 }
@@ -8949,12 +10635,38 @@ async function refreshLatestCardFromRecent(recent) {
    Check if robot is connected
    ============================================================ */
 async function updateStatus() {
-  const el = document.getElementById("wifi-status");
-  if (!el) return;
+  const els = Array.from(document.querySelectorAll("[data-guard-status]"));
+  if (!els.length) return;
+  const titleEls = Array.from(document.querySelectorAll("[data-guard-state-title]"));
+  const copyEls = Array.from(document.querySelectorAll("[data-guard-state-copy]"));
+  const bannerEls = Array.from(document.querySelectorAll("[data-guard-banner]"));
+
+  const setStatus = (text, color, title = "", copy = "", tone = "neutral") => {
+    for (const el of els) {
+      el.textContent = text;
+      el.style.color = color;
+    }
+    for (const el of titleEls) {
+      el.textContent = title;
+    }
+    for (const el of copyEls) {
+      el.textContent = copy;
+    }
+    for (const el of bannerEls) {
+      el.dataset.tone = tone;
+    }
+  };
 
   if (!getCurrentDeviceId()) {
-    el.textContent = "Not paired yet";
-    el.style.color = "grey";
+    guardResetConnectionState = { paired: false, online: false, bluetooth: isGuardBleConnected() };
+    updateGuardFactoryResetUI();
+    setStatus(
+      "Setup needed",
+      "grey",
+      "GUARD still needs setup",
+      "Add your main Wi-Fi once on Home and Guardian will take care of the rest.",
+      "neutral"
+    );
     return;
   }
 
@@ -8984,40 +10696,118 @@ async function updateStatus() {
 
     if (!res.ok) {
       if (res.status === 404 || res.status === 401) {
-        el.textContent = "Not paired yet";
-        el.style.color = "grey";
+        guardResetConnectionState = { paired: false, online: false, bluetooth: isGuardBleConnected() };
+        updateGuardFactoryResetUI();
+        setStatus(
+          "Setup needed",
+          "grey",
+          "GUARD still needs setup",
+          "Add your main Wi-Fi once on Home and Guardian will take care of the rest.",
+          "neutral"
+        );
         return;
       }
       throw new Error(data.error || "Status request failed");
     }
 
     if (!data.lastSeen) {
-      if (hasRecentPendingCloudHandoff()) {
-        el.textContent = "Waiting for GUARD to finish its first cloud check-in…";
-        el.style.color = "grey";
+      const bleConnected = isGuardBleConnected();
+      guardResetConnectionState = { paired: true, online: false, bluetooth: bleConnected };
+      updateGuardFactoryResetUI();
+      if (bleConnected) {
+        setStatus(
+          "Nearby",
+          "green",
+          "GUARD is connected nearby",
+          "Local setup is open right now, so Guardian can finish setup or recovery from here.",
+          "success"
+        );
         return;
       }
-      el.textContent = "Waiting for GUARD heartbeat…";
-      el.style.color = "grey";
+      if (hasRecentPendingCloudHandoff()) {
+        setStatus(
+          "Finishing setup",
+          "grey",
+          "GUARD is joining Guardian",
+          "It already has Wi-Fi and is finishing its first online hello.",
+          "neutral"
+        );
+        return;
+      }
+      setStatus(
+        "Getting ready",
+        "grey",
+        "Waiting for GUARD to check in",
+        "Guardian has the pairing, but it has not seen a recent heartbeat yet.",
+        "neutral"
+      );
       return;
     }
 
     if (data.online) {
+      guardResetConnectionState = { paired: true, online: true, bluetooth: isGuardBleConnected() };
+      updateGuardFactoryResetUI();
       clearPendingCloudHandoffAt();
-      el.textContent = "Connected";
-      el.style.color = "green";
+      setStatus(
+        "Online",
+        "green",
+        "GUARD is online",
+        "Heartbeats are arriving and Guardian is keeping the connection fresh.",
+        "success"
+      );
     } else {
-      if (hasRecentPendingCloudHandoff()) {
-        el.textContent = "GUARD saved Wi-Fi. Waiting for its first heartbeat…";
-        el.style.color = "grey";
+      const bleConnected = isGuardBleConnected();
+      guardResetConnectionState = { paired: true, online: false, bluetooth: bleConnected };
+      updateGuardFactoryResetUI();
+      if (bleConnected) {
+        setStatus(
+          "Nearby",
+          "green",
+          "GUARD is connected nearby",
+          "Local setup is open right now, so Guardian can finish setup or recovery from here.",
+          "success"
+        );
         return;
       }
-      el.textContent = "Disconnected (no heartbeat)";
-      el.style.color = "red";
+      if (hasRecentPendingCloudHandoff()) {
+        setStatus(
+          "Finishing setup",
+          "grey",
+          "GUARD is joining Guardian",
+          "It already has Wi-Fi and is finishing its first online hello.",
+          "neutral"
+        );
+        return;
+      }
+      setStatus(
+        "Offline",
+        "red",
+        "GUARD is currently offline",
+        "Power it on or bring back one of its saved Wi-Fi networks to reconnect.",
+        "warning"
+      );
     }
   } catch {
-    el.textContent = "Status error";
-    el.style.color = "red";
+    const bleConnected = isGuardBleConnected();
+    guardResetConnectionState = { paired: !!getCurrentDeviceId(), online: false, bluetooth: bleConnected };
+    updateGuardFactoryResetUI();
+    if (bleConnected) {
+      setStatus(
+        "Nearby",
+        "green",
+        "GUARD is connected nearby",
+        "Local setup is open right now, so Guardian can finish setup or recovery from here.",
+        "success"
+      );
+      return;
+    }
+    setStatus(
+      "Unavailable",
+      "red",
+      "Guardian can’t confirm GUARD right now",
+      "Try refreshing or give the connection a moment to settle.",
+      "error"
+    );
   }
 }
 function setAnalysisState(state, extra = "") {
@@ -9027,22 +10817,22 @@ function setAnalysisState(state, extra = "") {
   if (!avgEl || !urgEl) return;
 
   if (state === "connecting") {
-    avgEl.textContent = "Average change (1h): Connecting to Dexcom…";
-    urgEl.textContent = "Urgency: Checking CGM session…";
+    avgEl.textContent = "Connecting to Dexcom…";
+    urgEl.textContent = "Checking CGM session…";
     dbg(extra || "Connecting to Dexcom...");
     return;
   }
 
   if (state === "no_sensor") {
-    avgEl.textContent = "Average change (1h): No Dexcom connected";
-    urgEl.textContent = "Urgency: No CGM session detected";
+    avgEl.textContent = "No Dexcom connected";
+    urgEl.textContent = "No CGM session detected";
     dbg(extra || "Dexcom connected but no active sensor session.");
     return;
   }
 
   if (state === "no_data") {
-    avgEl.textContent = "Average change (1h): Waiting for data…";
-    urgEl.textContent = "Urgency: Waiting for data…";
+    avgEl.textContent = "Waiting for data…";
+    urgEl.textContent = "Waiting for data…";
     dbg(extra || "No glucose points available yet.");
     return;
   }
@@ -9111,6 +10901,29 @@ document.getElementById("settingsForm").addEventListener("submit", async (e) => 
 /* ============================================================
    LOGIN FLOW
    ============================================================ */
+function normalizeDexcomLoginMessage(message) {
+  const text = String(message || "").trim();
+  const lowered = text.toLowerCase();
+
+  if (
+    !text ||
+    lowered.includes("authenticatepublisheraccount") ||
+    lowered.includes("loginpublisheraccountbyid") ||
+    lowered.includes("accountpasswordinvalid") ||
+    lowered.includes("no account id returned") ||
+    lowered.includes("no session id returned") ||
+    lowered.includes("invalid account") ||
+    lowered.includes("authentication") ||
+    lowered.includes("<html") ||
+    lowered.includes("<!doctype") ||
+    text.length > 140
+  ) {
+    return "No account found";
+  }
+
+  return text;
+}
+
 async function saveDexcomCreds() {
   const username = document.getElementById("dxUser").value.trim();
   const password = document.getElementById("dxPass").value.trim();
@@ -9143,14 +10956,14 @@ async function saveDexcomCreds() {
     try {
       data = JSON.parse(text);
     } catch {
-      const loginError = text || "Login failed";
+      const loginError = normalizeDexcomLoginMessage(text || "Login failed");
       dbg("Login response was not valid JSON: " + loginError);
       stateEl.textContent = loginError;
       return;
     }
 
     if (!res.ok || !data.ok) {
-      const loginError = data?.error || text || "Login failed";
+      const loginError = normalizeDexcomLoginMessage(data?.error || text || "Login failed");
       dbg("Login failed: " + loginError);
       stateEl.textContent = loginError;
       return;
@@ -9173,7 +10986,7 @@ async function saveDexcomCreds() {
     }
     if (!sessionState.device_id) {
       setClaimCardVisible(true, {
-        help: "Optional: pair your GUARD anytime by entering the claim code shown after Bluetooth setup.",
+        help: "Optional: pair your GUARD anytime with Bluetooth setup. Guardian usually finishes the pairing automatically.",
         state: "Logged in. You can use Guardian now, even without a GUARD device."
       });
       stateEl.textContent = "Logged in";
@@ -9183,7 +10996,7 @@ async function saveDexcomCreds() {
     await enterDashboard();
 
   } catch (err) {
-    const loginError = err?.message || String(err) || "Login failed";
+    const loginError = normalizeDexcomLoginMessage(err?.message || String(err) || "Login failed");
     dbg("Login fetch error: " + loginError);
     stateEl.textContent = loginError;
   }
@@ -9260,7 +11073,7 @@ async function enterDashboard(){
   const devMode = getSessionToken().startsWith(DEMO_TOKEN_PREFIX);
   const titleEl = document.getElementById("dashboardTitle");
   if (titleEl) {
-    titleEl.textContent = devMode ? "Dashboard Developer Mode" : "Dashboard";
+    titleEl.textContent = devMode ? "Today Developer Mode" : "Today";
     titleEl.style.color = devMode ? "var(--g)" : "var(--ink)";
     titleEl.style.opacity = devMode ? "1" : ".95";
     titleEl.style.textShadow = devMode ? "0 6px 18px rgba(250,250,250,.1)" : "none";
@@ -9310,11 +11123,11 @@ async function bootstrapExistingSession() {
    ============================================================ */
 async function pollDexcomNow() {
   const el = document.getElementById("poll-status");
-  el.textContent = "Refreshing…";
+  if (el) el.textContent = "Refreshing…";
 
   const r = await loadDexcomRecent();
   if (!r) {
-    el.textContent = "Dexcom unavailable";
+    if (el) el.textContent = "Dexcom unavailable";
     alert("Could not load Dexcom data.");
     return;
   }
@@ -9325,13 +11138,13 @@ async function pollDexcomNow() {
     document.getElementById("glucose-trend").textContent = "Trend: —";
     document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
     document.getElementById("glucose-age").textContent = "—";
-    el.textContent = "No active sensor";
+    if (el) el.textContent = "No active sensor";
     return;
   }
 
   renderLastHour(r.points);
   await refreshLatestCardFromRecent(r);
-  el.textContent = "Updated ✅";
+  if (el) el.textContent = "Updated ✅";
 }
 
 function makeFakeDexcomRecent({ minutes = 180, stepMin = 5, base = 120 } = {}) {

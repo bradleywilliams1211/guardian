@@ -6,6 +6,8 @@ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_FREERTOS_HZ=1000
+CONFIG_AUTOSTART_ARDUINO=n
 # Browsers can handle the provisioning session's Sec1 crypto, but they do not
 # reliably expose the OS-level BLE pairing flow needed for Secure Connections.
 # Leave link-layer secure connections off so Web Bluetooth can complete setup.

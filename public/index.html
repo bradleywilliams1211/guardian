@@ -8651,11 +8651,11 @@ const HERO_MODEL_MOTION = {
   // Extra rotation applied from scroll.
   // These are added on top of HERO_MODEL_TRANSFORM.rotation.
   rotateXPerScroll: 0,
-  rotateYPerScroll: 0,
+  rotateYPerScroll: Math.PI * 2.15,
   rotateZPerScroll: 0,
 
   // How much the model moves vertically as scroll progresses.
-  moveYPerScroll: 0.024,
+  moveYPerScroll: 0.045,
 
   // How far the model gets pushed back when exploded.
   depthPullOnExplode: 1.18,
@@ -8684,7 +8684,7 @@ const HERO_MODEL_CAMERA = {
   radiusExplodeBoost: 2.05,
 
   // Extra zoom-out added as scroll increases.
-  radiusScrollBoost: 0.48,
+  radiusScrollBoost: 2.55,
 
   // Vertical camera follow settings.
   heightBaseFactor: 0.28,
@@ -8726,12 +8726,12 @@ const HERO_MODEL_DEBUG = {
 const HERO_EXPLODE_CONFIG = {
   // Master explode amount for the front-page hero model.
   // 0 keeps the assembly fully closed, 1 uses the tuned explode behavior.
-  intensity: 0,
+  intensity: 1,
 
   // Scroll progress range where the explosion happens.
   // 0 = very start of the section scroll, 1 = very end.
   start: 0,
-  end: 0,
+  end: 0.34,
 
   // Global axis multiplier for the whole explosion.
   // Use -1 to reverse an axis, 0 to flatten it, >1 to exaggerate it.

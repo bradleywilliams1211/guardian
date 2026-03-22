@@ -8639,8 +8639,6 @@ const HERO_MODEL_MOTION = {
   // Higher = snappier, lower = floatier.
   scrollBlend: 0.11,
 
-  // Keep the front-page model flat to the horizon.
-  // Scroll should pull it back, let it float slightly, and spin only around Y.
   // How smoothly the orbit angle chases its target.
   orbitLerp: 0.08,
 
@@ -8653,11 +8651,11 @@ const HERO_MODEL_MOTION = {
   // Extra rotation applied from scroll.
   // These are added on top of HERO_MODEL_TRANSFORM.rotation.
   rotateXPerScroll: 0,
-  rotateYPerScroll: Math.PI * 1.85,
+  rotateYPerScroll: 0,
   rotateZPerScroll: 0,
 
-  // Small upward float as the page scrolls.
-  moveYPerScroll: 0.04,
+  // How much the model moves vertically as scroll progresses.
+  moveYPerScroll: 0.024,
 
   // How far the model gets pushed back when exploded.
   depthPullOnExplode: 1.18,
@@ -8685,12 +8683,12 @@ const HERO_MODEL_CAMERA = {
   // Extra zoom-out added as the model explodes.
   radiusExplodeBoost: 2.05,
 
-  // Stronger zoom-out as scroll increases.
-  radiusScrollBoost: 2.35,
+  // Extra zoom-out added as scroll increases.
+  radiusScrollBoost: 0.48,
 
   // Vertical camera follow settings.
   heightBaseFactor: 0.28,
-  heightScrollFactor: 0.05,
+  heightScrollFactor: 0.12,
   heightExplodeFactor: 0.08,
 
   // Where the camera looks on the model vertically.
@@ -8732,23 +8730,23 @@ const HERO_EXPLODE_CONFIG = {
 
   // Scroll progress range where the explosion happens.
   // 0 = very start of the section scroll, 1 = very end.
-  start: 0.12,
-  end: 0.42,
+  start: 0,
+  end: 0,
 
   // Global axis multiplier for the whole explosion.
   // Use -1 to reverse an axis, 0 to flatten it, >1 to exaggerate it.
   axis: { x: 1, y: 1, z: 1 },
 
   // Default fallback spread if a part has no exact rule.
-  defaultDistanceBase: 0.18,
-  defaultDistanceCap: 0.35,
+  defaultDistanceBase: 0,
+  defaultDistanceCap: 0,
 
   // Default fallback twist if a part has no exact rule.
-  defaultRotationBase: 0.14,
-  defaultRotationStep: 0.05,
+  defaultRotationBase: 0,
+  defaultRotationStep: 0,
 
   // Fallback Y offset used when a part sits exactly at the center.
-  fallbackVerticalStep: 0.35
+  fallbackVerticalStep: 0
 };
 
 // Group rules are intentionally empty now.
@@ -9027,10 +9025,10 @@ const HERO_EXPLODE_PART_RULES = {
   "LED_5MM_RED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "M3X12_PHILIPS_SCREW-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "M3X12_PHILIPS_SCREW-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NOSE_REMODEL-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "NOSE_REMODEL-1__1": { direction: [1, 0, 0], distance: 1, rotationAmount: 0 },
   "Container_axel-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "M3X12_PHILIPS_SCREW-7__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "Guard_Shell-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
+  "Guard_Shell-1__1": { direction: [-1, 0, 0], distance: 1, rotationAmount: 0 },
   "M3X12_PHILIPS_SCREW-5__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "M3X12_PHILIPS_SCREW-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "Container-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },

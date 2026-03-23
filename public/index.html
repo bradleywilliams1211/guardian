@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -8768,1353 +8768,284 @@ const HERO_EXPLODE_GROUP_RULES = [];
 //   end: 0.4
 // }
 const HERO_EXPLODE_PART_RULES = {
-  "FOOT_GRIP-1__1": { direction: [0, .1, 1], distance: .6, rotationAmount: 0 },
-  "THIGH_RH-1__1": { direction: [0, 0, 1], distance: 1, rotationAmount: 0 },
-  "LEG_KNEE_RH-1__1": { direction: [0, 0, 1], distance: .4, rotationAmount: 0 },
-  "LEG_KNEE_RH-1__2": { direction: [0, 0, 1], distance: .6, rotationAmount: 0 },
-  "SHOULDER_PIN-1__1": { direction: [0, 0, 1], distance: .3, rotationAmount: 0 },
-  "SHOULDER_COVER-1__1": { direction: [0, 0, 1], distance: .2, rotationAmount: 0 },
-  "WRIST_RH_1-1__1": { direction: [0, 0, 1], distance: .8, rotationAmount: 0 },
-  "SHOULDER_COVER-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "SHOULDER_PIN-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "THIGH_RH-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-
-  "FOOT_GRIP-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "WRIST_RH_1-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "FOOT_GRIP-1__3": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "BATTERY_CONTACT_NEG-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "BATTERY_HOLDER-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "BATTERY_CONTACT_POS-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__3": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "_UNSAVED__ASM-1/ACTUATOR-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "_UNSAVED__ASM-1/PINS-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "_UNSAVED__ASM-1/BODY1-140-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "_UNSAVED__ASM-1/PCB_1_ASM-1/PINS-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "_UNSAVED__ASM-1/PCB_1_ASM-1/BODY1-137-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "_UNSAVED__ASM-1/PCB_1_ASM-1/PINS-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__4": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/CERAMIC_BASE_LDR_CELL_THRU-HOLE-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET2-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET1-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/ELECTRODES_LDR_CELL_THRU-HOLE_L_ASM-1/BOSS-EXTRUDE1_1_-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/ELECTRODES_LDR_CELL_THRU-HOLE_L_ASM-1/BOSS-EXTRUDE1_2_-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LED_SMD_ANYUNSPECIFIED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LED_SMD_ANYUNSPECIFIED-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-5__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LED_SMD_ANYUNSPECIFIED-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LED_SMD_ANYUNSPECIFIED-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1164-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1166-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1159-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1160-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PCB-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1158-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1161-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1162-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1157-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1163-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1165-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1172-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1176-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1167-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1170-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1175-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1181-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1183-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1171-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1168-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1169-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1173-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1174-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1177-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/PADS-1178-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1179-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1180-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1182-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1188-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1193-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1189-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1190-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1192-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1187-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1200-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1194-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1186-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1184-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1185-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1191-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1195-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1197-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1198-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1196-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1199-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1204-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1211-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1212-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1203-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1202-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1201-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1205-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1206-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1209-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1207-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1208-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1210-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1214-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1216-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1213-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1217-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1215-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1218-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1224-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1221-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1226-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1225-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1219-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1220-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1223-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1228-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1222-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1227-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROUSB_BEST_ASM-1/S_X_F3LIDO2-1229-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROUSB_BEST_ASM-1/S_X_F3LIDO4-1231-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MICROUSB_BEST_ASM-1/S_X_F3LIDO3-1230-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "SOT23_ASM-1/PIN-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "SOT23_ASM-1/COMPONENT1-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "SOT23_ASM-1/PIN-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "SOT23_ASM-1/PIN-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO3-1236-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO5-1238-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO1-1234-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO2-1235-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO4-1237-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1244-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1243-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1245-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1246-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1248-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1247-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO5-1263-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1259-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1260-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1261-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO4-1262-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO6-1264-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO7-1265-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO9-1267-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO13-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO16-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO18-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO19-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO12-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO24-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO23-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO14-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO10-1268-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO8-1266-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO11-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO15-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO17-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO20-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO21-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO22-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO30-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO27-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO29-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO26-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO25-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO28-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO2-1250-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO1-1249-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO7-1255-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO10-1258-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO5-1253-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO6-1254-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO4-1252-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO3-1251-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO9-1257-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO8-1256-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__5": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__6": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "FOOT_GRIP-1__4": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__7": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NUT_M3_1_ASM__8": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "ARDUINOUNODETAILED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-3__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LED_5MM_RED-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "BODY_REMODEL-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "HC-SR04-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "BODY_REMODEL_LID-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "STRIPBOARD-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "HC-SR04-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LED_5MM_RED-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-2__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "NOSE_REMODEL-1__1": { direction: [-1, 0, 0], distance: 1, rotationAmount: 0 },
-  "Container_axel-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-7__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "Guard_Shell-1__1": { direction: [1, 0, 0], distance: 1, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-5__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-4__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "Container-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-6__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "M3X12_PHILIPS_SCREW-8__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-};
-
-let heroModelScene = null;
-let heroModelCamera = null;
-let heroModelRenderer = null;
-let heroModelRig = null;
-let heroModelRoot = null;
-let heroModelExplodeRoot = null;
-let heroModelExplodeParts = [];
-let heroModelAnimFrame = null;
-let heroModelSize = new THREE.Vector3(1, 1, 1);
-let heroModelMaxDim = 1;
-let heroModelScrollTarget = 0;
-let heroModelScrollCurrent = 0;
-let heroModelOrbitAngle = HERO_MODEL_MOTION.orbitStartAngle;
-let heroModelLoadedAsset = "";
-const heroMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
-const heroModelTempQuat = new THREE.Quaternion();
-
-function setHeroModelStatus(message) {
-  const wrap = document.getElementById("heroModelViewer");
-  if (!wrap) return;
-
-  let status = wrap.querySelector(".hero-model-status");
-  if (!status) {
-    status = document.createElement("div");
-    status.className = "hero-model-status";
-    wrap.appendChild(status);
-  }
-
-  status.textContent = message;
-}
-
-function getHeroModelPlaybackTarget() {
+  "FOOT_GRIP-1__1": { direction: [0, .1, 1], distance: .6, start: 0, end: 1, rotationAmount: 0 },
+  "THIGH_RH-1__1": { direction: [0, 0, 1], distance: 1, start: 0, end: 1, rotationAmount: 0 },
+  "LEG_KNEE_RH-1__1": { direction: [0, 0, 1], distance: .4, start: 0, end: 1, rotationAmount: 0 },
+  "LEG_KNEE_RH-1__2": { direction: [0, 0, 1], distance: .6, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_PIN-1__1": { direction: [0, 0, 1], distance: .3, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_COVER-1__1": { direction: [0, 0, 1], distance: .2, start: 0, end: 1, rotationAmount: 0 },
+  "WRIST_RH_1-1__1": { direction: [0, 0, 1], distance: .8, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_COVER-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_PIN-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "THIGH_RH-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "FOOT_GRIP-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "WRIST_RH_1-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "FOOT_GRIP-1__3": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "BATTERY_CONTACT_NEG-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "BATTERY_HOLDER-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "BATTERY_CONTACT_POS-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__3": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/ACTUATOR-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PINS-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/BODY1-140-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PCB_1_ASM-1/PINS-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PCB_1_ASM-1/BODY1-137-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "_UNSAVED__ASM-1/PCB_1_ASM-1/PINS-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__4": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/CERAMIC_BASE_LDR_CELL_THRU-HOLE-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET2-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET1-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/ELECTRODES_LDR_CELL_THRU-HOLE_L_ASM-1/BOSS-EXTRUDE1_1_-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/ELECTRODES_LDR_CELL_THRU-HOLE_L_ASM-1/BOSS-EXTRUDE1_2_-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-4__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-3__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-4__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "CAPC-0805-T0_75-BN_ANYUNSPECIFI-5__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LED_SMD_ANYUNSPECIFIED-3__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1164-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1166-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1159-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1160-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PCB-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1158-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1161-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1162-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1157-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1163-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1165-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1172-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1176-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1167-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1170-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1175-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1181-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1183-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1171-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1168-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1169-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1173-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1174-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1177-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/PADS-1178-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1179-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1180-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1182-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1188-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1193-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1189-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1190-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1192-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1187-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1200-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1194-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1186-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1184-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1185-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1191-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1195-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1197-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1198-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1196-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1199-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1204-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1211-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1212-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1203-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1202-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1201-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1205-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1206-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1209-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1207-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1208-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1210-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1214-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1216-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1213-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1217-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1215-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1218-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1224-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1221-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1226-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1225-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1219-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1220-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1223-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1228-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1222-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "PLACASUPERBOOST1000C_ASM-1/LETRAS-1227-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROUSB_BEST_ASM-1/S_X_F3LIDO2-1229-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROUSB_BEST_ASM-1/S_X_F3LIDO4-1231-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MICROUSB_BEST_ASM-1/S_X_F3LIDO3-1230-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "SOT23_ASM-1/PIN-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "SOT23_ASM-1/COMPONENT1-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "SOT23_ASM-1/PIN-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "SOT23_ASM-1/PIN-3__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-2/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO3-1236-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO5-1238-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO1-1234-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO2-1235-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MOLEX2PINSMD_ASM-1/S_X_F3LIDO4-1237-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-3/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-4/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-9/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-8/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-15/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-17/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-6/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-11/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-12/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-10/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-5/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-7/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-14/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-16/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-13/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1244-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1243-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-1210_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1245-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1246-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1248-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LPS4018_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1247-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO5-1263-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO1-1259-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO2-1260-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO3-1261-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO4-1262-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO6-1264-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO7-1265-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO9-1267-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO13-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO16-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO18-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO19-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO12-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO24-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO23-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO14-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO10-1268-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO8-1266-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO11-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO15-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO17-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO20-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO21-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO22-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO30-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO27-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO29-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO26-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO25-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-220WGGE_ANYUNSPECIFIED_ASM-1/S_X_F3LIDO28-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO2-1250-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO1-1249-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO7-1255-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO10-1258-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO5-1253-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO6-1254-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO4-1252-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO3-1251-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO9-1257-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "MO-229W3030D-1_4000_ASM-1/S_X_F3LIDO8-1256-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__5": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__6": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "FOOT_GRIP-1__4": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__7": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM__8": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "ARDUINOUNODETAILED-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-3__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LED_5MM_RED-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "BODY_REMODEL-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "HC-SR04-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "BODY_REMODEL_LID-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "STRIPBOARD-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "HC-SR04-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "LED_5MM_RED-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-2__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "NOSE_REMODEL-1__1": { direction: [-1, 0, 0], distance: 1, start: 0, end: 1, rotationAmount: 0 },
+  "Container_axel-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-7__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "Guard_Shell-1__1": { direction: [1, 0, 0], distance: 1, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-5__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-4__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "Container-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-6__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "M3X12_PHILIPS_SCREW-8__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   // This lets you test the model without scrolling.
-  switch (HERO_MODEL_PLAYBACK.mode) {
-    case "exploded":
-      return 1;
-    case "imploded":
-      return 0;
-    case "manual":
-      return THREE.MathUtils.clamp(HERO_MODEL_PLAYBACK.manualProgress, 0, 1);
-    default:
-      return heroModelScrollTarget;
-  }
-}
-
-function clearHeroModelStatus() {
-  const wrap = document.getElementById("heroModelViewer");
-  if (!wrap) return;
-
-  const status = wrap.querySelector(".hero-model-status");
-  if (status) status.remove();
-}
-
-function styleHeroModel(root) {
   // Applies the look controls above to every mesh in the loaded model.
-  root.traverse((child) => {
-    if (!child.isMesh) return;
-
-    child.frustumCulled = false;
-
-    if (child.isSkinnedMesh) {
-      child.bindMode = "attached";
-      child.normalizeSkinWeights();
-    }
-
-    const materials = Array.isArray(child.material) ? child.material : [child.material];
-    const nextMaterials = materials.map((mat) => {
-      if (!mat) return mat;
-
-      const next = mat.clone();
-      if ("color" in next && HERO_MODEL_LOOK.color != null) next.color = new THREE.Color(HERO_MODEL_LOOK.color);
-      if ("emissive" in next && HERO_MODEL_LOOK.emissive != null) next.emissive = new THREE.Color(HERO_MODEL_LOOK.emissive);
-      if ("emissiveIntensity" in next && HERO_MODEL_LOOK.emissiveIntensity != null) next.emissiveIntensity = HERO_MODEL_LOOK.emissiveIntensity;
-      if ("metalness" in next && HERO_MODEL_LOOK.metalness != null) next.metalness = HERO_MODEL_LOOK.metalness;
-      if ("roughness" in next && HERO_MODEL_LOOK.roughness != null) next.roughness = HERO_MODEL_LOOK.roughness;
-      if ("transparent" in next) next.transparent = HERO_MODEL_LOOK.transparent || HERO_MODEL_LOOK.opacity < 1;
-      if ("opacity" in next && HERO_MODEL_LOOK.opacity != null) next.opacity = HERO_MODEL_LOOK.opacity;
-      if ("side" in next) next.side = HERO_MODEL_LOOK.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
-      if ("skinning" in next) next.skinning = child.isSkinnedMesh;
-      next.needsUpdate = true;
-      return next;
-    });
-
-    child.material = Array.isArray(child.material) ? nextMaterials : nextMaterials[0];
-  });
-}
-
-function hasRenderableDescendants(node) {
-  let hasRenderable = false;
-
-  node.traverse((child) => {
-    if (child.isMesh) {
-      hasRenderable = true;
-    }
-  });
-
-  return hasRenderable;
-}
-
-function findHeroExplodeRoot(root) {
-  let current = root;
-
-  while (
-    current &&
-    current.children.length === 1 &&
-    !current.children[0].isMesh &&
-    hasRenderableDescendants(current.children[0])
-  ) {
-    current = current.children[0];
-  }
-
-  const renderableChildren = current.children.filter(hasRenderableDescendants);
-  if (renderableChildren.length > 1) {
-    return current;
-  }
-
-  for (const child of current.children) {
-    if (child.isMesh || !hasRenderableDescendants(child)) continue;
-
-    const nestedRenderableChildren = child.children.filter(hasRenderableDescendants);
-    if (nestedRenderableChildren.length > 1) {
-      return child;
-    }
-  }
-
-  return current;
-}
-
-function collectHeroExplodeCandidates(node, candidates, seen) {
-  if (!node || !hasRenderableDescendants(node)) return;
-
-  if (node.isMesh) {
-    if (!seen.has(node.uuid)) {
-      seen.add(node.uuid);
-      candidates.push(node);
-    }
-    return;
-  }
-
-  const directMeshes = node.children.filter((child) => child.isMesh);
-  const nestedGroups = node.children.filter((child) => !child.isMesh && hasRenderableDescendants(child));
-
-  if (nestedGroups.length === 0) {
-    const targets = directMeshes.length <= 1 ? [node] : directMeshes;
-    targets.forEach((target) => {
-      if (!seen.has(target.uuid)) {
-        seen.add(target.uuid);
-        candidates.push(target);
-      }
-    });
-    return;
-  }
-
-  directMeshes.forEach((mesh) => {
-    if (!seen.has(mesh.uuid)) {
-      seen.add(mesh.uuid);
-      candidates.push(mesh);
-    }
-  });
-
-  nestedGroups.forEach((group) => {
-    collectHeroExplodeCandidates(group, candidates, seen);
-  });
-}
-
-function getHeroExplodePartId(nodeName, nameCounts) {
   // Creates stable IDs like "NOSE_REMODEL-1__1" and "NOSE_REMODEL-1__2"
   // so duplicate part names can still be edited individually.
-  const safeName = (nodeName || "Unnamed Part").trim() || "Unnamed Part";
-  nameCounts[safeName] = (nameCounts[safeName] || 0) + 1;
-  return safeName + "__" + nameCounts[safeName];
-}
-
-function getHeroExplodeRule(nodeName, partId) {
   // Exact per-part rules are the source of truth now.
-  const exactRule = HERO_EXPLODE_PART_RULES[partId] || HERO_EXPLODE_PART_RULES[nodeName];
-  if (exactRule && Object.keys(exactRule).length) return exactRule;
-  return null;
-}
-
-function isHeroExplodeRuleNeutral(rule) {
-  if (!rule) return false;
-
-  const direction = Array.isArray(rule.direction) ? rule.direction : [0, 0, 0];
-  const directionMagnitude = Math.abs(direction[0] || 0) + Math.abs(direction[1] || 0) + Math.abs(direction[2] || 0);
-  const distance = Math.abs(rule.distance || 0);
-  const rotationAmount = Math.abs(rule.rotationAmount || 0);
-
-  return directionMagnitude < 1e-6 && distance < 1e-6 && rotationAmount < 1e-6;
-}
-
-function buildHeroExplodeParts(root) {
   // Builds the editable explosion metadata for every visible leaf part.
-  heroModelExplodeParts = [];
-  heroModelExplodeRoot = findHeroExplodeRoot(root);
-
-  const candidates = [];
-  const seen = new Set();
-
-  heroModelExplodeRoot.children
-    .filter(hasRenderableDescendants)
-    .forEach((child) => collectHeroExplodeCandidates(child, candidates, seen));
-
-  if (candidates.length <= 1) {
-    console.info("Hero model loaded without separable assembly parts:", heroModelLoadedAsset);
-    return;
-  }
-
-  const partNameCounts = Object.create(null);
-
-  candidates.forEach((node, index) => {
-    const box = new THREE.Box3().setFromObject(node);
-    if (box.isEmpty()) return;
-
-    const partId = getHeroExplodePartId(node.name || "", partNameCounts);
-    const rule = getHeroExplodeRule(node.name || "", partId);
-    const partCenterWorld = box.getCenter(new THREE.Vector3());
-    const partSize = box.getSize(new THREE.Vector3());
-
     // Exact zeroed rules are treated as a hard lock for that part.
     // This makes "direction: [0,0,0], distance: 0, rotationAmount: 0"
     // a reliable neutral starting point while you tune parts individually.
-    if (isHeroExplodeRuleNeutral(rule)) {
-      heroModelExplodeParts.push({
-        node,
-        partId,
-        partName: node.name || "Unnamed Part",
-        restPosition: node.position.clone(),
-        restQuaternion: node.quaternion.clone(),
-        explodeOffset: new THREE.Vector3(0, 0, 0),
-        rotationAxis: new THREE.Vector3(0, 1, 0),
-        rotationAmount: 0,
-        start: 0,
-        end: 1
-      });
-      return;
-    }
-
     // Parts only move when you give them an explicit non-zero direction.
     // A missing direction, or [0, 0, 0], now means "no translation".
-    const directionWorld = new THREE.Vector3(0, 0, 0);
-
-    if (rule?.direction) {
-      const customDirection = new THREE.Vector3(
-        rule.direction[0] || 0,
-        rule.direction[1] || 0,
-        rule.direction[2] || 0
-      );
-
-      if (customDirection.lengthSq() >= 1e-6) {
-        directionWorld.copy(customDirection);
-      }
-    }
-
-    const hasExplicitDirection = directionWorld.lengthSq() >= 1e-6;
-    if (hasExplicitDirection) {
-      directionWorld.normalize();
-    }
-
-    const sizeRatio = partSize.length() / Math.max(heroModelMaxDim, 1);
-    const spread = heroModelMaxDim * (
-      rule?.distance ??
-      (HERO_EXPLODE_CONFIG.defaultDistanceBase + Math.min(sizeRatio, HERO_EXPLODE_CONFIG.defaultDistanceCap))
-    );
-    const parent = node.parent || heroModelExplodeRoot;
-    const localStart = parent.worldToLocal(partCenterWorld.clone());
-    const localEnd = hasExplicitDirection
-      ? parent.worldToLocal(
-          partCenterWorld.clone().add(directionWorld.clone().multiplyScalar(spread))
-        )
-      : localStart.clone();
-    const localDirection = localEnd.clone().sub(localStart);
-
-    if (hasExplicitDirection && localDirection.lengthSq() < 1e-6) {
-      localDirection.set(directionWorld.x, directionWorld.y, directionWorld.z);
-    }
-
-    if (localDirection.lengthSq() >= 1e-6) {
-      localDirection.normalize();
-    }
-    const rotationAxis = rule?.rotationAxis
-      ? new THREE.Vector3(rule.rotationAxis[0], rule.rotationAxis[1], rule.rotationAxis[2]).normalize()
-      : new THREE.Vector3(
-          localDirection.z || 0.25,
-          0.4 + (index % 5) * 0.08,
-          -localDirection.x || 0.25
-        ).normalize();
-
-    heroModelExplodeParts.push({
-      node,
-      partId,
-      partName: node.name || "Unnamed Part",
-      restPosition: node.position.clone(),
-      restQuaternion: node.quaternion.clone(),
-      explodeOffset: localEnd.sub(localStart),
-      rotationAxis,
-      start: rule?.start ?? 0,
-      end: rule?.end ?? 1,
-      rotationAmount: rule?.rotationAmount ?? (
-        HERO_EXPLODE_CONFIG.defaultRotationBase + (index % 4) * HERO_EXPLODE_CONFIG.defaultRotationStep
-      )
-    });
-  });
-
-  if (HERO_MODEL_DEBUG.logExplodePartIdsOnLoad) {
     // Browser console helper for creating exact per-part overrides.
-    console.groupCollapsed("Hero explode part IDs");
-    console.table(heroModelExplodeParts.map((part) => ({
-      id: part.partId,
-      name: part.partName
-    })));
-    console.groupEnd();
-  }
-}
-
-function getHeroExplodeWindowProgress(progress, start = 0, end = 1) {
-  const safeStart = Number.isFinite(start) ? start : 0;
-  const safeEnd = Number.isFinite(end) ? end : 1;
-
-  if (safeEnd <= safeStart) {
-    return progress >= safeEnd ? 1 : 0;
-  }
-
-  return THREE.MathUtils.smootherstep(progress, safeStart, safeEnd);
-}
-
-function applyHeroModelExplosion(progress) {
   // Turns section scroll progress into explosion progress.
-  const explodePhase = THREE.MathUtils.smootherstep(
-    progress,
-    HERO_EXPLODE_CONFIG.start,
-    HERO_EXPLODE_CONFIG.end
-  );
-  const explodeProgress = explodePhase * HERO_EXPLODE_CONFIG.intensity;
-
-  heroModelExplodeParts.forEach((part) => {
-    const liveRule = getHeroExplodeRule(part.partName, part.partId);
-    const ruleIsNeutral = isHeroExplodeRuleNeutral(liveRule);
-    const partWindowProgress = ruleIsNeutral
-      ? 0
-      : getHeroExplodeWindowProgress(
-          explodePhase,
-          liveRule?.start ?? part.start ?? 0,
-          liveRule?.end ?? part.end ?? 1
-        );
-    const partExplodeProgress = partWindowProgress * HERO_EXPLODE_CONFIG.intensity;
-    const offset = ruleIsNeutral ? new THREE.Vector3(0, 0, 0) : part.explodeOffset.clone();
-
     // Global axis multipliers let you flip or exaggerate the entire explosion.
     // x: right/left, y: up/down, z: forward/backward
-    offset.set(
-      offset.x * HERO_EXPLODE_CONFIG.axis.x,
-      offset.y * HERO_EXPLODE_CONFIG.axis.y,
-      offset.z * HERO_EXPLODE_CONFIG.axis.z
-    );
-
-    part.node.position
-      .copy(part.restPosition)
-      .addScaledVector(offset, partExplodeProgress);
-
-    heroModelTempQuat.setFromAxisAngle(
-      part.rotationAxis,
-      (ruleIsNeutral ? 0 : part.rotationAmount) * partExplodeProgress
-    );
-
-    part.node.quaternion
-      .copy(part.restQuaternion)
-      .multiply(heroModelTempQuat);
-  });
-
-  return explodeProgress;
-}
-
-
-function updateHeroModelScrollProgress() {
   // Scroll does nothing until the standalone model section is actually on screen.
-  const section = document.querySelector(".argos-model-section");
-  if (!section) return;
-
-  const rect = section.getBoundingClientRect();
-  const triggerY = window.innerHeight * HERO_MODEL_PLAYBACK.triggerLine;
-
-  if (rect.bottom <= 0 || rect.top > triggerY) {
-    heroModelScrollTarget = 0;
-    return;
-  }
-
-  const range = Math.max(rect.height - triggerY + window.innerHeight * 0.55, 1);
-  const traveled = triggerY - rect.top;
-  heroModelScrollTarget = THREE.MathUtils.clamp(traveled / range, 0, 1);
-}
-
-function resizeHeroModelViewer() {
-  const wrap = document.getElementById("heroModelViewer");
-  if (!wrap || !heroModelRenderer || !heroModelCamera) return;
-
-  const width = wrap.clientWidth || 640;
-  const height = wrap.clientHeight || 640;
-
-  heroModelCamera.aspect = width / height;
-  heroModelCamera.updateProjectionMatrix();
-  heroModelRenderer.setSize(width, height);
-}
-
-function loadHeroModel() {
-  if (!heroModelScene) return;
-
-  setHeroModelStatus("Loading " + HERO_MODEL_CONFIG.name);
-
-  const loader = new THREE.GLTFLoader();
-  const dracoLoader = new THREE.DRACOLoader();
-  dracoLoader.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/");
-  loader.setDRACOLoader(dracoLoader);
-
-  const tryLoadAsset = (assetIndex) => {
-    const assetPath = HERO_MODEL_CONFIG.assetCandidates[assetIndex];
-
-    if (!assetPath) {
-      console.error("Hero model failed to load all asset candidates");
-      setHeroModelStatus(HERO_MODEL_CONFIG.name + " model unavailable");
-      return;
-    }
-
-    loader.load(
-      assetPath,
-      function (gltf) {
-        heroModelLoadedAsset = assetPath;
-        clearHeroModelStatus();
-
-        if (heroModelRig) {
-          heroModelScene.remove(heroModelRig);
-        }
-
-        heroModelRig = new THREE.Group();
-        heroModelRoot = gltf.scene;
-        heroModelExplodeParts = [];
-
-        styleHeroModel(heroModelRoot);
-
-        heroModelRoot.scale.set(
-          HERO_MODEL_TRANSFORM.scale[0],
-          HERO_MODEL_TRANSFORM.scale[1],
-          HERO_MODEL_TRANSFORM.scale[2]
-        );
-        heroModelRoot.position.set(0, 0, 0);
-        heroModelRoot.rotation.set(0, 0, 0);
-
-        const box = new THREE.Box3().setFromObject(heroModelRoot);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-
-        heroModelSize.copy(size);
-        heroModelMaxDim = Math.max(size.x, size.y, size.z) || 1;
-
-        heroModelRoot.position.set(-center.x, -center.y, -center.z);
-        heroModelRig.position.set(
-          HERO_MODEL_TRANSFORM.position[0],
-          HERO_MODEL_TRANSFORM.position[1],
-          HERO_MODEL_TRANSFORM.position[2]
-        );
-        heroModelRig.rotation.set(
-          HERO_MODEL_TRANSFORM.rotation[0],
-          HERO_MODEL_TRANSFORM.rotation[1],
-          HERO_MODEL_TRANSFORM.rotation[2]
-        );
-
-        heroModelRig.add(heroModelRoot);
-        heroModelScene.add(heroModelRig);
-        heroModelRig.updateWorldMatrix(true, true);
-        buildHeroExplodeParts(heroModelRoot);
-        applyHeroModelExplosion(0);
-        resizeHeroModelViewer();
-        updateHeroModelScrollProgress();
-      },
-      undefined,
-      function (error) {
-        if (assetIndex < HERO_MODEL_CONFIG.assetCandidates.length - 1) {
-          console.warn("Hero model asset unavailable, trying fallback:", assetPath);
-          tryLoadAsset(assetIndex + 1);
-          return;
-        }
-
-        console.error("Hero model failed to load:", error);
-        setHeroModelStatus(HERO_MODEL_CONFIG.name + " model unavailable");
-      }
-    );
-  };
-
-  tryLoadAsset(0);
-}
-
-function animateHeroModelViewer() {
-  if (!heroModelRenderer || !heroModelScene || !heroModelCamera) return;
-
-  function loop(now) {
-    heroModelAnimFrame = requestAnimationFrame(loop);
-    updateHeroModelScrollProgress();
-
-    const reducedMotion = !!heroMotionQuery?.matches;
-    const blend = reducedMotion ? HERO_MODEL_MOTION.reducedMotionBlend : HERO_MODEL_MOTION.scrollBlend;
-    const targetProgress = getHeroModelPlaybackTarget();
-    heroModelScrollCurrent += (targetProgress - heroModelScrollCurrent) * blend;
-
-    if (heroModelRig) {
       // explodeProgress is the one number that drives the visible separation.
-      const explodeProgress = applyHeroModelExplosion(heroModelScrollCurrent);
-      const depthPull = explodeProgress * heroModelMaxDim * HERO_MODEL_MOTION.depthPullOnExplode;
-      const explodeLift = explodeProgress * heroModelMaxDim * HERO_MODEL_MOTION.liftOnExplode;
-      const zoomOut =
-        explodeProgress * HERO_MODEL_CAMERA.radiusExplodeBoost +
-        heroModelScrollCurrent * HERO_MODEL_CAMERA.radiusScrollBoost;
-
-      heroModelOrbitAngle += (
-        (HERO_MODEL_MOTION.orbitStartAngle + heroModelScrollCurrent * HERO_MODEL_MOTION.orbitTurnPerScroll) -
-        heroModelOrbitAngle
-      ) * HERO_MODEL_MOTION.orbitLerp;
-
-      heroModelRig.rotation.x = HERO_MODEL_TRANSFORM.rotation[0] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateXPerScroll;
-      heroModelRig.rotation.y = HERO_MODEL_TRANSFORM.rotation[1] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateYPerScroll;
-      heroModelRig.rotation.z = HERO_MODEL_TRANSFORM.rotation[2] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateZPerScroll;
-
-      heroModelRig.position.x = HERO_MODEL_TRANSFORM.position[0];
-      heroModelRig.position.y =
-        HERO_MODEL_TRANSFORM.position[1] +
-        heroModelScrollCurrent * heroModelMaxDim * HERO_MODEL_MOTION.moveYPerScroll -
-        explodeLift;
-      heroModelRig.position.z = HERO_MODEL_TRANSFORM.position[2] - depthPull;
-      heroModelRig.scale.setScalar(1 - explodeProgress * HERO_MODEL_MOTION.scaleDownOnExplode);
-
-      const radius = heroModelMaxDim * (HERO_MODEL_CAMERA.radiusBase + zoomOut);
-      heroModelCamera.position.x = heroModelRig.position.x + Math.cos(heroModelOrbitAngle) * radius;
-      heroModelCamera.position.z = heroModelRig.position.z + Math.sin(heroModelOrbitAngle) * radius;
-      heroModelCamera.position.y =
-        heroModelRig.position.y +
-        heroModelSize.y * (
-          HERO_MODEL_CAMERA.heightBaseFactor +
-          heroModelScrollCurrent * HERO_MODEL_CAMERA.heightScrollFactor +
-          explodeProgress * HERO_MODEL_CAMERA.heightExplodeFactor
-        );
-
-      heroModelCamera.lookAt(
-        heroModelRig.position.x,
-        heroModelRig.position.y + heroModelSize.y * HERO_MODEL_CAMERA.lookAtYOffset,
-        heroModelRig.position.z
-      );
-    }
-
-    heroModelRenderer.render(heroModelScene, heroModelCamera);
-  }
-
-  loop(0);
-}
-
-function initHeroModelViewer() {
-  const wrap = document.getElementById("heroModelViewer");
-  if (!wrap || !window.THREE) return;
-
-  if (heroModelRenderer) {
-    resizeHeroModelViewer();
-    return;
-  }
-
-  setHeroModelStatus("Loading " + HERO_MODEL_CONFIG.name);
-
-  const width = wrap.clientWidth || 640;
-  const height = wrap.clientHeight || 640;
-
   // Camera setup is controlled by HERO_MODEL_CAMERA above.
-  heroModelScene = new THREE.Scene();
-  heroModelCamera = new THREE.PerspectiveCamera(
-    HERO_MODEL_CAMERA.fov,
-    width / height,
-    HERO_MODEL_CAMERA.near,
-    HERO_MODEL_CAMERA.far
-  );
-  heroModelCamera.position.set(
-    HERO_MODEL_CAMERA.position[0],
-    HERO_MODEL_CAMERA.position[1],
-    HERO_MODEL_CAMERA.position[2]
-  );
-
-  heroModelRenderer = new THREE.WebGLRenderer({
-    alpha: true,
-    antialias: true
-  });
-  heroModelRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  heroModelRenderer.setSize(width, height);
-  heroModelRenderer.outputEncoding = THREE.sRGBEncoding;
-  heroModelRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  heroModelRenderer.toneMappingExposure = HERO_MODEL_LOOK.toneMappingExposure;
-  heroModelRenderer.domElement.style.width = "100%";
-  heroModelRenderer.domElement.style.height = "100%";
-  heroModelRenderer.domElement.style.display = "block";
-  heroModelRenderer.domElement.style.pointerEvents = "none";
-  wrap.appendChild(heroModelRenderer.domElement);
-
   // Lighting setup is controlled by HERO_MODEL_LIGHTING above.
-  heroModelScene.add(new THREE.AmbientLight(
-    HERO_MODEL_LIGHTING.ambient.color,
-    HERO_MODEL_LIGHTING.ambient.intensity
-  ));
-
-  const keyLight = new THREE.DirectionalLight(
-    HERO_MODEL_LIGHTING.key.color,
-    HERO_MODEL_LIGHTING.key.intensity
-  );
-  keyLight.position.set(
-    HERO_MODEL_LIGHTING.key.position[0],
-    HERO_MODEL_LIGHTING.key.position[1],
-    HERO_MODEL_LIGHTING.key.position[2]
-  );
-  heroModelScene.add(keyLight);
-
-  const rimLight = new THREE.DirectionalLight(
-    HERO_MODEL_LIGHTING.rim.color,
-    HERO_MODEL_LIGHTING.rim.intensity
-  );
-  rimLight.position.set(
-    HERO_MODEL_LIGHTING.rim.position[0],
-    HERO_MODEL_LIGHTING.rim.position[1],
-    HERO_MODEL_LIGHTING.rim.position[2]
-  );
-  heroModelScene.add(rimLight);
-
-  const fillLight = new THREE.HemisphereLight(
-    HERO_MODEL_LIGHTING.fill.skyColor,
-    HERO_MODEL_LIGHTING.fill.groundColor,
-    HERO_MODEL_LIGHTING.fill.intensity
-  );
-  heroModelScene.add(fillLight);
-
-  updateHeroModelScrollProgress();
-  loadHeroModel();
-  animateHeroModelViewer();
-
-  if (!window.__heroModelEventsBound) {
-    window.__heroModelEventsBound = true;
-    window.addEventListener("resize", resizeHeroModelViewer);
-    window.addEventListener("scroll", updateHeroModelScrollProgress, { passive: true });
-  }
-}
-
-/* ============================================================
-   Footer button functions
-   ============================================================ */
-function showPage(id){
-  document.querySelectorAll(".page").forEach(page => {
-    page.classList.remove("active");
-  });
-
-  document.getElementById(id).classList.add("active");
-  updateFooterNavActive(id);
-  syncFloatingFooter();
-}
-
-let homeFlowStep = 1;
-let homeRobotPageReady = false;
-
-function ensureHomeRobotPageReady() {
-  initModelWheel();
-  initRobotViewer();
-
-  requestAnimationFrame(() => {
-    resizeRobotViewer();
-    centerModelWheelOn(currentRobotAnimal, false);
-    updateModelWheelSelection();
-  });
-
-  homeRobotPageReady = true;
-}
-
-function setHomeFlowStep(step, options = {}) {
-  const normalizedStep = step === 2 ? 2 : 1;
-  homeFlowStep = normalizedStep;
-
-  const setupEl = document.getElementById("setup");
-  const robotEl = document.getElementById("robot");
-  const setupButton = document.getElementById("homeFlowSetupButton");
-  const robotButton = document.getElementById("homeFlowRobotButton");
-
-  if (setupEl) setupEl.hidden = normalizedStep !== 1;
-  if (robotEl) robotEl.hidden = normalizedStep !== 2;
-
-  if (setupButton) {
-    setupButton.classList.toggle("is-active", normalizedStep === 1);
-    setupButton.setAttribute("aria-current", normalizedStep === 1 ? "step" : "false");
-  }
-
-  if (robotButton) {
-    robotButton.classList.toggle("is-active", normalizedStep === 2);
-    robotButton.setAttribute("aria-current", normalizedStep === 2 ? "step" : "false");
-  }
-
-  if (normalizedStep === 2) {
-    ensureHomeRobotPageReady();
-  }
-
-  if (options.scroll === false) return;
-
-  requestAnimationFrame(() => {
-    const target = normalizedStep === 1 ? setupEl : robotEl;
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-}
-
-
-
-function home() {
-  showPage("home");
-  setHomeFlowStep(1, { scroll: false });
-}
-
-function data() {
-  showPage("content");
-}
-
-function settings() {
-  showPage("settings");
-}
-
-function openlogin() {
-  showPage("user-screen");
-
-  setHomeFlowStep(1, { scroll: false });
-}
-
-function updateFooterNavActive(activePageId = "") {
-  document.querySelectorAll("[data-nav-page]").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.navPage === activePageId);
-  });
-}
-
-function isSiteFooterNearViewport() {
-  const siteFooter = document.querySelector(".guard-footer");
-  if (!siteFooter) return false;
-
-  const rect = siteFooter.getBoundingClientRect();
-  return rect.bottom > 0 && rect.top <= (window.innerHeight - 96);
-}
-
-function syncFloatingFooter() {
-  const footerNav = document.getElementById("footerbuttons");
-  const guardian = document.getElementById("guardiancontent");
-  const footerPagesWrap = document.getElementById("footer-pages");
-  const activePage = document.querySelector(".page.active");
-
-  if (!footerNav) return;
-
-  const guardianVisible = !!(guardian && guardian.classList.contains("active"));
-  const footerPagesOpen = !!(footerPagesWrap && getComputedStyle(footerPagesWrap).display !== "none");
-  const appPageVisible = !!(activePage && activePage.id !== "user-screen");
-  const shouldShow = guardianVisible && appPageVisible && !footerPagesOpen && !isSiteFooterNearViewport();
-
-  footerNav.classList.toggle("is-visible", shouldShow);
-  updateFooterNavActive(activePage?.id || "");
-}
-
-window.addEventListener("scroll", syncFloatingFooter, { passive: true });
-window.addEventListener("resize", syncFloatingFooter);
-syncFloatingFooter();
-
-/* ============================================================
-   NEVER-SILENT DEBUG HELPERS
-   ============================================================ */
-function dbg(msg){
-  const el = document.getElementById("analysis-debug");
-  if (el) el.textContent = msg || "";
-}
-window.addEventListener("error", (e) => dbg("JS error: " + (e.message || "unknown")));
-window.addEventListener("unhandledrejection", (e) => dbg("Promise error: " + (e.reason?.message || e.reason || "unknown")));
-
-/* ============================================================
-   SESSION MANAGEMENT
-   ============================================================ */
-/* ============================================================
-   Real Dexcom sessions are stored safely on the Worker.
-   The browser only keeps:
-   - a tiny demo-mode flag in sessionStorage for local developer mode
-   - an in-memory boolean that says whether a secure server session exists
-   The real authenticated session is an HttpOnly cookie, which page JavaScript
-   cannot read back out.
-   ============================================================ */
-function isDemoMode() {
-  try {
-    return sessionStorage.getItem(DEMO_MODE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function setDemoMode(enabled) {
-  try {
-    if (enabled) {
-      sessionStorage.setItem(DEMO_MODE_KEY, "1");
-    } else {
-      sessionStorage.removeItem(DEMO_MODE_KEY);
-    }
-  } catch {}
-}
-
-function getSessionToken() {
-  if (isDemoMode()) {
-    return DEMO_TOKEN_PREFIX + "local-demo";
-  }
-
-  return hasServerSession ? "server-session" : "";
-}
-
-function setSessionToken(t) {
-  const demo = !!t && t.startsWith(DEMO_TOKEN_PREFIX);
-  setDemoMode(demo);
-  hasServerSession = !!t && !demo;
-}
-
-function authHeaders() {
   // Real authenticated requests now use the secure session cookie automatically.
   // This helper stays in place so older fetch code can keep calling it.
-  return {};
-}
-
-async function refreshSessionState() {
-  if (isDemoMode()) {
-    hasServerSession = false;
-    setCurrentDeviceId("demo-device");
-    setClaimCardVisible(false, { state: "" });
-    return { ok: true, logged_in: true, demo: true };
-  }
-
-  try {
-    const res = await fetch("/session", {
-      cache: "no-store",
-      credentials: "same-origin"
-    });
-    const data = await res.json().catch(() => ({}));
-    hasServerSession = !!data.logged_in;
-    if (data.device_id) {
-      setCurrentDeviceId(data.device_id);
-      clearPendingClaimCode();
-      clearPendingHardwareId();
-      setClaimCardVisible(false, { state: "" });
-    } else {
-      setCurrentDeviceId("");
-      if (data.logged_in) {
-        setClaimCardVisible(true, {
-          help: "Guardian is ready for pairing. Bluetooth setup will usually finish automatically, and a fallback code only appears if it is needed.",
-          state: ""
-        });
-        const pendingHardwareId = getPendingHardwareId();
-        if (pendingHardwareId) {
-          void tryFinishPendingBlePairing(pendingHardwareId);
-        }
-      }
-    }
-    updateBleConnectButton();
-    updateGuardFactoryResetUI();
-    return {
-      ok: !!data.ok,
-      logged_in: !!data.logged_in,
-      device_id: data.device_id || "",
-      device_claim_required: !!data.device_claim_required,
-      trusted_users_count: data.trusted_users_count,
-      demo: false
-    };
-  } catch {
-    hasServerSession = false;
-    setCurrentDeviceId("");
-    updateBleConnectButton();
-    updateGuardFactoryResetUI();
-    return { ok: false, logged_in: false, demo: false };
-  }
-}
-
-/* ============================================================
-   Hide setup screen and show login screen
-   ============================================================ */
-
-/* ============================================================
-   CHART GLOBALS / CONSTANTS
-   ============================================================ */
-
-/* ============================================================
-   SMALL UI HELPERS
-   ============================================================ */
-function setEmpty(isEmpty) {
-  /*if chart is empty, check if element exists and if so hide it */
-  const el = document.getElementById("chart-empty");
-  if (el) el.style.display = isEmpty ? "flex" : "none";
-}
-
-/* ============================================================
-   Just displays the low and high range values in the chart header
-   ============================================================ */
-function setThresholdLabels() {
-  const el = document.getElementById("threshold-labels");
-  if (!el) return;
-  el.innerHTML = "";
-
-  const low = document.createElement("span");
-  low.className = "threshold-chip threshold-chip-low";
-  low.textContent = "Low " + RANGE_LOW;
-
-  const high = document.createElement("span");
-  high.className = "threshold-chip threshold-chip-high";
-  high.textContent = "High " + RANGE_HIGH;
-
-  el.append(low, high);
-}
-
-/* ============================================================
-   ✅ ANALYSIS THAT NEVER GOES BLANK
-   ============================================================ */
-function clamp(v, lo, hi) {
-  /*keeps numbers in range annd if out of range returns high or low*/
-  return Math.max(lo, Math.min(hi, v));
-}
-
-/* ============================================================
-   average change of window
-   ============================================================ */
-function median(arr){
-  /*makes a copy of the array so that the original is not modified*/
-  const a = arr.slice().sort((x,y)=>x-y);
-  /*give the median value*/
-  return a[Math.floor(a.length/2)];
-}
-
-/* ============================================================
-   average change of window
-   ============================================================ */
-function normalizeDexcomPoints(points, {
-  bucketMin = 5,
-  minGlucose = 40,
-  maxGlucose = 400
-} = {}) {
-  const bucketMs = bucketMin * 60 * 1000;
-
-  const raw = (points || [])
-    /*converts dexcom data into readable format*/
-    .map(p => ({ x: Number(p.ts) * 1000, y: Number(p.glucose) }))
-    /*gets rid of invalid points*/
-    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y))
-    /*keeps valid points within the glucose range (I think this is pointless becuase dexcom already caps at 40 and 400 anyway)*/
-    .map(p => ({ x: p.x, y: Math.max(minGlucose, Math.min(maxGlucose, p.y)) }))
-    /*orders the time idk*/
-    .sort((a,b) => a.x - b.x);
-
-  if (!raw.length) return [];
-
-  const bucketMap = new Map();
-  for (const p of raw) {
-    /*rounds the time, also i think pointless because dexcom polls every 5 minutes, I guess if the 5 minute intervals are already not starting at 0:00 then it does it*/
-    const bucketKey = Math.round(p.x / bucketMs) * bucketMs;
-    const existing = bucketMap.get(bucketKey);
-    if (!existing || p.x >= existing._rawX) {
-      bucketMap.set(bucketKey, { x: bucketKey, y: p.y, _rawX: p.x });
-    }
-  }
-  /*has a rounded time, glucose value, and raw time array*/
-  return Array.from(bucketMap.values())
-    /*sorts it one more time*/
-    .sort((a,b) => a.x - b.x)
-    .map(p => ({ x: p.x, y: p.y }));
-}
-
-/* ============================================================
-   average change of window
-   ============================================================ */
-function avgChangeWindow(points, windowMin = 60) {
-  if (!points || points.length < 2) return { ok:false, reason:"No data" };
-  /* if there arnt points or less than 2 then not enough data*/
-  const last = points[points.length - 1];
-  /*most recent glucose point*/
-  const tNow = last.x;
-  /*most recent time value*/
-  const tTarget = tNow - windowMin * 60000;
-  /*most recent time value - look back window for average change analysis in miliseconds*/
-  /*start time for average change calculation*/
-
   // Find earliest point >= tTarget (or fall back to earliest available)
-  let i = 0;
-  while (i < points.length && points[i].x < tTarget) i++;
-  /*the point index is less than its lentgh of indexes and its actual value of the time is in the lookout window*/
-
-  let yStart, tStart;
-  /*in the window (0< i < length of index)*/
-  if (i > 0 && i < points.length) {
-    const pA = points[i - 1];
-    /*point right before point*/
-    const pB = points[i];
-    /*the point*/
-    const dt = pB.x - pA.x;
-    /*difference of time of point and time of point before*/
-    /*delta time, time differencd*/
-    if (dt <= 0) return { ok:false, reason:"Bad timestamps" };
-    /*change in time cant be zero or negetive duh so error*/
-    const frac = (tTarget - pA.x) / dt;
-    /*time of target - time of next point all over change in time between point and next point*/
-    yStart = pA.y + frac * (pB.y - pA.y);
-    tStart = tTarget;
-  } else {
     // Not enough history: use first point
-    const first = points[0];
-    yStart = first.y;
-    tStart = first.x;
-  }
 
-  const yNow = last.y;
-  const delta = yNow - yStart;
-  const minutes = Math.max(1e-6, (tNow - tStart) / 60000);
-  const ratePerHr = (delta / minutes) * 60;
-
-  return { ok:true, delta, ratePerHr, minutesUsed: minutes };
-}
-
-/* ============================================================
-   Update data Analysis card
-   ============================================================ */
-
-function updateAnalysisUI(normalizedPts) {
-  const avgEl = document.getElementById("avgchg");
-  const urgEl = document.getElementById("Urgency");
-
-  if (!avgEl || !urgEl) {
-    dbg("Missing analysis elements (#avgchg or #Urgency).");
-    return;
-  }
-
-  if (!normalizedPts || normalizedPts.length < 2) {
-    const debugText =
-      (document.getElementById("analysis-debug")?.textContent || "").toLowerCase();
-
-    if (debugText.includes("no active sensor") || debugText.includes("no dexcom")) {
-      setAnalysisState("no_sensor");
-    } else {
-      setAnalysisState("no_data");
-    }
-    return;
-  }
-
-  setAnalysisState("live");
-
-  const r = avgChangeWindow(normalizedPts, 60);
-
-  if (!r.ok) {
-    avgEl.textContent = "Unavailable right now";
-    urgEl.textContent = "Waiting for a clearer read";
-    dbg("Analysis failed: " + (r.reason || "unknown"));
-    return;
-  }
-
-  const sign = r.delta >= 0 ? "+" : "-";
-  const label = r.minutesUsed >= 59.5 ? "1h" : (r.minutesUsed.toFixed(0) + " min");
-
-  avgEl.textContent = sign + r.delta.toFixed(0) + " mg/dL over " + label;
-
-  let u = "Low";
-  if (r.ratePerHr <= -60) u = "High";
-  else if (r.ratePerHr <= -30) u = "Medium";
-
-  urgEl.textContent = u + " urgency";
-
-  dbg("Analysis OK. Points=" + normalizedPts.length + ". WindowUsed=" + r.minutesUsed.toFixed(1) + " min.");
-}
-/* ============================================================
-   Low and High RANGE lines draw
-   ============================================================ */
-const rangeBandsPlugin = {
-  id: "rangeBands",
-  beforeDraw(c) {
-    const { ctx, chartArea, scales } = c;
-    if (!chartArea) return;
-
-    const y = scales.y;
-    const left = chartArea.left, right = chartArea.right;
-    const top = chartArea.top, bottom = chartArea.bottom;
-
-    const yLow = y.getPixelForValue(RANGE_LOW);
-    const yHigh = y.getPixelForValue(RANGE_HIGH);
-
-    ctx.save();
-    ctx.fillStyle = "rgba(255,0,0,.06)";
-    ctx.fillRect(left, top, right - left, Math.max(0, yHigh - top));
-
-    ctx.fillStyle = "rgba(9,176,44,.09)";
-    ctx.fillRect(left, Math.min(yHigh, yLow), right - left, Math.abs(yLow - yHigh));
-
-    ctx.fillStyle = "rgba(255,200,0,.10)";
-    ctx.fillRect(left, Math.min(bottom, yLow), right - left, Math.max(0, bottom - yLow));
-    ctx.restore();
-  }
 };
 
 /* ============================================================

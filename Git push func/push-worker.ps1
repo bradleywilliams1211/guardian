@@ -18,6 +18,19 @@ if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
     throw "Commit message is required."
 }
 
+function Format-CmdArgument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    if ($Value -match '[\s"&|<>^()]') {
+        return '"' + $Value.Replace('"', '\"') + '"'
+    }
+
+    return $Value
+}
+
 function Invoke-GitStep {
     param(
         [Parameter(Mandatory = $true)]
@@ -28,9 +41,10 @@ function Invoke-GitStep {
     )
 
     Write-Output "[stage] $Stage"
-    Write-Output ('$ git ' + ($Arguments -join ' '))
+    $gitCommand = 'git ' + (($Arguments | ForEach-Object { Format-CmdArgument $_ }) -join ' ')
+    Write-Output ('$ ' + $gitCommand)
 
-    & git @Arguments 2>&1 | ForEach-Object {
+    & cmd /c ($gitCommand + ' 2>&1') | ForEach-Object {
         $_.ToString()
     }
 
@@ -70,7 +84,7 @@ switch ($LASTEXITCODE) {
 
 Write-Output "[stage] deploy"
 Write-Output '$ npx wrangler whoami'
-& npx wrangler whoami 2>&1 | ForEach-Object {
+& cmd /c "npx wrangler whoami 2>&1" | ForEach-Object {
     $_.ToString()
 }
 

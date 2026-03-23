@@ -25,6 +25,8 @@ $themeStepIdleInk = [System.Drawing.Color]::FromArgb(106, 120, 113)
 
 $script:pushProcess = $null
 $script:lastRunHadChanges = $true
+$script:lastDeployVersion = ""
+$script:lastLogPath = Join-Path $scriptRoot "last-deploy.log"
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Push and Deploy Guardian"
@@ -129,6 +131,14 @@ $statusLabel.Padding = New-Object System.Windows.Forms.Padding(10, 6, 10, 6)
 $statusLabel.AutoSize = $true
 $statusLabel.Location = New-Object System.Drawing.Point(24, 156)
 $cardPanel.Controls.Add($statusLabel)
+
+$versionLabel = New-Object System.Windows.Forms.Label
+$versionLabel.Text = "Version: waiting for deploy"
+$versionLabel.Font = New-Object System.Drawing.Font("Segoe UI", 8.5)
+$versionLabel.ForeColor = $themeMuted
+$versionLabel.AutoSize = $true
+$versionLabel.Location = New-Object System.Drawing.Point(184, 162)
+$cardPanel.Controls.Add($versionLabel)
 
 $percentLabel = New-Object System.Windows.Forms.Label
 $percentLabel.Text = "0%"
@@ -366,11 +376,16 @@ function Update-StageFromLine {
             Set-Stage "Up to date" "There were no new changes to commit. Deploy will still run." 74 "" 
             break
         }
+        '^Current Version ID:\s+(.+)$' {
+            $script:lastDeployVersion = $Matches[1].Trim()
+            $versionLabel.Text = "Version: " + $script:lastDeployVersion
+            break
+        }
         '^\[stage\]\s+done$' {
             if ($script:lastRunHadChanges) {
-                Set-Stage "Done" "Changes were committed and pushed." 100 ""
+                Set-Stage "Done" "Commit, push, and live deploy finished." 100 ""
             } else {
-                Set-Stage "Up to date" "There was nothing new to push." 100 ""
+                Set-Stage "Done" "There was nothing new to push, but the live deploy finished." 100 ""
             }
             break
         }
@@ -395,11 +410,13 @@ $startButton.Add_Click({
     }
 
     $script:lastRunHadChanges = $true
+    $script:lastDeployVersion = ""
     $outputBox.Clear()
     $copyButton.Enabled = $false
     $startButton.Enabled = $false
     $messageBox.Enabled = $false
     $heroSubtitle.Text = "Running push and deploy flow"
+    $versionLabel.Text = "Version: waiting for deploy"
     Set-Stage "Starting" "Opening the Git and Wrangler process." 8 ""
 
     $process = New-Object System.Diagnostics.Process
@@ -456,8 +473,8 @@ $startButton.Add_Click({
                 $heroSubtitle.Text = "Already current"
             }
             } else {
-                Set-Stage "Needs attention" "Git stopped before it could finish." 100 "" $true
-                $heroSubtitle.Text = "Push did not finish"
+                Set-Stage "Needs attention" ("The flow stopped early. Check " + $script:lastLogPath) 100 "" $true
+                $heroSubtitle.Text = "Push or deploy did not finish"
             }
         }
     })

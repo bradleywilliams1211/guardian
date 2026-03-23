@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
+$logPath = Join-Path $scriptRoot "last-deploy.log"
 Set-Location $repoRoot
 
 if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
@@ -16,6 +17,19 @@ $CommitMessage = [string]$CommitMessage
 
 if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
     throw "Commit message is required."
+}
+
+try {
+    if (Test-Path $logPath) {
+        Remove-Item $logPath -Force
+    }
+} catch {}
+
+function Write-LogLine {
+    param([string]$Line)
+
+    Write-Output $Line
+    Add-Content -Path $logPath -Value $Line
 }
 
 function Format-CmdArgument {
@@ -40,12 +54,12 @@ function Invoke-GitStep {
         [string[]]$Arguments
     )
 
-    Write-Output "[stage] $Stage"
+    Write-LogLine "[stage] $Stage"
     $gitCommand = 'git ' + (($Arguments | ForEach-Object { Format-CmdArgument $_ }) -join ' ')
-    Write-Output ('$ ' + $gitCommand)
+    Write-LogLine ('$ ' + $gitCommand)
 
     & cmd /c ($gitCommand + ' 2>&1') | ForEach-Object {
-        $_.ToString()
+        Write-LogLine ($_.ToString())
     }
 
     if ($LASTEXITCODE -ne 0) {
@@ -53,11 +67,12 @@ function Invoke-GitStep {
     }
 }
 
-Write-Output "Guardian repo: $repoRoot"
-Write-Output "[info] Working tree"
+Write-LogLine "Guardian repo: $repoRoot"
+Write-LogLine "Log file: $logPath"
+Write-LogLine "[info] Working tree"
 
 & git status --short --branch 2>&1 | ForEach-Object {
-    $_.ToString()
+    Write-LogLine ($_.ToString())
 }
 
 if ($LASTEXITCODE -ne 0) {
@@ -66,12 +81,12 @@ if ($LASTEXITCODE -ne 0) {
 
 Invoke-GitStep -Stage "add" -Arguments @("add", ".")
 
-Write-Output "[info] Checking staged changes"
+Write-LogLine "[info] Checking staged changes"
 & git diff --cached --quiet
 
 switch ($LASTEXITCODE) {
     0 {
-        Write-Output "No staged changes found. Skipping commit and push."
+        Write-LogLine "No staged changes found. Skipping commit and push."
     }
     1 {
         Invoke-GitStep -Stage "commit" -Arguments @("commit", "-m", $CommitMessage)
@@ -82,24 +97,24 @@ switch ($LASTEXITCODE) {
     }
 }
 
-Write-Output "[stage] deploy"
-Write-Output '$ npx wrangler whoami'
+Write-LogLine "[stage] deploy"
+Write-LogLine '$ npx wrangler whoami'
 & cmd /c "npx wrangler whoami 2>&1" | ForEach-Object {
-    $_.ToString()
+    Write-LogLine ($_.ToString())
 }
 
 if ($LASTEXITCODE -ne 0) {
     throw "wrangler whoami failed with exit code $LASTEXITCODE."
 }
 
-Write-Output '$ cmd /c "set CI=&& npx wrangler deploy"'
+Write-LogLine '$ cmd /c "set CI=&& npx wrangler deploy"'
 & cmd /c "set CI=&& npx wrangler deploy" 2>&1 | ForEach-Object {
-    $_.ToString()
+    Write-LogLine ($_.ToString())
 }
 
 if ($LASTEXITCODE -ne 0) {
     throw "wrangler deploy failed with exit code $LASTEXITCODE."
 }
 
-Write-Output "[stage] done"
-Write-Output "Push and deploy complete."
+Write-LogLine "[stage] done"
+Write-LogLine "Push and deploy complete."

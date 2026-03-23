@@ -1,0 +1,9 @@
+Guardian repo: C:\Users\bradl\OneDrive\Guardian Project\GUARDIAN
+Log file: C:\Users\bradl\OneDrive\Guardian Project\GUARDIAN\Git push func\last-deploy.log
+[info] Working tree
+## master...origin/master
+ M "Git push func/push-worker-ui.ps1"
+ M "Git push func/push-worker.ps1"
+?? "Git push func/last-deploy.log"
+[stage] add
+$ git add .

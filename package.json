@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "preview": "wrangler dev --port 8787 --live-reload",
+    "preview:remote": "wrangler dev --remote --port 8787"
+  },
   "devDependencies": {
     "wrangler": "^4.73.0"
   }

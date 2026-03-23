@@ -8777,7 +8777,7 @@ const HERO_EXPLODE_PART_RULES = {
   "SHOULDER_COVER-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "SHOULDER_PIN-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "THIGH_RH-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
-  "LEG_KNEE_RH-1__2": { direction: [0, 1, 0], distance: 1, rotationAmount: 0 },
+  "LEG_KNEE_RH-1__2": { direction: [1, 1, 0], distance: 1, rotationAmount: 0 },
   "FOOT_GRIP-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "WRIST_RH_1-1__2": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
   "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, rotationAmount: 0 },
@@ -10574,6 +10574,13 @@ async function loadDexcomRecent() {
       return j;
     }
 
+    if (j?.status === "no_recent_data") {
+      window.__lastDexcomRecentError = j?.message || "No recent Dexcom data.";
+      setAnalysisState("no_data", window.__lastDexcomRecentError);
+      setEmpty(true);
+      return j;
+    }
+
     if (!r.ok || !j || !j.ok) {
       window.__lastDexcomRecentError = j?.error || text || `Dexcom data request failed (${r.status}).`;
       setAnalysisState("no_sensor", window.__lastDexcomRecentError);
@@ -10601,7 +10608,14 @@ async function loadDexcomRecent() {
    Right now glucose information
    ============================================================ */
 async function refreshLatestCardFromRecent(recent) {
-  if (!recent?.latest) return;
+  if (!recent?.latest) {
+    document.getElementById("glucose-value").textContent = "—";
+    document.getElementById("glucose-trend").textContent = "Trend: —";
+    document.getElementById("glucose-time").textContent =
+      recent?.status === "no_recent_data" ? "No recent Dexcom data" : "No active Dexcom sensor";
+    document.getElementById("glucose-age").textContent = "—";
+    return;
+  }
   const l = recent.latest;
 
   document.getElementById("glucose-value").textContent = l.glucose ?? "—";
@@ -11024,6 +11038,13 @@ function showNoActiveSensorUI() {
   document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
   document.getElementById("glucose-age").textContent = "—";
 }
+function showNoRecentDataUI() {
+  renderLastHour([]);
+  document.getElementById("glucose-value").textContent = "—";
+  document.getElementById("glucose-trend").textContent = "Trend: —";
+  document.getElementById("glucose-time").textContent = "No recent Dexcom data";
+  document.getElementById("glucose-age").textContent = "—";
+}
 async function enterDashboard(){
   if (!getSessionToken()) {
     alert("Please log in with Dexcom first.");
@@ -11049,6 +11070,8 @@ async function enterDashboard(){
 
   if (recent.status === "no_active_sensor") {
     showNoActiveSensorUI()
+  } else if (recent.status === "no_recent_data") {
+    showNoRecentDataUI()
   } else {
     renderLastHour(recent.points);
     await refreshLatestCardFromRecent(recent);
@@ -11074,6 +11097,11 @@ async function enterDashboard(){
 
     if (r.status === "no_active_sensor") {
       showNoActiveSensorUI()
+      return;
+    }
+
+    if (r.status === "no_recent_data") {
+      showNoRecentDataUI()
       return;
     }
 
@@ -11125,6 +11153,12 @@ async function pollDexcomNow() {
     document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
     document.getElementById("glucose-age").textContent = "—";
     if (el) el.textContent = "No active sensor";
+    return;
+  }
+
+  if (r.status === "no_recent_data") {
+    showNoRecentDataUI();
+    if (el) el.textContent = "No recent data";
     return;
   }
 

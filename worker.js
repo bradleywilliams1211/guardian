@@ -60,6 +60,7 @@ const APPLICATION_IDS = {
 const DEXCOM_DEFAULT_MINUTES = 180;
 const DEXCOM_DEFAULT_MAX_COUNT = 72;
 const DEXCOM_DEVICE_SYNC_MIN_MS = 15 * 1000;
+const DEXCOM_STALE_AFTER_SECONDS = 15 * 60;
 
 /* =========================
    CACHE KEYS
@@ -1105,6 +1106,22 @@ function buildGlucoseMailboxPatch(latest) {
   };
 }
 
+function normalizeRecentDexcomPoint(latest) {
+  if (!latest) return null;
+
+  const ts = Number(latest.ts);
+  if (!Number.isFinite(ts) || ts <= 0) {
+    return null;
+  }
+
+  const ageSeconds = Math.max(0, Math.floor(Date.now() / 1000) - ts);
+  if (ageSeconds > DEXCOM_STALE_AFTER_SECONDS) {
+    return null;
+  }
+
+  return latest;
+}
+
 function sameMailboxGlucoseValue(current, next) {
   const currentValue = Number(current);
   const nextValue = Number(next);
@@ -1366,7 +1383,9 @@ async function refreshDexcomForSession(env, session, options = {}) {
       minutes,
       maxCount
     );
-    const latest = points.length ? points[points.length - 1] : null;
+    const latestRaw = points.length ? points[points.length - 1] : null;
+    const latest = normalizeRecentDexcomPoint(latestRaw);
+    const staleLatest = !!latestRaw && !latest;
 
     let mailboxSync = null;
     if (syncMailbox) {
@@ -1378,7 +1397,8 @@ async function refreshDexcomForSession(env, session, options = {}) {
       ok: true,
       points,
       latest,
-      status: "ok",
+      status: staleLatest ? "no_recent_data" : "ok",
+      message: staleLatest ? "Dexcom has no recent data right now." : "",
       freshSessionId,
       ownedDeviceId,
       mailboxSync,

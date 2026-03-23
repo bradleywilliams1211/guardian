@@ -187,8 +187,8 @@ static void updateLcdOutput(void) {
     copyLcdLine(line0, sizeof(line0), sSetupLine0);
     copyLcdLine(line1, sizeof(line1), sSetupLine1);
   } else if (!sHasCurrentGlucose) {
-    snprintf(line0, sizeof(line0), "Waiting for");
-    snprintf(line1, sizeof(line1), "glucose...");
+    snprintf(line0, sizeof(line0), "No data");
+    snprintf(line1, sizeof(line1), "Check Dexcom");
   } else {
     snprintf(line0, sizeof(line0), "mg/dl :%d", sCurrentGlucoseMgdl);
 

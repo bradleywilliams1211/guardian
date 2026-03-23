@@ -8577,7 +8577,7 @@ const HERO_MODEL_TRANSFORM = {
   // Base rig rotation in radians.
   // Math.PI is 180 degrees.
   // x = tilt up/down, y = turn left/right, z = roll
-  rotation: [0, 0, 0]
+  rotation: [0, Math.PI, 0]
 };
 
 // Overall material/look controls for the hero model.
@@ -8735,7 +8735,7 @@ const HERO_EXPLODE_CONFIG = {
 
   // Global axis multiplier for the whole explosion.
   // Use -1 to reverse an axis, 0 to flatten it, >1 to exaggerate it.
-  axis: { x: 1, y: 1, z: 1 },
+  axis: { x: -1, y: 1, z: -1 },
 
   // Default fallback spread if a part has no exact rule.
   defaultDistanceBase: 0,
@@ -8756,16 +8756,16 @@ const HERO_EXPLODE_GROUP_RULES = [];
 
 // Exact per-part explode settings.
 // Each part ID below can be edited individually.
-// Entries with a full object keep the current hand-tuned behavior.
-// Entries left as {} fall back to the automatic "fly away from the assembly center" behavior.
-// Setting direction to [0, 0, 0] also uses that automatic assembly-center direction,
-// which isuseful when you want to test positive vs. negative distance on the same path.
+// A part only translates when it has an explicit non-zero direction.
+// Use start/end to delay when an individual part begins moving.
 // Example:
 // "NOSE_REMODEL-1__1": {
 //   direction: [0.2, 0, 1],
 //   distance: 1.1,
 //   rotationAmount: 0.04,
-//   rotationAxis: [0, 1, 0]
+//   rotationAxis: [0, 1, 0],
+//   start: 0,
+//   end: 0.4
 // }
 const HERO_EXPLODE_PART_RULES = {
   "FOOT_GRIP-1__1": { direction: [0, .1, 1], distance: .6, rotationAmount: 0 },
@@ -9256,7 +9256,9 @@ function buildHeroExplodeParts(root) {
         restQuaternion: node.quaternion.clone(),
         explodeOffset: new THREE.Vector3(0, 0, 0),
         rotationAxis: new THREE.Vector3(0, 1, 0),
-        rotationAmount: 0
+        rotationAmount: 0,
+        start: 0,
+        end: 1
       });
       return;
     }
@@ -9319,6 +9321,8 @@ function buildHeroExplodeParts(root) {
       restQuaternion: node.quaternion.clone(),
       explodeOffset: localEnd.sub(localStart),
       rotationAxis,
+      start: rule?.start ?? 0,
+      end: rule?.end ?? 1,
       rotationAmount: rule?.rotationAmount ?? (
         HERO_EXPLODE_CONFIG.defaultRotationBase + (index % 4) * HERO_EXPLODE_CONFIG.defaultRotationStep
       )
@@ -9336,6 +9340,17 @@ function buildHeroExplodeParts(root) {
   }
 }
 
+function getHeroExplodeWindowProgress(progress, start = 0, end = 1) {
+  const safeStart = Number.isFinite(start) ? start : 0;
+  const safeEnd = Number.isFinite(end) ? end : 1;
+
+  if (safeEnd <= safeStart) {
+    return progress >= safeEnd ? 1 : 0;
+  }
+
+  return THREE.MathUtils.smootherstep(progress, safeStart, safeEnd);
+}
+
 function applyHeroModelExplosion(progress) {
   // Turns section scroll progress into explosion progress.
   const explodePhase = THREE.MathUtils.smootherstep(
@@ -9348,6 +9363,14 @@ function applyHeroModelExplosion(progress) {
   heroModelExplodeParts.forEach((part) => {
     const liveRule = getHeroExplodeRule(part.partName, part.partId);
     const ruleIsNeutral = isHeroExplodeRuleNeutral(liveRule);
+    const partWindowProgress = ruleIsNeutral
+      ? 0
+      : getHeroExplodeWindowProgress(
+          explodePhase,
+          liveRule?.start ?? part.start ?? 0,
+          liveRule?.end ?? part.end ?? 1
+        );
+    const partExplodeProgress = partWindowProgress * HERO_EXPLODE_CONFIG.intensity;
     const offset = ruleIsNeutral ? new THREE.Vector3(0, 0, 0) : part.explodeOffset.clone();
 
     // Global axis multipliers let you flip or exaggerate the entire explosion.
@@ -9360,11 +9383,11 @@ function applyHeroModelExplosion(progress) {
 
     part.node.position
       .copy(part.restPosition)
-      .addScaledVector(offset, explodeProgress);
+      .addScaledVector(offset, partExplodeProgress);
 
     heroModelTempQuat.setFromAxisAngle(
       part.rotationAxis,
-      (ruleIsNeutral ? 0 : part.rotationAmount) * explodeProgress
+      (ruleIsNeutral ? 0 : part.rotationAmount) * partExplodeProgress
     );
 
     part.node.quaternion

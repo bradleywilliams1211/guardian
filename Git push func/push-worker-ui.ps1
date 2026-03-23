@@ -26,7 +26,7 @@ $themeStepIdleInk = [System.Drawing.Color]::FromArgb(106, 120, 113)
 $script:pushProcess = $null
 $script:lastRunHadChanges = $true
 $script:lastDeployVersion = ""
-$script:lastLogPath = Join-Path $scriptRoot "last-deploy.log"
+$script:lastLogPath = Join-Path (Join-Path $env:LOCALAPPDATA "Guardian") "last-deploy.log"
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Push and Deploy Guardian"

@@ -6,7 +6,8 @@ $ErrorActionPreference = "Stop"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
-$logPath = Join-Path $scriptRoot "last-deploy.log"
+$logDir = Join-Path $env:LOCALAPPDATA "Guardian"
+$logPath = Join-Path $logDir "last-deploy.log"
 Set-Location $repoRoot
 
 if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
@@ -20,6 +21,10 @@ if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
 }
 
 try {
+    if (-not (Test-Path $logDir)) {
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    }
+
     if (Test-Path $logPath) {
         Remove-Item $logPath -Force
     }

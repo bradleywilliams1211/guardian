@@ -9233,7 +9233,6 @@ function buildHeroExplodeParts(root) {
     return;
   }
 
-  const assemblyCenterWorld = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
   const partNameCounts = Object.create(null);
 
   candidates.forEach((node, index) => {
@@ -9262,10 +9261,9 @@ function buildHeroExplodeParts(root) {
       return;
     }
 
-    // A non-zero custom direction wins.
-    // Missing direction, or [0, 0, 0], means "use the automatic assembly-center direction".
-    const autoDirectionWorld = partCenterWorld.clone().sub(assemblyCenterWorld);
-    const directionWorld = autoDirectionWorld.clone();
+    // Parts only move when you give them an explicit non-zero direction.
+    // A missing direction, or [0, 0, 0], now means "no translation".
+    const directionWorld = new THREE.Vector3(0, 0, 0);
 
     if (rule?.direction) {
       const customDirection = new THREE.Vector3(
@@ -9279,16 +9277,10 @@ function buildHeroExplodeParts(root) {
       }
     }
 
-    if (directionWorld.lengthSq() < 1e-6) {
-      const angle = (index / Math.max(candidates.length, 1)) * Math.PI * 2;
-      directionWorld.set(
-        Math.cos(angle),
-        ((index % 3) - 1) * HERO_EXPLODE_CONFIG.fallbackVerticalStep,
-        Math.sin(angle)
-      );
+    const hasExplicitDirection = directionWorld.lengthSq() >= 1e-6;
+    if (hasExplicitDirection) {
+      directionWorld.normalize();
     }
-
-    directionWorld.normalize();
 
     const sizeRatio = partSize.length() / Math.max(heroModelMaxDim, 1);
     const spread = heroModelMaxDim * (
@@ -9297,16 +9289,20 @@ function buildHeroExplodeParts(root) {
     );
     const parent = node.parent || heroModelExplodeRoot;
     const localStart = parent.worldToLocal(partCenterWorld.clone());
-    const localEnd = parent.worldToLocal(
-      partCenterWorld.clone().add(directionWorld.clone().multiplyScalar(spread))
-    );
+    const localEnd = hasExplicitDirection
+      ? parent.worldToLocal(
+          partCenterWorld.clone().add(directionWorld.clone().multiplyScalar(spread))
+        )
+      : localStart.clone();
     const localDirection = localEnd.clone().sub(localStart);
 
-    if (localDirection.lengthSq() < 1e-6) {
+    if (hasExplicitDirection && localDirection.lengthSq() < 1e-6) {
       localDirection.set(directionWorld.x, directionWorld.y, directionWorld.z);
     }
 
-    localDirection.normalize();
+    if (localDirection.lengthSq() >= 1e-6) {
+      localDirection.normalize();
+    }
     const rotationAxis = rule?.rotationAxis
       ? new THREE.Vector3(rule.rotationAxis[0], rule.rotationAxis[1], rule.rotationAxis[2]).normalize()
       : new THREE.Vector3(

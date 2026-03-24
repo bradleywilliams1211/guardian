@@ -8828,7 +8828,7 @@ const HERO_MODEL_PLAYBACK = {
 
   // Remap the raw section scroll so motion can start later or finish earlier.
   // 0 = very start of the usable scroll range, 1 = very end.
-  scrollStart: 0.16,
+  scrollStart: 0.14,
   scrollEnd: 1
 };
 
@@ -8852,7 +8852,7 @@ const HERO_MODEL_MOTION = {
 
   // Hold the model still for the first part of the hero scroll, then
   // remap the remaining progress so rotation still ends in the same pose.
-  rotationStartDelay: 0,
+  rotationStartDelay: 0.12,
 
   // Extra rotation applied from scroll.
   // These are added on top of HERO_MODEL_TRANSFORM.rotation.

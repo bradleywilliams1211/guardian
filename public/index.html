@@ -266,7 +266,7 @@
 
     .argos-model-section{
         position: relative;
-        min-height: 320vh;
+        min-height: 1700vh;
         margin: 12px 0 0;
     }
 
@@ -418,6 +418,166 @@
         inset: 0;
     }
 
+    .hero-model-annotations{
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    #heroModelAnnotationLines{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
+
+    #heroModelAnnotationCards{
+        position: absolute;
+        inset: 0;
+    }
+
+    .hero-model-annotation-card{
+        position: absolute;
+        width: min(270px, calc(100vw - 36px));
+        display: grid;
+        gap: 8px;
+        padding: 16px 18px;
+        border-radius: 24px;
+        background: rgba(255,255,255,.9);
+        border: 1px solid rgba(255,255,255,.88);
+        box-shadow: 0 28px 80px rgba(16,34,24,.16);
+        backdrop-filter: blur(16px);
+        color: var(--text);
+        opacity: 0;
+        transform: translate3d(0, 18px, 0) scale(.96);
+        transform-origin: center;
+        transition:
+          opacity .34s ease,
+          transform .42s cubic-bezier(.22, 1, .36, 1);
+        will-change: transform, opacity;
+    }
+
+    .hero-model-annotation-card.is-final{
+        width: min(420px, calc(100vw - 40px));
+        gap: 10px;
+        padding: 22px 24px;
+        text-align: center;
+        border: 2px solid rgba(9,176,44,.55);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(246,255,247,.96) 100%);
+        box-shadow:
+          0 30px 90px rgba(16,34,24,.16),
+          0 0 0 1px rgba(9,176,44,.08) inset;
+    }
+
+    .hero-model-annotation-card.is-title{
+        text-align: center;
+        width: fit-content;
+        padding: 0;
+        gap: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        backdrop-filter: none;
+    }
+
+    .hero-model-annotation-title-row{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .hero-model-annotation-title-logo{
+        width: 64px;
+        height: 64px;
+        flex: 0 0 64px;
+        object-fit: contain;
+        filter: drop-shadow(0 8px 18px rgba(9,176,44,.14));
+    }
+
+    .hero-model-annotation-card.is-visible{
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .hero-model-annotation-kicker{
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: var(--green-dark);
+    }
+
+    .hero-model-annotation-card h3{
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.1;
+        letter-spacing: -.04em;
+    }
+
+    .hero-model-annotation-card.is-final h3{
+        font-size: 1.35rem;
+        letter-spacing: -.05em;
+    }
+
+    .hero-model-annotation-card p{
+        margin: 0;
+        color: var(--muted);
+        font-size: .95rem;
+        line-height: 1.6;
+    }
+
+    .hero-model-annotation-card.is-final p{
+        max-width: 34ch;
+        justify-self: center;
+    }
+
+    .hero-model-annotation-card.is-final .hero-model-annotation-kicker{
+        justify-self: center;
+    }
+
+    .hero-model-annotation-card.is-final .hero-model-annotation-title-row{
+        justify-content: center;
+    }
+
+    .hero-model-annotation-card.is-title .hero-model-annotation-title-row{
+        justify-content: center;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .hero-model-annotation-card.is-title .hero-model-annotation-title-logo{
+        width: 168px;
+        height: auto;
+        flex: 0 0 auto;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .hero-model-annotation-line{
+        opacity: 0;
+        transition: opacity .28s ease;
+    }
+
+    .hero-model-annotation-path{
+        fill: none;
+        stroke: rgba(255,255,255,.92);
+        stroke-width: 2.25;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 10px 20px rgba(16,34,24,.18));
+    }
+
+    .hero-model-annotation-dot{
+        fill: #09B02C;
+        stroke: rgba(255,255,255,.95);
+        stroke-width: 2;
+    }
+
     #heroModelViewer canvas{
         display: block;
         width: 100% !important;
@@ -438,6 +598,26 @@
         letter-spacing: .04em;
         text-transform: uppercase;
         text-align: center;
+    }
+
+    @media (max-width: 900px){
+        .hero-model-annotation-card{
+            width: min(220px, calc(100vw - 32px));
+            padding: 14px 16px;
+        }
+
+        .hero-model-annotation-card.is-final{
+            width: min(320px, calc(100vw - 28px));
+            padding: 18px 20px;
+        }
+
+        .hero-model-annotation-card h3{
+            font-size: .98rem;
+        }
+
+        .hero-model-annotation-card p{
+            font-size: .88rem;
+        }
     }
 #landing-page{
   display: block;
@@ -3248,7 +3428,7 @@
         }
 
         .argos-model-section{
-        min-height: 260vh;
+        min-height: 400vh;
         }
 
         .argos-model-stage{
@@ -3366,7 +3546,7 @@
         }
 
         .argos-model-section{
-        min-height: 220vh;
+        min-height: 400vh;
         }
 
         .argos-model-stage{
@@ -3828,6 +4008,10 @@
       <div class="argos-model-sticky">
         <div class="argos-model-stage" aria-hidden="true">
           <div id="heroModelViewer"></div>
+          <div class="hero-model-annotations" id="heroModelAnnotations">
+            <svg id="heroModelAnnotationLines" aria-hidden="true"></svg>
+            <div id="heroModelAnnotationCards"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -8640,7 +8824,12 @@ const HERO_MODEL_PLAYBACK = {
   // Scroll does not affect the model until the section crosses this
   // portion of the viewport height.
   // Lower number = wait longer.
-  triggerLine: 0.42
+  triggerLine: 0.15,
+
+  // Remap the raw section scroll so motion can start later or finish earlier.
+  // 0 = very start of the usable scroll range, 1 = very end.
+  scrollStart: 0.7,
+  scrollEnd: 1
 };
 
 // Scroll-driven turn/orbit controls.
@@ -8661,24 +8850,131 @@ const HERO_MODEL_MOTION = {
   // How much the camera orbits as scroll progresses.
   orbitTurnPerScroll: 0,
 
+  // Hold the model still for the first part of the hero scroll, then
+  // remap the remaining progress so rotation still ends in the same pose.
+  rotationStartDelay: 0.08,
+
   // Extra rotation applied from scroll.
   // These are added on top of HERO_MODEL_TRANSFORM.rotation.
-  rotateXPerScroll: 0,
-  rotateYPerScroll: Math.PI * 2.15,
-  rotateZPerScroll: 0,
+  rotateXPerScroll: Math.PI * -2,
+  rotateYPerScroll: Math.PI * 1,
+  rotateZPerScroll: Math.PI * 1.5,
 
   // How much the model moves vertically as scroll progresses.
   moveYPerScroll: 0.045,
 
   // How far the model gets pushed back when exploded.
-  depthPullOnExplode: 1.18,
+  depthPullOnExplode: 0,
 
   // How much the model lifts while exploding.
   liftOnExplode: 0.05,
 
   // How much the model shrinks as it explodes so more of it stays in frame.
-  scaleDownOnExplode: 0.12
+  scaleDownOnExplode: 0
 };
+
+const HERO_MOTION_DEV_DEFAULTS = Object.freeze({
+  rotateXPerScroll: HERO_MODEL_MOTION.rotateXPerScroll / Math.PI,
+  rotateYPerScroll: HERO_MODEL_MOTION.rotateYPerScroll / Math.PI,
+  rotateZPerScroll: HERO_MODEL_MOTION.rotateZPerScroll / Math.PI,
+  scrollStart: HERO_MODEL_PLAYBACK.scrollStart,
+  scrollEnd: HERO_MODEL_PLAYBACK.scrollEnd,
+});
+
+const HERO_MODEL_ANNOTATIONS = [
+  {
+    id: "heroShell",
+    partId: "Guard_Shell-1__1",
+    kicker: "Body",
+    title: "Protective shell",
+    body: "The shell gives your Guardian a sleek, modern look while also providing a durable outer layer that can withstand bumps and scrapes during action.",
+    anchor: [0.82, 0.3],
+    align: "right",
+    start: 0.1,
+    end: 0.35
+  },
+  {
+    id: "heroNose",
+    partId: "NOSE_REMODEL-1__1",
+    kicker: "EYES",
+    title: "Ultasonic distance sensors",
+    body: "These sensors help GUARD “see” by measuring the distance to nearby objects using sound waves, which is more reliable in low light than cameras alone.",
+    anchor: [0.1, 0.35],
+    align: "left",
+    start: 0.05,
+    end: 0.35
+  },
+  {
+    id: "heroLed",
+    partId: "LED_5MM_RED-1__1",
+    kicker: "Feedback",
+    title: "Status light",
+    body: "The front LED gives fast visual feedback when GUARD needs attention, is pairing, or is actively alerting.",
+    anchor: [0.84, 0.8],
+    align: "right",
+    start: 0.22,
+    end: 0.56
+  },
+  {
+    id: "arduino",
+    partId: "ARDUINOUNODETAILED-1__1",
+    kicker: "Brains",
+    title: "ESP32 microcontroller",
+    body: "Inside houses an ESP32 microcontroller that helps coordinate movement and process sensor data for smooth, responsive action, and connect your Guardian to Dexcom.",
+    anchor: [0.14, 0.64],
+    align: "left",
+    start: 0.34,
+    end: 0.7
+  },
+  {
+    id: "heroFoot",
+    partId: "FOOT_GRIP-1__1",
+    kicker: "Contact",
+    title: "Foot grip",
+    body: "The foot grip is the traction layer that helps GUARD stay planted when it stops, pivots, or leans into a move.",
+    anchor: [0.82, 0.78],
+    align: "right",
+    start: 0.58,
+    end: 0.80
+  },
+  {
+    id: "container",
+    partId: "Container-1__1",
+    kicker: "Storage",
+    title: "Snack or Insulin container",
+    body: "The internal container can be used to hold a small snack for quick access during the day, or even a vial of insulin for emergency backup.",
+    anchor: [0.8, 0.3],
+    align: "left",
+    start: 0.5,
+    end: 0.8
+  },
+  {
+    id: "wholeGuard",
+    partId: "BODY_REMODEL_LID-1__1",
+    variant: "final",
+    kicker: "Guardian",
+    title: "Your new best friend",
+    body: "The whole package comes together to create Guardian, a helpful companion designed to support you in managing your diabetes with confidence and ease.",
+    anchor: [0.5, 0.5],
+    align: "center",
+    start: 0.7,
+    end: 1
+  },
+  {
+    id: "Title",
+    partId: "Guard_Shell-1__1",
+    variant: "title",
+    logoSrc: "/images/GUARDIAN.png",
+    logoAlt: "Guardian logo",
+    kicker: " ",
+    title: " ",
+    body: "",
+    anchor: [0.5, 0.2],
+    align: "center",
+    start: 0,
+    end: .2
+  }
+];
 
 // Camera/zoom controls.
 const HERO_MODEL_CAMERA = {
@@ -8688,16 +8984,16 @@ const HERO_MODEL_CAMERA = {
   far: 1000,
 
   // Initial camera position before the orbit math takes over.
-  position: [0, 1.22, 6.6],
+  position: [0, 0, 0],
 
   // Base orbit radius around the model.
   radiusBase: 3.0,
 
   // Extra zoom-out added as the model explodes.
-  radiusExplodeBoost: 2.05,
+  radiusExplodeBoost: 1.75,
 
   // Extra zoom-out added as scroll increases.
-  radiusScrollBoost: 2.55,
+  radiusScrollBoost: 1.75,
 
   // Vertical camera follow settings.
   heightBaseFactor: 0.28,
@@ -8743,8 +9039,8 @@ const HERO_EXPLODE_CONFIG = {
 
   // Scroll progress range where the explosion happens.
   // 0 = very start of the section scroll, 1 = very end.
-  start: 0,
-  end: 0.34,
+  start: 0.1,
+  end: 1,
 
   // Global axis multiplier for the whole explosion.
   // Use -1 to reverse an axis, 0 to flatten it, >1 to exaggerate it.
@@ -9070,8 +9366,12 @@ let heroModelScrollTarget = 0;
 let heroModelScrollCurrent = 0;
 let heroModelOrbitAngle = HERO_MODEL_MOTION.orbitStartAngle;
 let heroModelLoadedAsset = "";
+let heroModelAnnotationEntries = [];
 const heroMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 const heroModelTempQuat = new THREE.Quaternion();
+const heroModelAnnotationTempBox = new THREE.Box3();
+const heroModelAnnotationTempWorld = new THREE.Vector3();
+const heroModelAnnotationTempScreen = new THREE.Vector3();
 const heroModelRaycaster = new THREE.Raycaster();
 const heroModelPointer = new THREE.Vector2();
 const HERO_EXPLODE_DEV_HIGHLIGHT_COLOR = 0xff1f1f;
@@ -9079,11 +9379,14 @@ const HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE = 0xff0000;
 const HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE_INTENSITY = 0.65;
 const HERO_EXPLODE_DEV_STORAGE_KEY = "guardian.hero.explode.overrides.v1";
 const HERO_EXPLODE_DEV_PANEL_STORAGE_KEY = "guardian.hero.explode.panel.v1";
+const HERO_MOTION_DEV_VALUES_STORAGE_KEY = "guardian.hero.motion.values.v1";
+const HERO_MOTION_DEV_PANEL_STORAGE_KEY = "guardian.hero.motion.panel.v1";
 const HERO_EXPLODE_DEV_ENABLED =
   /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) ||
   new URLSearchParams(window.location.search).get("explodeDev") === "1";
 let heroExplodeDevOverrides = loadHeroExplodeDevOverrides();
 let heroExplodeDevPanelBound = false;
+let heroMotionDevPanelBound = false;
 let heroModelPointerDown = null;
 
 function setHeroModelStatus(message) {
@@ -9186,6 +9489,178 @@ function setHeroExplodeDevMessage(message = "") {
   if (el) el.textContent = message;
 }
 
+function getHeroModelAnnotationsLayer() {
+  return document.getElementById("heroModelAnnotations");
+}
+
+function getHeroModelAnnotationLines() {
+  return document.getElementById("heroModelAnnotationLines");
+}
+
+function getHeroModelAnnotationCards() {
+  return document.getElementById("heroModelAnnotationCards");
+}
+
+function initHeroModelAnnotations() {
+  const layer = getHeroModelAnnotationsLayer();
+  const lines = getHeroModelAnnotationLines();
+  const cards = getHeroModelAnnotationCards();
+  if (!layer || !lines || !cards || heroModelAnnotationEntries.length) return;
+
+  cards.innerHTML = "";
+  lines.innerHTML = "";
+
+  heroModelAnnotationEntries = HERO_MODEL_ANNOTATIONS.map((annotation) => {
+    const kickerText = String(annotation.kicker || "").trim();
+    const titleText = String(annotation.title || "").trim();
+    const bodyText = String(annotation.body || "").trim();
+    const card = document.createElement("article");
+    card.className = "hero-model-annotation-card";
+    if (annotation.variant) {
+      card.classList.add(`is-${annotation.variant}`);
+    }
+    card.dataset.annotationId = annotation.id;
+    card.dataset.align = annotation.align || "left";
+    card.innerHTML = `
+      ${kickerText ? `<div class="hero-model-annotation-kicker">${kickerText}</div>` : ""}
+      <div class="hero-model-annotation-title-row">
+        ${annotation.logoSrc ? `<img class="hero-model-annotation-title-logo" src="${annotation.logoSrc}" alt="${annotation.logoAlt || annotation.title || "Guardian logo"}">` : ""}
+        ${titleText ? `<h3>${titleText}</h3>` : ""}
+      </div>
+      ${bodyText ? `<p>${bodyText}</p>` : ""}
+    `;
+      cards.appendChild(card);
+
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.setAttribute("class", "hero-model-annotation-line");
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", "hero-model-annotation-path");
+
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("class", "hero-model-annotation-dot");
+    dot.setAttribute("r", "5.25");
+
+    group.appendChild(path);
+    group.appendChild(dot);
+    lines.appendChild(group);
+
+    return {
+      ...annotation,
+      card,
+      group,
+      path,
+      dot
+    };
+  });
+}
+
+function setHeroModelAnnotationVisibility(entry, amount) {
+  const visible = Number.isFinite(amount) ? THREE.MathUtils.clamp(amount, 0, 1) : 0;
+
+  if (entry?.card) {
+    entry.card.classList.toggle("is-visible", visible > 0.02);
+    entry.card.style.opacity = visible.toFixed(3);
+  }
+
+  if (entry?.group) {
+    entry.group.style.opacity = visible.toFixed(3);
+  }
+}
+
+function getHeroModelAnnotationProgress(progress, start = 0, end = 1) {
+  const safeStart = THREE.MathUtils.clamp(Number.isFinite(start) ? start : 0, 0, 1);
+  const safeEnd = THREE.MathUtils.clamp(Number.isFinite(end) ? end : 1, 0, 1);
+
+  if (safeEnd <= safeStart + 1e-6) {
+    return progress >= safeEnd ? 1 : 0;
+  }
+
+  const feather = Math.min(0.08, Math.max((safeEnd - safeStart) * 0.45, 0.02));
+  const fadeInEnd = Math.min(safeStart + feather, safeEnd);
+  const fadeOutStart = Math.max(safeEnd - feather, safeStart);
+  const fadeIn = THREE.MathUtils.smootherstep(progress, safeStart, fadeInEnd);
+  const fadeOut = 1 - THREE.MathUtils.smootherstep(progress, fadeOutStart, safeEnd);
+
+  return THREE.MathUtils.clamp(Math.min(fadeIn, fadeOut), 0, 1);
+}
+
+function updateHeroModelAnnotations(progress = heroModelScrollCurrent) {
+  const layer = getHeroModelAnnotationsLayer();
+  if (!layer || !heroModelAnnotationEntries.length || !heroModelCamera) return;
+
+  const rect = layer.getBoundingClientRect();
+  const width = rect.width;
+  const height = rect.height;
+
+  if (width <= 0 || height <= 0 || !heroModelRig) {
+    heroModelAnnotationEntries.forEach((entry) => setHeroModelAnnotationVisibility(entry, 0));
+    return;
+  }
+
+  heroModelRig.updateWorldMatrix(true, true);
+  heroModelCamera.updateMatrixWorld();
+
+  heroModelAnnotationEntries.forEach((entry) => {
+    const amount = getHeroModelAnnotationProgress(progress, entry.start, entry.end);
+    const part = getHeroExplodePartById(entry.partId);
+
+    if (!part || amount <= 0.001) {
+      setHeroModelAnnotationVisibility(entry, 0);
+      return;
+    }
+
+    heroModelAnnotationTempBox.setFromObject(part.node);
+    if (heroModelAnnotationTempBox.isEmpty()) {
+      setHeroModelAnnotationVisibility(entry, 0);
+      return;
+    }
+
+    const worldCenter = heroModelAnnotationTempBox.getCenter(heroModelAnnotationTempWorld);
+    const projected = heroModelAnnotationTempScreen.copy(worldCenter).project(heroModelCamera);
+
+    if (projected.z < -1 || projected.z > 1.05) {
+      setHeroModelAnnotationVisibility(entry, 0);
+      return;
+    }
+
+    const sourceX = (projected.x * 0.5 + 0.5) * width;
+    const sourceY = (-projected.y * 0.5 + 0.5) * height;
+    const anchorX = width * (Array.isArray(entry.anchor) ? entry.anchor[0] : 0.5);
+    const anchorY = height * (Array.isArray(entry.anchor) ? entry.anchor[1] : 0.5);
+    const align = entry.align === "right" ? "right" : entry.align === "center" ? "center" : "left";
+    const cardWidth = entry.card.offsetWidth || Math.min(270, width * 0.34);
+    const cardHeight = entry.card.offsetHeight || 148;
+    const padding = 16;
+
+    let left = anchorX;
+    if (align === "right") left -= cardWidth;
+    else if (align === "center") left -= cardWidth * 0.5;
+
+    let top = anchorY - cardHeight * 0.5;
+
+    left = THREE.MathUtils.clamp(left, padding, Math.max(width - cardWidth - padding, padding));
+    top = THREE.MathUtils.clamp(top, padding, Math.max(height - cardHeight - padding, padding));
+
+    entry.card.style.left = `${left}px`;
+    entry.card.style.top = `${top}px`;
+
+    const targetX = align === "right"
+      ? left + cardWidth
+      : align === "center"
+        ? left + cardWidth * 0.5
+        : left;
+    const targetY = top + cardHeight * 0.5;
+    const controlX = sourceX + (targetX - sourceX) * 0.5;
+    const pathData = `M ${sourceX.toFixed(1)} ${sourceY.toFixed(1)} C ${controlX.toFixed(1)} ${sourceY.toFixed(1)}, ${controlX.toFixed(1)} ${targetY.toFixed(1)}, ${targetX.toFixed(1)} ${targetY.toFixed(1)}`;
+
+    entry.path.setAttribute("d", pathData);
+    entry.dot.setAttribute("cx", sourceX.toFixed(1));
+    entry.dot.setAttribute("cy", sourceY.toFixed(1));
+    setHeroModelAnnotationVisibility(entry, amount);
+  });
+}
+
 function loadHeroExplodeDevPanelState() {
   if (!HERO_EXPLODE_DEV_ENABLED) return {};
 
@@ -9285,6 +9760,284 @@ function beginHeroExplodeDevPanelDrag(event) {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     saveHeroExplodeDevPanelStateFromPanel();
+  };
+
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+}
+
+function getHeroMotionDevPanel() {
+  return document.getElementById("heroMotionDevPanel");
+}
+
+function getHeroMotionDevPanelHeader() {
+  return document.getElementById("heroMotionDevHeader");
+}
+
+function getHeroMotionDevField(id) {
+  return document.getElementById(id);
+}
+
+function loadHeroMotionDevValues() {
+  if (!HERO_EXPLODE_DEV_ENABLED) {
+    return { ...HERO_MOTION_DEV_DEFAULTS };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(HERO_MOTION_DEV_VALUES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return {
+      rotateXPerScroll: Number.isFinite(Number(parsed?.rotateXPerScroll))
+        ? Number(parsed.rotateXPerScroll)
+        : HERO_MOTION_DEV_DEFAULTS.rotateXPerScroll,
+      rotateYPerScroll: Number.isFinite(Number(parsed?.rotateYPerScroll))
+        ? Number(parsed.rotateYPerScroll)
+        : HERO_MOTION_DEV_DEFAULTS.rotateYPerScroll,
+      rotateZPerScroll: Number.isFinite(Number(parsed?.rotateZPerScroll))
+        ? Number(parsed.rotateZPerScroll)
+        : HERO_MOTION_DEV_DEFAULTS.rotateZPerScroll,
+      scrollStart: Number.isFinite(Number(parsed?.scrollStart))
+        ? Number(parsed.scrollStart)
+        : HERO_MOTION_DEV_DEFAULTS.scrollStart,
+      scrollEnd: Number.isFinite(Number(parsed?.scrollEnd))
+        ? Number(parsed.scrollEnd)
+        : HERO_MOTION_DEV_DEFAULTS.scrollEnd,
+    };
+  } catch {
+    return { ...HERO_MOTION_DEV_DEFAULTS };
+  }
+}
+
+function saveHeroMotionDevValues(values) {
+  if (!HERO_EXPLODE_DEV_ENABLED) return;
+  try {
+    window.localStorage.setItem(HERO_MOTION_DEV_VALUES_STORAGE_KEY, JSON.stringify(values));
+  } catch {}
+}
+
+function applyHeroMotionDevValues(values) {
+  HERO_MODEL_MOTION.rotateXPerScroll = Math.PI * Number(values?.rotateXPerScroll || 0);
+  HERO_MODEL_MOTION.rotateYPerScroll = Math.PI * Number(values?.rotateYPerScroll || 0);
+  HERO_MODEL_MOTION.rotateZPerScroll = Math.PI * Number(values?.rotateZPerScroll || 0);
+  HERO_MODEL_PLAYBACK.scrollStart = THREE.MathUtils.clamp(
+    Number(values?.scrollStart ?? HERO_MOTION_DEV_DEFAULTS.scrollStart),
+    0,
+    1
+  );
+  HERO_MODEL_PLAYBACK.scrollEnd = THREE.MathUtils.clamp(
+    Number(values?.scrollEnd ?? HERO_MOTION_DEV_DEFAULTS.scrollEnd),
+    0,
+    1
+  );
+}
+
+function getHeroMotionDevInputPair(baseId) {
+  return {
+    range: getHeroMotionDevField(baseId),
+    number: getHeroMotionDevField(`${baseId}Number`),
+  };
+}
+
+function parseHeroMotionDevValue(baseId, fallback) {
+  const { range, number } = getHeroMotionDevInputPair(baseId);
+  const active = document.activeElement;
+  const candidates = active === number
+    ? [number, range]
+    : active === range
+      ? [range, number]
+      : [number, range];
+
+  for (const field of candidates) {
+    const value = Number(field?.value);
+    if (Number.isFinite(value)) return value;
+  }
+
+  return fallback;
+}
+
+function readHeroMotionDevInputs() {
+  return {
+    rotateXPerScroll: parseHeroMotionDevValue("heroMotionDevX", HERO_MOTION_DEV_DEFAULTS.rotateXPerScroll),
+    rotateYPerScroll: parseHeroMotionDevValue("heroMotionDevY", HERO_MOTION_DEV_DEFAULTS.rotateYPerScroll),
+    rotateZPerScroll: parseHeroMotionDevValue("heroMotionDevZ", HERO_MOTION_DEV_DEFAULTS.rotateZPerScroll),
+    scrollStart: parseHeroMotionDevValue("heroMotionDevScrollStart", HERO_MOTION_DEV_DEFAULTS.scrollStart),
+    scrollEnd: parseHeroMotionDevValue("heroMotionDevScrollEnd", HERO_MOTION_DEV_DEFAULTS.scrollEnd),
+  };
+}
+
+function writeHeroMotionDevInputs(values) {
+  const pairs = [
+    ["heroMotionDevX", values.rotateXPerScroll],
+    ["heroMotionDevY", values.rotateYPerScroll],
+    ["heroMotionDevZ", values.rotateZPerScroll],
+    ["heroMotionDevScrollStart", values.scrollStart],
+    ["heroMotionDevScrollEnd", values.scrollEnd],
+  ];
+
+  pairs.forEach(([inputId, value]) => {
+    const safe = Number.isFinite(Number(value)) ? Number(value) : 0;
+    const { range, number } = getHeroMotionDevInputPair(inputId);
+    if (range) range.value = String(safe);
+    if (number) number.value = formatHeroExplodeDevNumber(safe);
+  });
+}
+
+function refreshHeroMotionDevSnippet() {
+  const snippet = getHeroMotionDevField("heroMotionDevSnippet");
+  if (!snippet) return;
+
+  const values = readHeroMotionDevInputs();
+  snippet.textContent =
+`rotateXPerScroll: Math.PI * ${formatHeroExplodeDevNumber(values.rotateXPerScroll)},
+rotateYPerScroll: Math.PI * ${formatHeroExplodeDevNumber(values.rotateYPerScroll)},
+rotateZPerScroll: Math.PI * ${formatHeroExplodeDevNumber(values.rotateZPerScroll)},
+scrollStart: ${formatHeroExplodeDevNumber(values.scrollStart)},
+scrollEnd: ${formatHeroExplodeDevNumber(values.scrollEnd)},`;
+}
+
+function syncHeroMotionDevControls() {
+  const values = loadHeroMotionDevValues();
+  writeHeroMotionDevInputs(values);
+  applyHeroMotionDevValues(values);
+  refreshHeroMotionDevSnippet();
+}
+
+function updateHeroMotionDevLive() {
+  const active = document.activeElement;
+  if (active && active.id?.endsWith("Number")) {
+    const raw = String(active.value ?? "").trim();
+    if (!raw || raw === "-" || raw === "-.") return;
+  }
+
+  const values = readHeroMotionDevInputs();
+  writeHeroMotionDevInputs(values);
+  saveHeroMotionDevValues(values);
+  applyHeroMotionDevValues(values);
+  refreshHeroMotionDevSnippet();
+}
+
+function resetHeroMotionDevValues() {
+  writeHeroMotionDevInputs(HERO_MOTION_DEV_DEFAULTS);
+  saveHeroMotionDevValues(HERO_MOTION_DEV_DEFAULTS);
+  applyHeroMotionDevValues(HERO_MOTION_DEV_DEFAULTS);
+  refreshHeroMotionDevSnippet();
+}
+
+function copyHeroMotionDevSnippet() {
+  const snippet = getHeroMotionDevField("heroMotionDevSnippet");
+  const text = snippet?.textContent || "";
+  if (!text) return;
+
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      const msg = getHeroMotionDevField("heroMotionDevMessage");
+      if (msg) msg.textContent = "Copied rotation snippet.";
+    })
+    .catch(() => {
+      const msg = getHeroMotionDevField("heroMotionDevMessage");
+      if (msg) msg.textContent = "Could not copy automatically.";
+    });
+}
+
+function loadHeroMotionDevPanelState() {
+  if (!HERO_EXPLODE_DEV_ENABLED) return {};
+
+  try {
+    const raw = window.localStorage.getItem(HERO_MOTION_DEV_PANEL_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveHeroMotionDevPanelStateFromPanel() {
+  if (!HERO_EXPLODE_DEV_ENABLED) return;
+
+  const panel = getHeroMotionDevPanel();
+  if (!panel) return;
+
+  const rect = panel.getBoundingClientRect();
+  const state = {
+    left: panel.style.left || `${Math.round(rect.left)}px`,
+    top: panel.style.top || `${Math.round(rect.top)}px`,
+    width: panel.style.width || `${Math.round(rect.width)}px`,
+    height: panel.classList.contains("is-collapsed")
+      ? ""
+      : (panel.style.height || `${Math.round(rect.height)}px`),
+    collapsed: panel.classList.contains("is-collapsed")
+  };
+
+  try {
+    window.localStorage.setItem(HERO_MOTION_DEV_PANEL_STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+}
+
+function setHeroMotionDevPanelCollapsed(collapsed) {
+  const panel = getHeroMotionDevPanel();
+  const toggle = getHeroMotionDevField("heroMotionDevToggle");
+  if (!panel) return;
+
+  panel.classList.toggle("is-collapsed", !!collapsed);
+  if (toggle) toggle.textContent = collapsed ? "Expand" : "Collapse";
+  saveHeroMotionDevPanelStateFromPanel();
+}
+
+function applyHeroMotionDevPanelState() {
+  const panel = getHeroMotionDevPanel();
+  if (!panel) return;
+
+  const state = loadHeroMotionDevPanelState();
+  if (state.left) {
+    panel.style.left = state.left;
+    panel.style.right = "auto";
+  }
+  if (state.top) {
+    panel.style.top = state.top;
+    panel.style.bottom = "auto";
+  }
+  if (state.width) panel.style.width = state.width;
+  if (state.height) panel.style.height = state.height;
+
+  setHeroMotionDevPanelCollapsed(!!state.collapsed);
+}
+
+function beginHeroMotionDevPanelDrag(event) {
+  if (event.button !== 0) return;
+  if (event.target.closest("button,input")) return;
+
+  const panel = getHeroMotionDevPanel();
+  if (!panel) return;
+
+  const rect = panel.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+
+  panel.style.left = `${Math.round(rect.left)}px`;
+  panel.style.top = `${Math.round(rect.top)}px`;
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+
+  const onMove = (moveEvent) => {
+    const width = panel.offsetWidth || rect.width;
+    const height = panel.offsetHeight || rect.height;
+    const nextLeft = Math.min(
+      Math.max(8, moveEvent.clientX - offsetX),
+      Math.max(8, window.innerWidth - width - 8)
+    );
+    const nextTop = Math.min(
+      Math.max(8, moveEvent.clientY - offsetY),
+      Math.max(8, window.innerHeight - height - 8)
+    );
+
+    panel.style.left = `${Math.round(nextLeft)}px`;
+    panel.style.top = `${Math.round(nextTop)}px`;
+  };
+
+  const onUp = () => {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    saveHeroMotionDevPanelStateFromPanel();
   };
 
   window.addEventListener("pointermove", onMove);
@@ -9799,6 +10552,240 @@ function initHeroExplodeDevPanel() {
   updateHeroExplodeDevPartOptions();
 }
 
+function initHeroMotionDevPanel() {
+  if (!HERO_EXPLODE_DEV_ENABLED || getHeroMotionDevPanel()) return;
+
+  const style = document.createElement("style");
+  style.id = "heroMotionDevStyles";
+  style.textContent = `
+    #heroMotionDevPanel{
+      position:fixed;
+      left:16px;
+      bottom:16px;
+      z-index:1195;
+      width:min(320px, calc(100vw - 24px));
+      display:grid;
+      gap:10px;
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(16,34,24,.08);
+      box-shadow:0 24px 60px rgba(16,34,24,.18);
+      backdrop-filter:blur(16px);
+      color:#102218;
+      resize:both;
+      overflow:auto;
+      min-width:280px;
+      min-height:150px;
+      max-width:calc(100vw - 16px);
+      max-height:calc(100vh - 16px);
+    }
+    #heroMotionDevPanel.is-collapsed{
+      resize:none;
+      min-height:0;
+      height:auto !important;
+    }
+    #heroMotionDevPanel.is-collapsed #heroMotionDevBody{
+      display:none;
+    }
+    #heroMotionDevHeader{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      cursor:move;
+      user-select:none;
+    }
+    #heroMotionDevHeading{
+      display:grid;
+      gap:4px;
+      min-width:0;
+      flex:1 1 auto;
+    }
+    #heroMotionDevPanel h3{
+      margin:0;
+      font-size:1rem;
+      line-height:1.2;
+    }
+    #heroMotionDevPanel p{
+      margin:0;
+      font-size:.78rem;
+      line-height:1.45;
+      color:#557063;
+    }
+    #heroMotionDevBody{
+      display:grid;
+      gap:10px;
+    }
+    #heroMotionDevPanel label{
+      display:grid;
+      gap:6px;
+      font-size:.74rem;
+      color:#557063;
+      font-weight:600;
+    }
+    #heroMotionDevPanel input[type="range"]{
+      width:100%;
+    }
+    .hero-motion-dev-row{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) 88px;
+      gap:10px;
+      align-items:center;
+    }
+    #heroMotionDevPanel .hero-motion-dev-number{
+      width:88px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(16,34,24,.12);
+      background:#fff;
+      color:#102218;
+      text-align:right;
+      font:600 .78rem/1.2 "SFMono-Regular",Consolas,monospace;
+    }
+    #heroMotionDevPanel .hero-motion-dev-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    #heroMotionDevPanel button{
+      appearance:none;
+      border:0;
+      border-radius:999px;
+      padding:10px 12px;
+      font:inherit;
+      font-size:.8rem;
+      font-weight:700;
+      cursor:pointer;
+    }
+    #heroMotionDevToggle{ background:#eef4f0; color:#102218; }
+    #heroMotionDevReset{ background:#eef4f0; color:#102218; }
+    #heroMotionDevCopy{ background:#102218; color:#fff; }
+    #heroMotionDevSnippet{
+      margin:0;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#0f1714;
+      color:#dff7e6;
+      font-size:.72rem;
+      line-height:1.5;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    #heroMotionDevMessage{
+      min-height:1.1em;
+      font-size:.72rem;
+      color:#557063;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const panel = document.createElement("aside");
+  panel.id = "heroMotionDevPanel";
+  panel.innerHTML = `
+    <div id="heroMotionDevHeader">
+      <div id="heroMotionDevHeading">
+        <h3>Hero scroll rotation</h3>
+        <p>Preview only. Tune the Math.PI multipliers for scroll rotation live.</p>
+      </div>
+      <button id="heroMotionDevToggle" type="button">Collapse</button>
+    </div>
+    <div id="heroMotionDevBody">
+      <label>
+        Rotate X per scroll
+        <div class="hero-motion-dev-row">
+          <input id="heroMotionDevX" type="range" min="-8" max="8" step="0.05">
+          <input id="heroMotionDevXNumber" class="hero-motion-dev-number" type="number" min="-8" max="8" step="0.05" value="0">
+        </div>
+      </label>
+      <label>
+        Rotate Y per scroll
+        <div class="hero-motion-dev-row">
+          <input id="heroMotionDevY" type="range" min="-8" max="8" step="0.05">
+          <input id="heroMotionDevYNumber" class="hero-motion-dev-number" type="number" min="-8" max="8" step="0.05" value="0">
+        </div>
+      </label>
+      <label>
+        Rotate Z per scroll
+        <div class="hero-motion-dev-row">
+          <input id="heroMotionDevZ" type="range" min="-8" max="8" step="0.05">
+          <input id="heroMotionDevZNumber" class="hero-motion-dev-number" type="number" min="-8" max="8" step="0.05" value="0">
+        </div>
+      </label>
+      <label>
+        Scroll start
+        <div class="hero-motion-dev-row">
+          <input id="heroMotionDevScrollStart" type="range" min="0" max="1" step="0.01">
+          <input id="heroMotionDevScrollStartNumber" class="hero-motion-dev-number" type="number" min="0" max="1" step="0.01" value="0">
+        </div>
+      </label>
+      <label>
+        Scroll end
+        <div class="hero-motion-dev-row">
+          <input id="heroMotionDevScrollEnd" type="range" min="0" max="1" step="0.01">
+          <input id="heroMotionDevScrollEndNumber" class="hero-motion-dev-number" type="number" min="0" max="1" step="0.01" value="1">
+        </div>
+      </label>
+      <div class="hero-motion-dev-actions">
+        <button id="heroMotionDevReset" type="button">Reset</button>
+        <button id="heroMotionDevCopy" type="button">Copy snippet</button>
+      </div>
+      <pre id="heroMotionDevSnippet">rotateXPerScroll: Math.PI * 0,
+rotateYPerScroll: Math.PI * 0,
+rotateZPerScroll: Math.PI * 0,
+scrollStart: 0,
+scrollEnd: 1,</pre>
+      <div id="heroMotionDevMessage"></div>
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  getHeroMotionDevField("heroMotionDevToggle")?.addEventListener("click", () => {
+    const panelEl = getHeroMotionDevPanel();
+    setHeroMotionDevPanelCollapsed(!panelEl?.classList.contains("is-collapsed"));
+  });
+  getHeroMotionDevPanelHeader()?.addEventListener("pointerdown", beginHeroMotionDevPanelDrag);
+
+  [
+    "heroMotionDevX",
+    "heroMotionDevXNumber",
+    "heroMotionDevY",
+    "heroMotionDevYNumber",
+    "heroMotionDevZ",
+    "heroMotionDevZNumber",
+    "heroMotionDevScrollStart",
+    "heroMotionDevScrollStartNumber",
+    "heroMotionDevScrollEnd",
+    "heroMotionDevScrollEndNumber"
+  ].forEach((id) => {
+    getHeroMotionDevField(id)?.addEventListener("input", updateHeroMotionDevLive);
+  });
+
+  getHeroMotionDevField("heroMotionDevReset")?.addEventListener("click", resetHeroMotionDevValues);
+  getHeroMotionDevField("heroMotionDevCopy")?.addEventListener("click", copyHeroMotionDevSnippet);
+
+  if (!heroMotionDevPanelBound) {
+    heroMotionDevPanelBound = true;
+    window.addEventListener("storage", (event) => {
+      if (event.key !== HERO_MOTION_DEV_VALUES_STORAGE_KEY) return;
+      syncHeroMotionDevControls();
+      const msg = getHeroMotionDevField("heroMotionDevMessage");
+      if (msg) msg.textContent = "Synced rotation values from another tab.";
+    });
+
+    if ("ResizeObserver" in window) {
+      const resizeObserver = new ResizeObserver(() => {
+        saveHeroMotionDevPanelStateFromPanel();
+      });
+      const panelEl = getHeroMotionDevPanel();
+      if (panelEl) resizeObserver.observe(panelEl);
+    }
+  }
+
+  applyHeroMotionDevPanelState();
+  syncHeroMotionDevControls();
+}
+
 function getHeroModelPlaybackTarget() {
   // This lets you test the model without scrolling.
   switch (HERO_MODEL_PLAYBACK.mode) {
@@ -10190,7 +11177,20 @@ function updateHeroModelScrollProgress() {
 
   const range = Math.max(rect.height - triggerY + window.innerHeight * 0.55, 1);
   const traveled = triggerY - rect.top;
-  heroModelScrollTarget = THREE.MathUtils.clamp(traveled / range, 0, 1);
+  const rawProgress = THREE.MathUtils.clamp(traveled / range, 0, 1);
+  const scrollStart = THREE.MathUtils.clamp(HERO_MODEL_PLAYBACK.scrollStart ?? 0, 0, 1);
+  const scrollEnd = THREE.MathUtils.clamp(HERO_MODEL_PLAYBACK.scrollEnd ?? 1, 0, 1);
+
+  if (scrollEnd <= scrollStart + 1e-6) {
+    heroModelScrollTarget = rawProgress >= scrollEnd ? 1 : 0;
+    return;
+  }
+
+  heroModelScrollTarget = THREE.MathUtils.clamp(
+    (rawProgress - scrollStart) / (scrollEnd - scrollStart),
+    0,
+    1
+  );
 }
 
 function resizeHeroModelViewer() {
@@ -10272,6 +11272,7 @@ function loadHeroModel() {
         heroModelRig.updateWorldMatrix(true, true);
         buildHeroExplodeParts(heroModelRoot);
         applyHeroModelExplosion(0);
+        updateHeroModelAnnotations(0);
         resizeHeroModelViewer();
         updateHeroModelScrollProgress();
       },
@@ -10307,6 +11308,12 @@ function animateHeroModelViewer() {
     if (heroModelRig) {
       // explodeProgress is the one number that drives the visible separation.
       const explodeProgress = applyHeroModelExplosion(heroModelScrollCurrent);
+      const rotationProgress = THREE.MathUtils.clamp(
+        (heroModelScrollCurrent - HERO_MODEL_MOTION.rotationStartDelay) /
+        Math.max(1 - HERO_MODEL_MOTION.rotationStartDelay, 1e-6),
+        0,
+        1
+      );
       const depthPull = explodeProgress * heroModelMaxDim * HERO_MODEL_MOTION.depthPullOnExplode;
       const explodeLift = explodeProgress * heroModelMaxDim * HERO_MODEL_MOTION.liftOnExplode;
       const zoomOut =
@@ -10318,9 +11325,9 @@ function animateHeroModelViewer() {
         heroModelOrbitAngle
       ) * HERO_MODEL_MOTION.orbitLerp;
 
-      heroModelRig.rotation.x = HERO_MODEL_TRANSFORM.rotation[0] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateXPerScroll;
-      heroModelRig.rotation.y = HERO_MODEL_TRANSFORM.rotation[1] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateYPerScroll;
-      heroModelRig.rotation.z = HERO_MODEL_TRANSFORM.rotation[2] + heroModelScrollCurrent * HERO_MODEL_MOTION.rotateZPerScroll;
+      heroModelRig.rotation.x = HERO_MODEL_TRANSFORM.rotation[0] + rotationProgress * HERO_MODEL_MOTION.rotateXPerScroll;
+      heroModelRig.rotation.y = HERO_MODEL_TRANSFORM.rotation[1] + rotationProgress * HERO_MODEL_MOTION.rotateYPerScroll;
+      heroModelRig.rotation.z = HERO_MODEL_TRANSFORM.rotation[2] + rotationProgress * HERO_MODEL_MOTION.rotateZPerScroll;
 
       heroModelRig.position.x = HERO_MODEL_TRANSFORM.position[0];
       heroModelRig.position.y =
@@ -10346,6 +11353,9 @@ function animateHeroModelViewer() {
         heroModelRig.position.y + heroModelSize.y * HERO_MODEL_CAMERA.lookAtYOffset,
         heroModelRig.position.z
       );
+      updateHeroModelAnnotations(heroModelScrollCurrent);
+    } else if (heroModelAnnotationEntries.length) {
+      heroModelAnnotationEntries.forEach((entry) => setHeroModelAnnotationVisibility(entry, 0));
     }
 
     heroModelRenderer.render(heroModelScene, heroModelCamera);
@@ -10358,7 +11368,9 @@ function initHeroModelViewer() {
   const wrap = document.getElementById("heroModelViewer");
   if (!wrap || !window.THREE) return;
 
+  initHeroModelAnnotations();
   initHeroExplodeDevPanel();
+  initHeroMotionDevPanel();
 
   if (heroModelRenderer) {
     resizeHeroModelViewer();

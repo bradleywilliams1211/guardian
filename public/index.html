@@ -3720,7 +3720,7 @@
               <span>trend visibility</span>
             </article>
             <article class="stat">
-              <strong id="trusted-users-count" data-count="0" data-live-count="trusted-users">0</strong>
+              <strong id="trusted-users-count" data-count="" data-live-count="trusted-users">—</strong>
               <span>Trusted Users</span>
             </article>
             <article class="stat">
@@ -7752,14 +7752,24 @@ async function loadTrustedUsersCount() {
     } catch {}
 
     const count = Number(data?.count);
-    if (!res.ok || !data?.ok || !Number.isFinite(count) || count < 0) {
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || text || "Failed to load trusted users count.");
+    }
+
+    if (data?.degraded) {
+      el.textContent = "—";
+      el.setAttribute("title", "Temporarily unavailable");
+      return;
+    }
+
+    if (!Number.isFinite(count) || count < 0) {
       throw new Error(data?.error || text || "Failed to load trusted users count.");
     }
 
     setTrustedUsersCount(count);
   } catch {
-    const fallback = Number(el.dataset.count || 0);
-    el.textContent = Number.isFinite(fallback) ? String(fallback) : "0";
+    el.textContent = "—";
+    el.setAttribute("title", "Temporarily unavailable");
   }
 }
 
@@ -7769,6 +7779,7 @@ function setTrustedUsersCount(count, options = {}) {
 
   const safeCount = Math.max(0, Math.floor(Number(count) || 0));
   el.dataset.count = String(safeCount);
+  el.removeAttribute("title");
 
   if (options.animate === false) {
     el.textContent = String(safeCount);
@@ -7785,6 +7796,8 @@ const DEMO_MODE_KEY = "guard_demo_mode";
 const DEMO_USER = "dev";
 const DEMO_PASS = "123";
 const DEMO_TOKEN_PREFIX = "demo:";
+const SERVER_SESSION_TOKEN_STORAGE_KEY = "guardian.serverSessionToken";
+let inMemoryServerSessionToken = "";
 let hasServerSession = false;
 
 let previousView = "landing";
@@ -8770,35 +8783,48 @@ const HERO_EXPLODE_GROUP_RULES = [];
 const HERO_EXPLODE_PART_RULES = {
 "FOOT_GRIP-1__1": { direction: [0, 0.1, 1], distance: 0.6, start: 0, end: 1, rotationAmount: 0 },  
 "THIGH_RH-1__1": { direction: [0, 0, 1], distance: 1, start: 0, end: 1, rotationAmount: 0 },
-  "LEG_KNEE_RH-1__1": { direction: [0, 0, 1], distance: .4, start: 0, end: 1, rotationAmount: 0 },
+"THIGH_RH-1_1__1": { direction: [0, 0, 1], distance: 1, start: 0, end: 1, rotationAmount: 0 },  
+"THIGH_RH_MIR-1_1__1": { direction: [0, 0, 1], distance: -1, start: 0, end: 1, rotationAmount: 0 },
+"THIGH_RH_MIR-1__1": { direction: [0, 0, 1], distance: -1, start: 0, end: 1, rotationAmount: 0 },
+"LEG_KNEE_RH-1__1": { direction: [0, 0, 1], distance: .4, start: 0, end: 1, rotationAmount: 0 },
   "LEG_KNEE_RH-1__2": { direction: [0, 0, 1], distance: .6, start: 0, end: 1, rotationAmount: 0 },
-"LEG_KNEE_RH_MIR-1_1__1": { direction: [0, 0, 1], distance: 0.2, start: 0, end: 1, rotationAmount: 0 },
-"LEG_KNEE_RH_MIR-1__1": { direction: [0, 0, -1], distance: 0.2, start: 0, end: 1, rotationAmount: 0 },  
-  "SHOULDER_PIN-1__1": { direction: [0, 0, 1], distance: .3, start: 0, end: 1, rotationAmount: 0 },
+"LEG_KNEE_RH-1_1__1": { direction: [0, 0, 1], distance: 0.4, start: 0, end: 1, rotationAmount: 0 },
+"LEG_KNEE_RH_MIR-1_1__1": { direction: [0, 0, 1], distance: -0.4, start: 0, end: 1, rotationAmount: 0 },
+"LEG_KNEE_RH_MIR-1__1": { direction: [0, 0, -1], distance: 0.4, start: 0, end: 1, rotationAmount: 0 },
+"SHOULDER_PIN-1__1": { direction: [0, 0, 1], distance: .3, start: 0, end: 1, rotationAmount: 0 },
   "SHOULDER_COVER-1__1": { direction: [0, 0, 1], distance: .2, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_COVER_MIR-1__1": { direction: [0, 0, -1], distance: 0.2, start: 0, end: 1, rotationAmount: 0 },
+"SHOULDER_COVER-1_1__1": { direction: [0, 0, 1], distance: 0.4, start: 0, end: 1, rotationAmount: 0 },  
+"SHOULDER_COVER_MIR-1_1__1": { direction: [0, 0, 1], distance: -0.2, start: 0, end: 1, rotationAmount: 0 },
   "WRIST_RH_1-1__1": { direction: [0, 0, 1], distance: .8, start: 0, end: 1, rotationAmount: 0 },
+  "WRIST_RH_1-1_1__1": { direction: [0, 0, 1], distance: 0.8, start: 0, end: 1, rotationAmount: 0 },
+  "WRIST_RH_1_MIR-1_1__1": { direction: [0, 0, 1], distance: -0.8, start: 0, end: 1, rotationAmount: 0 },
+  "WRIST_RH_1_MIR-1__1": { direction: [0, 0, 1], distance: -0.8, start: 0, end: 1, rotationAmount: 0 },
   "SHOULDER_COVER-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "SHOULDER_PIN-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_PIN-1_1__1": { direction: [0, 0, 1], distance: 0.3, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_PIN_MIR-1_1__1": { direction: [0, 0, 1], distance: -0.2, start: 0, end: 1, rotationAmount: 0 },
+  "SHOULDER_PIN_MIR-1__1": { direction: [0, 0, 1], distance: -0.2, start: 0, end: 1, rotationAmount: 0 },
   "THIGH_RH-1__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
 "FOOT_GRIP-1__2": { direction: [0, 0.1, -1], distance: 0.6, start: 0, end: 1, rotationAmount: 0 },  
+"FOOT_GRIP-1_2__1": { direction: [0, 0.1, 1], distance: 0.6, start: 0, end: 1, rotationAmount: 0 },
+"FOOT_GRIP-1_1__1": { direction: [0, 0.1, 1], distance: -0.6, start: 0, end: 1, rotationAmount: 0 },
+"FOOT_GRIP-1_3__1": { direction: [0, 0.1, 1], distance: -0.6, start: 0, end: 1, rotationAmount: 0 },
 "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "MICROSERVOASSEMBLY_AF11_ASM-1/MICROSERVOASSEMBLY_1_2_AF11_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOARM_A2-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "MICROSERVOASSEMBLY_AF10_ASM-1/MICROSERVOASSEMBLY_1_2_AF10_ASM-1/MICROSERVOSG90-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
 "FOOT_GRIP-1__3": { direction: [0, 0, 1], distance: 0.6, start: 0, end: 1, rotationAmount: 0 },  
-"NUT_M3_1_ASM__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-  "NUT_M3_1_ASM__2": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
 "BATTERY_CONTACT_NEG-1__1": { direction: [0, 0.5, -1], distance: 1, start: 0.8, end: 1, rotationAmount: 0 },
 "BATTERY_HOLDER-1__1": { direction: [-2, 0.5, 0], distance: 1, start: 0.6, end: 1, rotationAmount: 0 },
 "BATTERY_CONTACT_POS-1__1": { direction: [0, 1, 1], distance: 1, start: 0.8, end: 1, rotationAmount: 0 },
-  "NUT_M3_1_ASM__3": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-"_UNSAVED__ASM-1ACTUATOR-1__1": { direction: [0, -1, -1], distance: 0.5, start: 0.6, end: 1, rotationAmount: 0 },
+
+  "_UNSAVED__ASM-1ACTUATOR-1__1": { direction: [0, -1, -1], distance: 0.5, start: 0.6, end: 1, rotationAmount: 0 },
 "_UNSAVED__ASM-1PINS-1__1": { direction: [1, -0.5, 1], distance: 1, start: 0.6, end: 1, rotationAmount: 0 },
 "_UNSAVED__ASM-1BODY1-140-1__1": { direction: [0, 0, 1], distance: 0.3, start: 0.6, end: 1, rotationAmount: 0 },
 "_UNSAVED__ASM-1PCB_1_ASM-1PINS-2__1": { direction: [0, -1, -2], distance: 1, start: 0.6, end: 1, rotationAmount: 0 },
 "_UNSAVED__ASM-1PCB_1_ASM-1BODY1-137-1__1": { direction: [0, -1, 1], distance: 1, start: 0.6, end: 1, rotationAmount: 0 },
 "_UNSAVED__ASM-1PCB_1_ASM-1PINS-1__1": { direction: [0, -1, 2], distance: 1, start: 0.6, end: 1, rotationAmount: 0 },
-  "NUT_M3_1_ASM__4": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/CERAMIC_BASE_LDR_CELL_THRU-HOLE-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET2-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "LDR_CELL_THRU-HOLE_LEADED_1_ASM-1/LEADS_LDR_CELL_THRU-HOLE_LEADED_ASM-1/FILLET1-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
@@ -8998,12 +9024,15 @@ const HERO_EXPLODE_PART_RULES = {
   "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO3-1242-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO1-1240-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
   "RESC-0805_ANYUNSPECIFIED_ASM-18/S_X_F3LIDO2-1241-1__1": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-  "NUT_M3_1_ASM__5": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-  "NUT_M3_1_ASM__6": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-"FOOT_GRIP-1__4": { direction: [0, 0, 1], distance: -0.6, start: 0, end: 1, rotationAmount: 0 },  
-"NUT_M3_1_ASM__7": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-  "NUT_M3_1_ASM__8": { direction: [0, 0, 0], distance: 0, start: 0, end: 1, rotationAmount: 0 },
-"ARDUINOUNODETAILED-1__1": { direction: [0, 1, 0], distance: -0.3, start: 0.7, end: 1, rotationAmount: 0 },
+"NUT_M3_1_ASM__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+"NUT_M3_1_ASM_1__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM_2__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM_3__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM_4__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM_5__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM_6__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "NUT_M3_1_ASM_7__1": { direction: [0, 1, 0], distance: 0.1, start: 0.9, end: 1, rotationAmount: 0 },
+  "ARDUINOUNODETAILED-1__1": { direction: [0, 1, 0], distance: -0.3, start: 0.7, end: 1, rotationAmount: 0 },
 "LED_5MM_RED-1__1": { direction: [1, 0.2, 0.5], distance: 1, start: 0, end: 0.4, rotationAmount: 0 },
   "LED_5MM_RED-2__1": { direction: [1, 0.2, -0.5], distance: 1, start: 0, end: 0.4, rotationAmount: 0 },  
   "BODY_REMODEL-1__1": { direction: [0, 1, 0], distance: -0.5, start: 0.6, end: 1, rotationAmount: 0 },
@@ -9043,6 +9072,11 @@ let heroModelOrbitAngle = HERO_MODEL_MOTION.orbitStartAngle;
 let heroModelLoadedAsset = "";
 const heroMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 const heroModelTempQuat = new THREE.Quaternion();
+const heroModelRaycaster = new THREE.Raycaster();
+const heroModelPointer = new THREE.Vector2();
+const HERO_EXPLODE_DEV_HIGHLIGHT_COLOR = 0xff1f1f;
+const HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE = 0xff0000;
+const HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE_INTENSITY = 0.65;
 const HERO_EXPLODE_DEV_STORAGE_KEY = "guardian.hero.explode.overrides.v1";
 const HERO_EXPLODE_DEV_PANEL_STORAGE_KEY = "guardian.hero.explode.panel.v1";
 const HERO_EXPLODE_DEV_ENABLED =
@@ -9050,6 +9084,7 @@ const HERO_EXPLODE_DEV_ENABLED =
   new URLSearchParams(window.location.search).get("explodeDev") === "1";
 let heroExplodeDevOverrides = loadHeroExplodeDevOverrides();
 let heroExplodeDevPanelBound = false;
+let heroModelPointerDown = null;
 
 function setHeroModelStatus(message) {
   const wrap = document.getElementById("heroModelViewer");
@@ -9313,6 +9348,7 @@ function syncHeroExplodeDevSelection() {
   const rule = getHeroExplodeDevEffectiveRule(partId);
   writeHeroExplodeDevInputs(rule);
   refreshHeroExplodeDevSnippet();
+  updateHeroExplodeDevHighlight();
 }
 
 function updateHeroExplodeDevPartOptions() {
@@ -9329,6 +9365,7 @@ function updateHeroExplodeDevPartOptions() {
   if (!parts.length) {
     select.innerHTML = `<option value="">Loading model parts...</option>`;
     refreshHeroExplodeDevSnippet();
+    updateHeroExplodeDevHighlight();
     return;
   }
 
@@ -9339,6 +9376,118 @@ function updateHeroExplodeDevPartOptions() {
   const nextValue = parts.some((part) => part.partId === current) ? current : parts[0].partId;
   select.value = nextValue;
   syncHeroExplodeDevSelection();
+}
+
+function getHeroExplodePartForObject(object) {
+  let current = object;
+  while (current) {
+    const match = heroModelExplodeParts.find((part) => part.node === current);
+    if (match) return match;
+    current = current.parent || null;
+  }
+  return null;
+}
+
+function resetHeroExplodeDevHighlight() {
+  if (!HERO_EXPLODE_DEV_ENABLED || !heroModelRoot) return;
+
+  heroModelRoot.traverse((child) => {
+    if (!child.isMesh) return;
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((mat) => {
+      if (!mat?.userData) return;
+      if ("color" in mat && mat.userData.__heroBaseColor) {
+        mat.color.copy(mat.userData.__heroBaseColor);
+      }
+      if ("emissive" in mat && mat.userData.__heroBaseEmissive) {
+        mat.emissive.copy(mat.userData.__heroBaseEmissive);
+      }
+      if (
+        "emissiveIntensity" in mat &&
+        Number.isFinite(mat.userData.__heroBaseEmissiveIntensity)
+      ) {
+        mat.emissiveIntensity = mat.userData.__heroBaseEmissiveIntensity;
+      }
+      mat.needsUpdate = true;
+    });
+  });
+}
+
+function updateHeroExplodeDevHighlight() {
+  if (!HERO_EXPLODE_DEV_ENABLED) return;
+
+  resetHeroExplodeDevHighlight();
+
+  const selectedPart = getHeroExplodePartById(getHeroExplodeSelectedPartId());
+  if (!selectedPart?.node) return;
+
+  selectedPart.node.traverse((child) => {
+    if (!child.isMesh) return;
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((mat) => {
+      if (!mat) return;
+      if ("color" in mat && mat.color) {
+        mat.color.setHex(HERO_EXPLODE_DEV_HIGHLIGHT_COLOR);
+      }
+      if ("emissive" in mat && mat.emissive) {
+        mat.emissive.setHex(HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE);
+      }
+      if ("emissiveIntensity" in mat) {
+        mat.emissiveIntensity = HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE_INTENSITY;
+      }
+      mat.needsUpdate = true;
+    });
+  });
+}
+
+function selectHeroExplodeDevPart(partId, options = {}) {
+  if (!HERO_EXPLODE_DEV_ENABLED || !partId) return false;
+
+  const select = getHeroExplodeDevField("heroExplodeDevPart");
+  if (!select) return false;
+
+  const exists = heroModelExplodeParts.some((part) => part.partId === partId);
+  if (!exists) return false;
+
+  select.value = partId;
+  syncHeroExplodeDevSelection();
+
+  if (options.message !== false) {
+    setHeroExplodeDevMessage(`Selected ${partId}`);
+  }
+
+  return true;
+}
+
+function beginHeroModelPartPick(event) {
+  if (!HERO_EXPLODE_DEV_ENABLED) return;
+  heroModelPointerDown = { x: event.clientX, y: event.clientY };
+}
+
+function finishHeroModelPartPick(event) {
+  if (!HERO_EXPLODE_DEV_ENABLED || !heroModelRenderer || !heroModelCamera || !heroModelRoot) return;
+
+  const down = heroModelPointerDown;
+  heroModelPointerDown = null;
+
+  if (!down) return;
+  if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > 6) return;
+
+  const rect = heroModelRenderer.domElement.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  heroModelPointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  heroModelPointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  heroModelRaycaster.setFromCamera(heroModelPointer, heroModelCamera);
+
+  const hits = heroModelRaycaster.intersectObject(heroModelRoot, true);
+  for (const hit of hits) {
+    const part = getHeroExplodePartForObject(hit.object);
+    if (part && selectHeroExplodeDevPart(part.partId, { message: false })) {
+      setHeroExplodeDevMessage(`Selected ${part.partId}`);
+      return;
+    }
+  }
 }
 
 function applyHeroExplodeDevOverridesLive() {
@@ -9694,13 +9843,22 @@ function styleHeroModel(root) {
       if ("emissiveIntensity" in next && HERO_MODEL_LOOK.emissiveIntensity != null) next.emissiveIntensity = HERO_MODEL_LOOK.emissiveIntensity;
       if ("metalness" in next && HERO_MODEL_LOOK.metalness != null) next.metalness = HERO_MODEL_LOOK.metalness;
       if ("roughness" in next && HERO_MODEL_LOOK.roughness != null) next.roughness = HERO_MODEL_LOOK.roughness;
-      if ("transparent" in next) next.transparent = HERO_MODEL_LOOK.transparent || HERO_MODEL_LOOK.opacity < 1;
-      if ("opacity" in next && HERO_MODEL_LOOK.opacity != null) next.opacity = HERO_MODEL_LOOK.opacity;
-      if ("side" in next) next.side = HERO_MODEL_LOOK.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
-      if ("skinning" in next) next.skinning = child.isSkinnedMesh;
-      next.needsUpdate = true;
-      return next;
-    });
+        if ("transparent" in next) next.transparent = HERO_MODEL_LOOK.transparent || HERO_MODEL_LOOK.opacity < 1;
+        if ("opacity" in next && HERO_MODEL_LOOK.opacity != null) next.opacity = HERO_MODEL_LOOK.opacity;
+        if ("side" in next) next.side = HERO_MODEL_LOOK.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+        if ("skinning" in next) next.skinning = child.isSkinnedMesh;
+        next.userData = {
+          ...next.userData,
+          __heroBaseColor: "color" in next && next.color ? next.color.clone() : null,
+          __heroBaseEmissive: "emissive" in next && next.emissive ? next.emissive.clone() : null,
+          __heroBaseEmissiveIntensity:
+            "emissiveIntensity" in next && Number.isFinite(next.emissiveIntensity)
+              ? next.emissiveIntensity
+              : null,
+        };
+        next.needsUpdate = true;
+        return next;
+      });
 
     child.material = Array.isArray(child.material) ? nextMaterials : nextMaterials[0];
   });
@@ -10238,8 +10396,15 @@ function initHeroModelViewer() {
   heroModelRenderer.domElement.style.width = "100%";
   heroModelRenderer.domElement.style.height = "100%";
   heroModelRenderer.domElement.style.display = "block";
-  heroModelRenderer.domElement.style.pointerEvents = "none";
+  heroModelRenderer.domElement.style.pointerEvents = HERO_EXPLODE_DEV_ENABLED ? "auto" : "none";
+  heroModelRenderer.domElement.style.touchAction = HERO_EXPLODE_DEV_ENABLED ? "pan-y" : "auto";
+  heroModelRenderer.domElement.style.cursor = HERO_EXPLODE_DEV_ENABLED ? "crosshair" : "default";
   wrap.appendChild(heroModelRenderer.domElement);
+
+  if (HERO_EXPLODE_DEV_ENABLED) {
+    heroModelRenderer.domElement.addEventListener("pointerdown", beginHeroModelPartPick);
+    heroModelRenderer.domElement.addEventListener("pointerup", finishHeroModelPartPick);
+  }
 
   // Lighting setup is controlled by HERO_MODEL_LIGHTING above.
   heroModelScene.add(new THREE.AmbientLight(
@@ -10450,19 +10615,48 @@ function getSessionToken() {
     return DEMO_TOKEN_PREFIX + "local-demo";
   }
 
+  if (inMemoryServerSessionToken) {
+    return inMemoryServerSessionToken;
+  }
+
+  try {
+    const stored = sessionStorage.getItem(SERVER_SESSION_TOKEN_STORAGE_KEY) || "";
+    if (stored) return stored;
+  } catch {}
+
   return hasServerSession ? "server-session" : "";
 }
 
 function setSessionToken(t) {
   const demo = !!t && t.startsWith(DEMO_TOKEN_PREFIX);
   setDemoMode(demo);
+  inMemoryServerSessionToken =
+    !!t && !demo && t !== "server-session" ? String(t) : "";
+  try {
+    if (!t || demo || t === "server-session") {
+      sessionStorage.removeItem(SERVER_SESSION_TOKEN_STORAGE_KEY);
+    } else {
+      sessionStorage.setItem(SERVER_SESSION_TOKEN_STORAGE_KEY, t);
+    }
+  } catch {}
   hasServerSession = !!t && !demo;
 }
 
 function authHeaders() {
-  // Real authenticated requests now use the secure session cookie automatically.
-  // This helper stays in place so older fetch code can keep calling it.
+  const token = getSessionToken();
+  if (
+    token &&
+    !token.startsWith(DEMO_TOKEN_PREFIX) &&
+    token !== "server-session"
+  ) {
+    return { Authorization: `Bearer ${token}` };
+  }
+
   return {};
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function refreshSessionState() {
@@ -10476,7 +10670,8 @@ async function refreshSessionState() {
   try {
     const res = await fetch("/session", {
       cache: "no-store",
-      credentials: "same-origin"
+      credentials: "same-origin",
+      headers: authHeaders(),
     });
     const data = await res.json().catch(() => ({}));
     hasServerSession = !!data.logged_in;
@@ -10515,6 +10710,32 @@ async function refreshSessionState() {
     updateGuardFactoryResetUI();
     return { ok: false, logged_in: false, demo: false };
   }
+}
+
+async function refreshSessionStateWithRetry(attempts = 5, delayMs = 350, options = {}) {
+  let lastState = { ok: false, logged_in: false };
+  const tokenBeforeRetry = getSessionToken();
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    lastState = await refreshSessionState();
+    if (lastState.logged_in) {
+      return lastState;
+    }
+    if (attempt < attempts - 1) {
+      await delay(delayMs);
+    }
+  }
+
+  if (
+    !lastState.logged_in &&
+    tokenBeforeRetry &&
+    !tokenBeforeRetry.startsWith(DEMO_TOKEN_PREFIX) &&
+    !options?.preserveTokenOnFailure
+  ) {
+    setSessionToken("");
+  }
+
+  return lastState;
 }
 
 /* ============================================================
@@ -11546,6 +11767,15 @@ function normalizeDexcomLoginMessage(message) {
   const lowered = text.toLowerCase();
 
   if (
+    lowered.includes("too many dexcom login attempts") ||
+    lowered.includes("dexcom is unavailable right now") ||
+    lowered.includes("no account found. check your dexcom username, password, and region.") ||
+    lowered.includes("dexcom login failed. try checking your region first.")
+  ) {
+    return text;
+  }
+
+  if (
     !text ||
     lowered.includes("authenticatepublisheraccount") ||
     lowered.includes("loginpublisheraccountbyid") ||
@@ -11558,10 +11788,25 @@ function normalizeDexcomLoginMessage(message) {
     lowered.includes("<!doctype") ||
     text.length > 140
   ) {
-    return "No account found";
+    return "No account found. Check your Dexcom username, password, and region.";
   }
 
   return text;
+}
+
+function formatDexcomLoginFailure(data, fallbackText) {
+  const base = normalizeDexcomLoginMessage(data?.error || fallbackText || "Login failed");
+  const dexcomStatus = Number(data?.dexcom_status);
+
+  if (!Number.isFinite(dexcomStatus) || dexcomStatus <= 0) {
+    return base;
+  }
+
+  if (base.toLowerCase().includes(`dexcom status ${dexcomStatus}`)) {
+    return base;
+  }
+
+  return `${base} (Dexcom status ${dexcomStatus})`;
 }
 
 async function saveDexcomCreds() {
@@ -11603,23 +11848,48 @@ async function saveDexcomCreds() {
     }
 
     if (!res.ok || !data.ok) {
-      const loginError = normalizeDexcomLoginMessage(data?.error || text || "Login failed");
+      const loginError = formatDexcomLoginFailure(data, text || "Login failed");
       dbg("Login failed: " + loginError);
       stateEl.textContent = loginError;
       return;
     }
 
-    const sessionState = await refreshSessionState();
+    if (data?.session_token) {
+      setSessionToken(String(data.session_token));
+    }
+
+    let sessionState = await refreshSessionStateWithRetry(5, 350, {
+      preserveTokenOnFailure: !!data?.session_token,
+    });
+    if (!sessionState.logged_in && data?.session_token) {
+      setSessionToken(String(data.session_token));
+      dbg("Secure session handshake is lagging. Continuing with the returned server session token.");
+      sessionState = {
+        ok: true,
+        logged_in: true,
+        device_id: String(data?.device_id || "").trim(),
+        device_claim_required: !!data?.device_claim_required,
+        trusted_users_count: data?.trusted_users_count,
+        trusted_users_degraded: !!data?.trusted_users_degraded,
+      };
+
+      if (sessionState.device_id) {
+        setCurrentDeviceId(sessionState.device_id);
+      }
+    }
+
     if (!sessionState.logged_in) {
-      stateEl.textContent = "Login succeeded, but the secure session was not saved.";
-      dbg("Secure session cookie was missing after login.");
+      stateEl.textContent = "Login succeeded, but this browser did not keep the secure session. Check that cookies are allowed, then try again.";
+      dbg("Secure session cookie was still missing after login retries.");
       return;
     }
 
-    setSessionToken("server-session");
+    if (!data?.session_token) {
+      setSessionToken("server-session");
+    }
     stateEl.textContent = "Logged in";
 
-    if (Number.isFinite(Number(data?.trusted_users_count))) {
+    if (!data?.trusted_users_degraded && Number.isFinite(Number(data?.trusted_users_count))) {
       setTrustedUsersCount(Number(data.trusted_users_count));
     } else {
       await loadTrustedUsersCount();
@@ -11755,7 +12025,13 @@ async function enterDashboard(){
 
 async function bootstrapExistingSession() {
   const session = await refreshSessionState();
-  if (!session.logged_in) {
+  const token = getSessionToken();
+  const hasFallbackServerToken =
+    !!token &&
+    !token.startsWith(DEMO_TOKEN_PREFIX) &&
+    token !== "server-session";
+
+  if (!session.logged_in && !hasFallbackServerToken) {
     setClaimCardVisible(false, { state: "" });
     return;
   }
@@ -11763,7 +12039,13 @@ async function bootstrapExistingSession() {
   document.getElementById("dexcom-state").textContent =
     session.demo ? "Logged in (Developer Mode)" : "Logged in";
 
-  if (Number.isFinite(Number(session?.trusted_users_count))) {
+  if (!session.logged_in && hasFallbackServerToken) {
+    await loadTrustedUsersCount();
+    await enterDashboard();
+    return;
+  }
+
+  if (!session?.trusted_users_degraded && Number.isFinite(Number(session?.trusted_users_count))) {
     setTrustedUsersCount(Number(session.trusted_users_count));
   } else {
     await loadTrustedUsersCount();

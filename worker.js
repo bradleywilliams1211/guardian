@@ -68,6 +68,11 @@ const DEXCOM_STALE_AFTER_SECONDS = 15 * 60;
 const CACHE_LASTSEEN = new Request("https://cache.guardian/local/lastSeen");
 const CACHE_TRUSTED_USERS = new Request("https://cache.guardian/local/trustedUsers");
 const OWNER_DEXCOM_CACHE_TTL_SECONDS = 60;
+const SESSION_CACHE_TTL_SECONDS = 24 * 60 * 60;
+const DEVICE_CACHE_TTL_SECONDS = 24 * 60 * 60;
+const OWNER_CACHE_TTL_SECONDS = 24 * 60 * 60;
+const SETTINGS_CACHE_TTL_SECONDS = 10 * 60;
+const MAILBOX_CACHE_TTL_SECONDS = 2 * 60;
 
 /* =========================
    CACHE HELPERS
@@ -135,6 +140,10 @@ async function readJson(request) {
    ========================= */
 function isKvLimitError(e) {
   return String(e || "").toLowerCase().includes("kv put() limit exceeded");
+}
+
+function isKvReadLimitError(e) {
+  return String(e || "").toLowerCase().includes("kv get() limit exceeded");
 }
 
 async function kvPutSafe(env, key, value, options = undefined) {
@@ -229,6 +238,12 @@ async function saveServerSession(env, sessionData) {
     { expirationTtl: SESSION_TTL_SECONDS }
   );
 
+  if (out.ok) {
+    try {
+      await cachePutJson(cacheSessionKey(sessionId), sessionData, SESSION_CACHE_TTL_SECONDS);
+    } catch {}
+  }
+
   return {
     ok: !!out.ok,
     sessionId,
@@ -238,14 +253,29 @@ async function saveServerSession(env, sessionData) {
 
 async function loadServerSession(env, sessionId) {
   if (!sessionId) return null;
+  const cached = await cacheGetJson(cacheSessionKey(sessionId));
+  if (cached && typeof cached === "object") {
+    return cached;
+  }
+
   const raw = await env.ESP32_KV.get(buildSessionKey(sessionId));
   const session = safeJsonParse(raw, null);
+
+  if (session && typeof session === "object") {
+    try {
+      await cachePutJson(cacheSessionKey(sessionId), session, SESSION_CACHE_TTL_SECONDS);
+    } catch {}
+  }
+
   return session && typeof session === "object" ? session : null;
 }
 
 async function deleteServerSession(env, sessionId) {
   if (!sessionId) return;
   await env.ESP32_KV.delete(buildSessionKey(sessionId));
+  try {
+    await caches.default.delete(cacheSessionKey(sessionId));
+  } catch {}
 }
 
 async function requireSession(request, env) {
@@ -369,6 +399,42 @@ function cacheLastSeenKey(deviceId) {
   );
 }
 
+function cacheSessionKey(sessionId) {
+  return new Request(
+    `https://cache.guardian/local/session/${encodeURIComponent(String(sessionId || "").trim())}`
+  );
+}
+
+function cacheDeviceRecordKey(deviceId) {
+  return new Request(
+    `https://cache.guardian/local/device/${encodeURIComponent(String(deviceId || "").trim())}`
+  );
+}
+
+function cacheSettingsKey(deviceId) {
+  return new Request(
+    `https://cache.guardian/local/settings/${encodeURIComponent(String(deviceId || "").trim())}`
+  );
+}
+
+function cacheMailboxKey(deviceId) {
+  return new Request(
+    `https://cache.guardian/local/mailbox/${encodeURIComponent(String(deviceId || "").trim())}`
+  );
+}
+
+function cacheOwnerDeviceKey(region, accountId) {
+  return new Request(
+    `https://cache.guardian/local/ownerDevice/${encodeURIComponent(String(region || "us").trim().toLowerCase())}/${encodeURIComponent(String(accountId || "").trim().toLowerCase())}`
+  );
+}
+
+function cacheOwnerDexcomRecordKey(region, accountId) {
+  return new Request(
+    `https://cache.guardian/local/ownerDexcom/${encodeURIComponent(String(region || "us").trim().toLowerCase())}/${encodeURIComponent(String(accountId || "").trim().toLowerCase())}`
+  );
+}
+
 async function cacheOwnerDexcomPullKey(region, accountId) {
   const key = await buildOwnerDexcomKey(region, accountId);
   return new Request(
@@ -378,13 +444,38 @@ async function cacheOwnerDexcomPullKey(region, accountId) {
 
 async function loadDeviceRecord(env, deviceId) {
   if (!deviceId) return null;
-  const raw = await env.ESP32_KV.get(buildDeviceKey(deviceId));
+  const cached = await cacheGetJson(cacheDeviceRecordKey(deviceId));
+  if (cached && typeof cached === "object" && !Array.isArray(cached)) {
+    return cached;
+  }
+
+  let raw = null;
+  try {
+    raw = await env.ESP32_KV.get(buildDeviceKey(deviceId));
+  } catch (error) {
+    if (isKvReadLimitError(error)) {
+      console.warn("Guardian device record lookup skipped: KV read limit exceeded");
+      return null;
+    }
+    throw error;
+  }
   const record = safeJsonParse(raw, null);
-  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+  if (record && typeof record === "object" && !Array.isArray(record)) {
+    try {
+      await cachePutJson(cacheDeviceRecordKey(deviceId), record, DEVICE_CACHE_TTL_SECONDS);
+    } catch {}
+    return record;
+  }
+  return null;
 }
 
 async function saveDeviceRecord(env, deviceId, record) {
   const out = await kvPutSafe(env, buildDeviceKey(deviceId), JSON.stringify(record));
+  if (out.ok) {
+    try {
+      await cachePutJson(cacheDeviceRecordKey(deviceId), record, DEVICE_CACHE_TTL_SECONDS);
+    } catch {}
+  }
   return { record, save: out };
 }
 
@@ -422,30 +513,88 @@ async function deleteClaimLookup(env, claimCode) {
 
 async function setOwnerDeviceMapping(env, region, accountId, deviceId) {
   const key = await buildOwnerDeviceKey(region, accountId);
-  return await kvPutSafe(env, key, deviceId);
+  const out = await kvPutSafe(env, key, deviceId);
+  if (out.ok) {
+    try {
+      await cachePutJson(cacheOwnerDeviceKey(region, accountId), { deviceId }, OWNER_CACHE_TTL_SECONDS);
+    } catch {}
+  }
+  return out;
 }
 
 async function deleteOwnerDeviceMapping(env, region, accountId) {
   const key = await buildOwnerDeviceKey(region, accountId);
   await env.ESP32_KV.delete(key);
+  try {
+    await caches.default.delete(cacheOwnerDeviceKey(region, accountId));
+  } catch {}
 }
 
 async function getOwnerDeviceId(env, region, accountId) {
+  const cached = await cacheGetJson(cacheOwnerDeviceKey(region, accountId));
+  const cachedId = String(cached?.deviceId || "").trim();
+  if (cachedId) {
+    return cachedId;
+  }
+
   const key = await buildOwnerDeviceKey(region, accountId);
-  const value = await env.ESP32_KV.get(key);
-  return String(value || "").trim();
+  try {
+    const value = await env.ESP32_KV.get(key);
+    const cleanValue = String(value || "").trim();
+    if (cleanValue) {
+      try {
+        await cachePutJson(cacheOwnerDeviceKey(region, accountId), { deviceId: cleanValue }, OWNER_CACHE_TTL_SECONDS);
+      } catch {}
+    }
+    return cleanValue;
+  } catch (error) {
+    if (isKvReadLimitError(error)) {
+      console.warn("Guardian owner device lookup skipped: KV read limit exceeded");
+      return "";
+    }
+    throw error;
+  }
 }
 
 async function loadOwnerDexcomRecord(env, region, accountId) {
   if (!String(accountId || "").trim()) return null;
-  const raw = await env.ESP32_KV.get(await buildOwnerDexcomKey(region, accountId));
+  const cached = await cacheGetJson(cacheOwnerDexcomRecordKey(region, accountId));
+  if (cached && typeof cached === "object" && !Array.isArray(cached)) {
+    return cached;
+  }
+
+  let raw = null;
+  try {
+    raw = await env.ESP32_KV.get(await buildOwnerDexcomKey(region, accountId));
+  } catch (error) {
+    if (isKvReadLimitError(error)) {
+      console.warn("Guardian owner Dexcom record lookup skipped: KV read limit exceeded");
+      return null;
+    }
+    throw error;
+  }
   const record = safeJsonParse(raw, null);
-  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+  if (record && typeof record === "object" && !Array.isArray(record)) {
+    try {
+      await cachePutJson(cacheOwnerDexcomRecordKey(region, accountId), record, OWNER_CACHE_TTL_SECONDS);
+    } catch {}
+    return record;
+  }
+  return null;
 }
 
 async function saveOwnerDexcomRecord(env, record) {
   const key = await buildOwnerDexcomKey(record?.region, record?.accountId);
   const out = await kvPutSafe(env, key, JSON.stringify(record));
+  if (out.ok) {
+    try {
+      await cachePutJson(
+        cacheOwnerDexcomRecordKey(record?.region, record?.accountId),
+        record,
+        OWNER_CACHE_TTL_SECONDS
+      );
+    } catch {}
+  }
   return { record, save: out };
 }
 
@@ -1218,7 +1367,15 @@ async function rememberOwnerDexcomSession(env, session) {
     return { ok: false, skipped: true };
   }
 
-  const existing = await loadOwnerDexcomRecord(env, session.region, session.accountId);
+  let existing = null;
+  try {
+    existing = await loadOwnerDexcomRecord(env, session.region, session.accountId);
+  } catch (error) {
+    if (isKvReadLimitError(error)) {
+      return { ok: false, skipped: true, degraded: true };
+    }
+    throw error;
+  }
   const nextRecord = buildOwnerDexcomRecord(session, existing);
   const sameCredentials =
     existing &&
@@ -1325,7 +1482,16 @@ async function refreshDexcomForSession(env, session, options = {}) {
   const maxCount = Math.max(1, Math.min(288, Number(options.maxCount || DEXCOM_DEFAULT_MAX_COUNT)));
   const syncMailbox = options.syncMailbox !== false;
 
-  await rememberOwnerDexcomSession(env, session);
+  try {
+    await rememberOwnerDexcomSession(env, session);
+  } catch (persistError) {
+    console.warn(
+      "Guardian owner Dexcom session persistence skipped",
+      JSON.stringify({
+        message: String(persistError?.message || persistError || "").slice(0, 300),
+      })
+    );
+  }
 
   let freshSessionId = null;
   let ownedDeviceId = "";
@@ -1495,7 +1661,23 @@ async function heartbeatThrottled(env, deviceId) {
   const lastSeenKey = buildLastSeenKey(deviceId);
   const cacheKey = cacheLastSeenKey(deviceId);
 
-  const lastSeenRaw = await env.ESP32_KV.get(lastSeenKey);
+  const cached = await cacheGetJson(cacheKey);
+  const cachedLastSeen = Number(cached?.lastSeen || 0);
+  if (cachedLastSeen > 0 && (now - cachedLastSeen) < HEARTBEAT_MIN_WRITE_MS) {
+    await cachePutJson(cacheKey, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
+    return { ok: true, wrote: false, lastSeen: now, used: "cache" };
+  }
+
+  let lastSeenRaw = "";
+  try {
+    lastSeenRaw = await env.ESP32_KV.get(lastSeenKey);
+  } catch (error) {
+    if (isKvReadLimitError(error)) {
+      await cachePutJson(cacheKey, { lastSeen: now }, LASTSEEN_CACHE_TTL_SECONDS);
+      return { ok: true, wrote: false, lastSeen: now, used: "cache" };
+    }
+    throw error;
+  }
   const lastKv = lastSeenRaw ? Number(lastSeenRaw) : 0;
 
   if (lastKv > 0 && (now - lastKv) < HEARTBEAT_MIN_WRITE_MS) {
@@ -1519,10 +1701,30 @@ async function heartbeatThrottled(env, deviceId) {
    Settings (KV best effort)
    ========================= */
 async function getSettings(env, deviceId) {
-  const raw = await env.ESP32_KV.get(buildSettingsKey(deviceId));
+  const cached = await cacheGetJson(cacheSettingsKey(deviceId));
+  if (cached && typeof cached === "object" && !Array.isArray(cached)) {
+    return {
+      low: Number(cached.glucose_low ?? cached.low ?? 80) || 80,
+      high: Number(cached.glucose_high ?? cached.high ?? 180) || 180,
+    };
+  }
+
+  let raw = "";
+  try {
+    raw = await env.ESP32_KV.get(buildSettingsKey(deviceId));
+  } catch (error) {
+    if (isKvReadLimitError(error)) {
+      return { low: 80, high: 180 };
+    }
+    throw error;
+  }
   const s =
     safeJsonParse(raw, { glucose_low: 80, glucose_high: 180 }) ||
     { glucose_low: 80, glucose_high: 180 };
+
+  try {
+    await cachePutJson(cacheSettingsKey(deviceId), s, SETTINGS_CACHE_TTL_SECONDS);
+  } catch {}
 
   return {
     low: Number(s.glucose_low ?? 80) || 80,
@@ -1540,6 +1742,11 @@ async function setSettings(env, deviceId, low, high) {
   };
 
   const out = await kvPutSafe(env, buildSettingsKey(deviceId), JSON.stringify(settings));
+  if (out.ok) {
+    try {
+      await cachePutJson(cacheSettingsKey(deviceId), settings, SETTINGS_CACHE_TTL_SECONDS);
+    } catch {}
+  }
   return { settings, save: out };
 }
 
@@ -1564,8 +1771,30 @@ async function setSettings(env, deviceId, low, high) {
   - The ESP32 only has to poll one endpoint: /mailbox
 */
 async function readMailbox(env, deviceId) {
-  const raw = await env.ESP32_KV.get(buildMailboxKey(deviceId));
-  const mailbox = safeJsonParse(raw, {});
+  const cached = await cacheGetJson(cacheMailboxKey(deviceId));
+  let mailbox = null;
+
+  if (cached && typeof cached === "object" && !Array.isArray(cached)) {
+    mailbox = cached;
+  } else {
+    let raw = "";
+    try {
+      raw = await env.ESP32_KV.get(buildMailboxKey(deviceId));
+    } catch (error) {
+      if (isKvReadLimitError(error)) {
+        mailbox = {};
+      } else {
+        throw error;
+      }
+    }
+    if (mailbox === null) {
+    mailbox = safeJsonParse(raw, {});
+      try {
+        await cachePutJson(cacheMailboxKey(deviceId), mailbox, MAILBOX_CACHE_TTL_SECONDS);
+      } catch {}
+    }
+  }
+
   const cleanMailbox =
     mailbox && typeof mailbox === "object" && !Array.isArray(mailbox) ? mailbox : {};
 
@@ -1633,15 +1862,21 @@ async function saveMailboxPatch(env, deviceId, patch) {
   };
 
   const save = await kvPutSafe(env, buildMailboxKey(deviceId), JSON.stringify(mailbox));
+  if (save.ok) {
+    try {
+      await cachePutJson(cacheMailboxKey(deviceId), mailbox, MAILBOX_CACHE_TTL_SECONDS);
+    } catch {}
+  }
   return { mailbox, save };
 }
 
 async function handleTrustedUsersCount(env) {
-  const result = await getTrustedUsersCount(env);
+  const result = await getTrustedUsersCountSafe(env, { allowList: true, bypassCache: true });
   return jsonResponse({
     ok: true,
     count: result.count,
     cached: !!result.cached,
+    degraded: !!result.degraded,
   });
 }
 
@@ -1652,6 +1887,24 @@ function friendlyDexcomLoginError(error) {
   const msg = String(error?.message || "");
   const bodyText = String(error?.body || "");
   const combined = `${msg}\n${bodyText}`.toLowerCase();
+  const status = Number(error?.status);
+
+  if (status === 429 || combined.includes("too many")) {
+    return "Too many Dexcom login attempts. Wait a minute and try again.";
+  }
+
+  if (
+    status >= 500 ||
+    combined.includes("service unavailable") ||
+    combined.includes("gateway") ||
+    combined.includes("cloudflare") ||
+    combined.includes("timed out") ||
+    combined.includes("timeout") ||
+    combined.includes("networkerror") ||
+    combined.includes("failed to fetch")
+  ) {
+    return "Dexcom is unavailable right now. Try again in a moment.";
+  }
 
   if (
     combined.includes("authenticatepublisheraccount") ||
@@ -1665,12 +1918,12 @@ function friendlyDexcomLoginError(error) {
     combined.includes("authentication") ||
     combined.includes("<html") ||
     combined.includes("<!doctype") ||
-    [400, 401, 403, 404, 500].includes(Number(error?.status))
+    [400, 401, 403, 404].includes(status)
   ) {
-    return "No account found";
+    return "No account found. Check your Dexcom username, password, and region.";
   }
 
-  return "Dexcom login failed";
+  return "Dexcom login failed. Try checking your region first.";
 }
 
 async function handleDexcomLogin(request, env) {
@@ -1751,20 +2004,52 @@ async function handleDexcomLogin(request, env) {
       );
     }
 
-    await rememberOwnerDexcomSession(env, ownerSession);
+    try {
+      await rememberOwnerDexcomSession(env, ownerSession);
+    } catch (persistError) {
+      console.error(
+        "Guardian remember owner Dexcom session failed",
+        JSON.stringify({
+          message: String(persistError?.message || persistError || "").slice(0, 300),
+        })
+      );
+    }
 
     try {
       await rememberTrustedDexcomUser(env, region, accountId);
+    } catch (trustedError) {
+      console.error(
+        "Guardian remember trusted Dexcom user failed",
+        JSON.stringify({
+          message: String(trustedError?.message || trustedError || "").slice(0, 300),
+        })
+      );
+    }
+
+    let trustedUsers = { count: 0, degraded: true };
+    try {
+      trustedUsers = await getTrustedUsersCountSafe(env);
     } catch {}
 
-    const trustedUsers = await getTrustedUsersCount(env, { bypassCache: true });
-    const ownedDeviceId = await findOwnedDeviceId(env, ownerSession);
+    let ownedDeviceId = "";
+    try {
+      ownedDeviceId = await findOwnedDeviceId(env, ownerSession);
+    } catch (deviceError) {
+      console.error(
+        "Guardian find owned device after Dexcom login failed",
+        JSON.stringify({
+          message: String(deviceError?.message || deviceError || "").slice(0, 300),
+        })
+      );
+    }
 
     return jsonResponse(
       {
         ok: true,
         region,
+        session_token: storedSession.sessionId,
         trusted_users_count: trustedUsers.count,
+        trusted_users_degraded: !!trustedUsers.degraded,
         device_id: ownedDeviceId || "",
         device_claim_required: !ownedDeviceId,
         debug_saved_session_id: sessionId,
@@ -1773,6 +2058,28 @@ async function handleDexcomLogin(request, env) {
       { "Set-Cookie": makeSessionCookie(storedSession.sessionId) }
     );
   } catch (e) {
+    const dexcomFailureDebug = {
+      region,
+      status: Number(e?.status || 0) || null,
+      message: String(e?.message || "").slice(0, 400),
+      body: String(e?.body || "").slice(0, 400),
+      at: new Date().toISOString(),
+    };
+
+    console.error(
+      "Guardian Dexcom login failed",
+      JSON.stringify(dexcomFailureDebug)
+    );
+
+    try {
+      await kvPutSafe(
+        env,
+        "debug:lastDexcomLoginFailure",
+        JSON.stringify(dexcomFailureDebug),
+        { expirationTtl: 10 * 60 }
+      );
+    } catch {}
+
     const friendlyError = friendlyDexcomLoginError(e);
 
     return jsonResponse(
@@ -1863,6 +2170,31 @@ async function getTrustedUsersCount(env, options = {}) {
 
   await cachePutJson(CACHE_TRUSTED_USERS, { count }, 10 * 60);
   return { ok: true, count, cached: false };
+}
+
+async function getTrustedUsersCountSafe(env, options = {}) {
+  const cached = await cacheGetJson(CACHE_TRUSTED_USERS);
+  const cachedCount = Number(cached?.count);
+  if (Number.isFinite(cachedCount) && cachedCount >= 0) {
+    return { ok: true, count: cachedCount, cached: true };
+  }
+
+  if (!options?.allowList) {
+    return { ok: false, count: 0, cached: false, degraded: true };
+  }
+
+  try {
+    return await getTrustedUsersCount(env, options);
+  } catch (error) {
+    console.error(
+      "Guardian trusted users count failed",
+      JSON.stringify({
+        message: String(error?.message || error || "").slice(0, 300),
+      })
+    );
+
+    return { ok: false, count: 0, cached: false, degraded: true };
+  }
 }
 
 async function handleDexcomRecent(request, env) {
@@ -1987,22 +2319,42 @@ async function handleSetSettings(request, env) {
 }
 
 async function handleSessionStatus(request, env) {
-  const session = await requireSession(request, env);
-  if (!session) {
-    return jsonResponse({ ok: true, logged_in: false });
+  const sessionId = readCookie(request, SESSION_COOKIE_NAME) || readBearer(request);
+
+  try {
+    const session = await requireSession(request, env);
+    if (!session || typeof session !== "object" || !String(session.accountId || "").trim()) {
+      const headers = sessionId ? { "Set-Cookie": clearSessionCookie() } : undefined;
+      return jsonResponse({ ok: true, logged_in: false }, 200, headers);
+    }
+
+    const ownedDeviceId = await findOwnedDeviceId(env, session);
+    const trustedUsers = await getTrustedUsersCountSafe(env);
+
+    return jsonResponse({
+      ok: true,
+      logged_in: true,
+      region: session.region || "us",
+      device_id: ownedDeviceId || "",
+      device_claim_required: !ownedDeviceId,
+      trusted_users_count: trustedUsers.count,
+      trusted_users_degraded: !!trustedUsers.degraded,
+    });
+  } catch (error) {
+    console.error(
+      "Guardian session status failed",
+      JSON.stringify({
+        message: String(error?.message || error || "").slice(0, 300),
+        hadSessionCookie: !!sessionId,
+      })
+    );
+
+    return jsonResponse(
+      { ok: true, logged_in: false, session_recovered: true },
+      200,
+      sessionId ? { "Set-Cookie": clearSessionCookie() } : undefined
+    );
   }
-
-  const ownedDeviceId = await findOwnedDeviceId(env, session);
-  const trustedUsers = await getTrustedUsersCount(env);
-
-  return jsonResponse({
-    ok: true,
-    logged_in: true,
-    region: session.region || "us",
-    device_id: ownedDeviceId || "",
-    device_claim_required: !ownedDeviceId,
-    trusted_users_count: trustedUsers.count,
-  });
 }
 
 async function handleDeviceInfo(request, env) {
@@ -2424,7 +2776,5 @@ export default {
       );
     }
   },
-  async scheduled(controller, env, ctx) {
-    ctx.waitUntil(syncDexcomMailboxesForActiveSessions(env));
-  },
+  async scheduled(controller, env, ctx) {},
 };

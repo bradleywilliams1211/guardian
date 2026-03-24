@@ -8824,11 +8824,11 @@ const HERO_MODEL_PLAYBACK = {
   // Scroll does not affect the model until the section crosses this
   // portion of the viewport height.
   // Lower number = wait longer.
-  triggerLine: 0.15,
+  triggerLine: 1,
 
   // Remap the raw section scroll so motion can start later or finish earlier.
   // 0 = very start of the usable scroll range, 1 = very end.
-  scrollStart: 0.7,
+  scrollStart: 0,
   scrollEnd: 1
 };
 
@@ -8852,7 +8852,7 @@ const HERO_MODEL_MOTION = {
 
   // Hold the model still for the first part of the hero scroll, then
   // remap the remaining progress so rotation still ends in the same pose.
-  rotationStartDelay: 0.08,
+  rotationStartDelay: 0,
 
   // Extra rotation applied from scroll.
   // These are added on top of HERO_MODEL_TRANSFORM.rotation.
@@ -9039,7 +9039,7 @@ const HERO_EXPLODE_CONFIG = {
 
   // Scroll progress range where the explosion happens.
   // 0 = very start of the section scroll, 1 = very end.
-  start: 0.1,
+  start: 0,
   end: 1,
 
   // Global axis multiplier for the whole explosion.

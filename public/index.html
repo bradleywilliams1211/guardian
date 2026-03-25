@@ -264,6 +264,31 @@
         isolation: isolate;
     }
 
+    .hero .hero-grid{
+        grid-template-columns: minmax(0, 1fr);
+        min-height: calc(100vh - 132px);
+        align-items: center;
+    }
+
+    .hero-rig-stage{
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .hero-rig-image{
+        position: absolute;
+        top: 50%;
+        right: 0;
+        height: 150vh;
+        width: auto;
+        max-width: none;
+        transform: translate(50%, -50%);
+        filter: drop-shadow(0 30px 70px rgba(16, 34, 24, .14));
+        opacity: .98;
+    }
+
     .argos-model-section{
         position: relative;
         min-height: 420vh;
@@ -327,6 +352,7 @@
     .hero-copy{
         position: relative;
         z-index: 2;
+        max-width: 650px;
     }
 
     .eyebrow{
@@ -3427,6 +3453,16 @@
         grid-template-columns: 1fr;
         }
 
+        .hero .hero-grid{
+        min-height: 72vh;
+        }
+
+        .hero-rig-image{
+        height: 126vh;
+        transform: translate(42%, -50%);
+        opacity: .88;
+        }
+
         .argos-model-section{
         min-height: 420vh;
         }
@@ -3543,6 +3579,17 @@
 
         .hero{
         padding-top: 28px;
+        }
+
+        .hero .hero-grid{
+        min-height: auto;
+        }
+
+        .hero-rig-image{
+        height: 108vh;
+        top: 52%;
+        transform: translate(44%, -50%);
+        opacity: .42;
         }
 
         .argos-model-section{
@@ -3886,8 +3933,7 @@
           <h1>Less Stress,
             More Living.</h1>
           <p>
-            Guardian turns glucose data into a cleaner, calmer experience with simple insights,
-            trend-aware guidance, and a companion feature to assist management.
+           Guardian is your AI-powered companion for diabetes management, providing real-time glucose predictions and personalized insights to help you stay in control and live your best life.
           </p>
 
           <div class="hero-actions">
@@ -3909,7 +3955,13 @@
             </article>
           </div>
         </div>
-
+      </div>
+      <div class="hero-rig-stage" aria-hidden="true">
+        <img class="hero-rig-image" src="/renders/argos-front-chrome-transparent.png" alt="">
+      </div>
+    </section>
+    <section>
+      <div class="wrap hero-grid">
         <div class="hero-visual reveal">
           <div class="glow"></div>
 
@@ -3931,7 +3983,7 @@
               <div class="reading-side">
                 <div class="small-label">Confidence</div>
                 <div style="font-size:2rem;font-weight:900;letter-spacing:-.06em;">High</div>
-                <div style="color:var(--muted);line-height:1.6;">Recent movement suggests a smooth trend instead of a dramatic spike.</div>
+                <div style="color:var(--muted);line-height:1.6;">Recent movement suggests a smooth trend and a more confident estimate.</div>
               </div>
             </div>
 
@@ -4002,9 +4054,12 @@
           </div>
 
         </div>
-      </div>
+        </div>
     </section>
     <section class="argos-model-section" id="argos-model">
+                 <h1 style= "text-align:center;40px;font-weight:700;color:rgb(0, 0, 0);letter-spacing:-0.02em;line-height:1.1;">
+    The Hardware
+       </h1>
       <div class="argos-model-sticky">
         <div class="argos-model-stage" aria-hidden="true">
           <div id="heroModelViewer"></div>

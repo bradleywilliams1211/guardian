@@ -429,6 +429,24 @@
         z-index: 2;
     }
 
+    .hero-overview-grid.wrap{
+        width: min(1320px, calc(100% - 32px));
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+    }
+
+    .hero-overview-section .hero-visual{
+        width: min(1120px, 100%);
+        justify-self: center;
+        padding-top: 6px;
+    }
+
+    .hero-overview-section .dashboard-card{
+        width: min(1120px, 100%);
+        margin-inline: auto;
+        padding: 28px 30px;
+    }
+
     .glow{
         position: absolute;
         inset: 9% 6% auto auto;
@@ -3960,8 +3978,8 @@
         <img class="hero-rig-image" src="/renders/argos-front-chrome-transparent.png" alt="">
       </div>
     </section>
-    <section>
-      <div class="wrap hero-grid">
+    <section class="hero-overview-section">
+      <div class="wrap hero-grid hero-overview-grid">
         <div class="hero-visual reveal">
           <div class="glow"></div>
 

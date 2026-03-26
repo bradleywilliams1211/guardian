@@ -1,0 +1,755 @@
+﻿[
+    {
+        "namespace": "nvs.net80211",
+        "key": "bssid.set",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.lis_intval",
+        "encoding": "uint16_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.sort_method",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.minrssi",
+        "encoding": "int8_t",
+        "data": -127,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.pmf_e",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.pmf_r",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.rrm_e",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.btm_e",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.mbo_e",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.ft",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.owe",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.bss_retry",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.trans_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.sae_h2e",
+        "encoding": "uint8_t",
+        "data": 2,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.sae_pk_mode",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "wifi_list",
+        "encoding": "blob_data",
+        "data": "AQAAAAEAAABBVFQ1SG5rM3lOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4djc/NGoycD1uOHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.ssid",
+        "encoding": "blob_data",
+        "data": "CgAAAEFUVDVIbmszeU4AAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.pswd",
+        "encoding": "blob_data",
+        "data": "OHY3PzRqMnA9bjhwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.scan_method",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.minauth",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.apsw",
+        "encoding": "blob_data",
+        "data": "BQA=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.sae_h2e_id",
+        "encoding": "blob_data",
+        "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "last_ble_cmd",
+        "encoding": "string",
+        "data": "-",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "device_id",
+        "encoding": "string",
+        "data": "guard-lyqgxmveofbx",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "opmode",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.pwr_reset",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "device_token",
+        "encoding": "string",
+        "data": "JmSpDWRyEL8Ky2R0fenjXh2JsBbPoU_Q",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "phy",
+        "key": "cal_version",
+        "encoding": "uint32_t",
+        "data": 1232,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "hw_id",
+        "encoding": "string",
+        "data": "guard-404cca68e124",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "boot_secret",
+        "encoding": "string",
+        "data": "d0adb1a19a90ddf0feff797807cbcffb",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.authmode",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.pmk",
+        "encoding": "blob_data",
+        "data": "//////////////////////////////////////////8=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "auto.conn",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.bssid",
+        "encoding": "blob_data",
+        "data": "////////",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.phym",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.phybw",
+        "encoding": "uint8_t",
+        "data": 2,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "phy",
+        "key": "cal_data",
+        "encoding": "blob_data",
+        "data": "0AQAAEBMymjhJAAAAAAAAAAAAAAAAAAAAAB/f39vX093V3NTNSMTEjAgEAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgABgAEAAMAAYAAAD5//D/4v/X/8v/wf+y/6n/nf+S/4T/bP9/b19PPy8fDwsHAwIBACAAHQAXABEACQAAAPL/2//R/8L/qv+h/5T/fP8pACkAKQBkAAAAAQEAAAAAAAUFAAAAAAACAAAAxP9LAMT/SwDu7u4VFRUAG10IpAoIXwp0BX8A8AI/qPMPQSauAQBAMBwAGwCJBKwKLQUAAAAAMAAAAAAAAAAAAAAAAP4AAFBQUExMSExISERKRkZCAAAA////////////AAAAAAAAAAAAAAAAAAAAAAAAIN7dAQEB+gD/AAABAAH7AAABAAH/APsAAAECAf0A/AAAAQEB/QD9AP8A/wA8AAAAfA88DwAAAAANDwUNDwULDQUAfQCA/ichIQsLFRApEA4QDw4QDzgVFxUVFxU4AAAA/QcBAQABAAH8AAEBAAH+APwAAQEAAfoA+QAAAAAAAQIDAwcLDw8fLz9f1eHt+e3s7/vv7O767+3w6vHx8fX18fXx8fHz8/P1gACAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH9/f39/f39/f29/b29fCwAAT08AgP4AAAAAAAAAANEMAAAAAAAAAAAAAAAAKQApACkAAAAAAAAA7gD9AO4A/ADuAPoA7gD9AO4A/ADuAPoA7gD9AO4A+wDuAPoA7gD9AO4A+wDuAPoA7gD9AO4A+wDuAPoA7gD9AO4A+wDuAPoA7QD9AO4A/ADuAPsA7QD9AO4A/ADuAPsA7QD9AO4A/ADtAP0A7QD9AO4A/ADtAP0A7gD9AO0A/ADvAPsA7gD9AO0A/ADvAPsA7gD9AO0A/ADuAPwA7gD9AO0A/ADuAPwA/QD/AP0A/wD8AP8A/AD/APwA/wD8AP8A/AD/APwA/wD8AP8A7wD/AO8A/wDtAP0A7QD9AO0A/QDtAP0A7gD9AO4A/ADuAPwA7AAAAeoA/QDyAP4A9gD/AABvgAAAAAABAQHCAAADBAUGDQ4PEBITFBUYGRobIiMkJScoKfQAAAA8MhYAAAAAAAAAAAAq7wH1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.ssid",
+        "encoding": "blob_data",
+        "data": "////////////////////////////////////////////////",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.passwd",
+        "encoding": "blob_data",
+        "data": "//////////////////////////////////////////////////////////////////////////////////////8=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.pmk",
+        "encoding": "blob_data",
+        "data": "//////////////////////////////////////////8=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.chan",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.authmode",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.hidden",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.max.conn",
+        "encoding": "uint8_t",
+        "data": 10,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "bcn.interval",
+        "encoding": "uint16_t",
+        "data": 100,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.phym",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.phybw",
+        "encoding": "uint8_t",
+        "data": 2,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.pmf_e",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.pmf_r",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.p_cipher",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "lorate",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "country",
+        "encoding": "blob_data",
+        "data": "////////////////",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.ftm_r",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.owe_data",
+        "encoding": "blob_data",
+        "data": "//////////////////////////////////////////////////////////8=",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_dcm",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_dcm_c_tx",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_dcm_c_rx",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_mcs9_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_su_b_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_su_b_f_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_mu_b_f_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.he_cqi_f_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.sae_h2e",
+        "encoding": "uint8_t",
+        "data": 2,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.pmk_info",
+        "encoding": "blob_data",
+        "data": "////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "nan.phym",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "band_mode",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.phym5g",
+        "encoding": "uint8_t",
+        "data": 7,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.phym5g",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.phybw5g",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.phybw5g",
+        "encoding": "uint8_t",
+        "data": 2,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.sndchan5g",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.chan5g",
+        "encoding": "uint8_t",
+        "data": 36,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.chanisset",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.chan5gisset",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.lowrate",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.lowrate",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.rssi_5g_adj",
+        "encoding": "uint8_t",
+        "data": 10,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.csa_count",
+        "encoding": "uint8_t",
+        "data": 3,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.dtim_period",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.trans_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.sae_ext",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.bssmaxidle",
+        "encoding": "uint16_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.pro_keep_a",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.gtk_rekey",
+        "encoding": "uint16_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.vht_su_b_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.vht_mu_b_d",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.vht_mcs8_e",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.ina_time",
+        "encoding": "uint16_t",
+        "data": 6,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.ina_time",
+        "encoding": "uint16_t",
+        "data": 300,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "ap.sndchan",
+        "encoding": "uint8_t",
+        "data": 1,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "phy",
+        "key": "cal_mac",
+        "encoding": "blob_data",
+        "data": "QEzKaOEk",
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "guarddev",
+        "key": "force_ble",
+        "encoding": "uint8_t",
+        "data": 0,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.chan",
+        "encoding": "uint8_t",
+        "data": 9,
+        "state": "Written",
+        "is_empty": false
+    },
+    {
+        "namespace": "nvs.net80211",
+        "key": "sta.apinfo",
+        "encoding": "blob_data",
+        "data": "CgAAAEFUVDVIbmszeU4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAOHY3PzRqMnA9bjhwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////60xOG3YRl6pIuW/PIn33UosynYIQfq6VGgZhboLc7Tgn//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w==",
+        "state": "Written",
+        "is_empty": false
+    }
+]
+

@@ -341,6 +341,37 @@
         opacity: .72;
     }
 
+    .argos-model-heading{
+        position: relative;
+        z-index: 2;
+        margin: 70px auto 0;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: .24em;
+        flex-wrap: wrap;
+        font-weight: 800;
+        font-size: clamp(2.35rem, 5vw, 4.3rem);
+        letter-spacing: -.05em;
+        line-height: 1.04;
+    }
+
+    .argos-model-heading-word{
+        display: inline-flex;
+        gap: .015em;
+    }
+
+    .argos-model-heading-letter{
+        display: inline-block;
+        color: #16201a;
+        text-shadow:
+            0 1px 0 rgba(255,255,255,.52),
+            0 12px 28px rgba(9,176,44,.14);
+        -webkit-text-fill-color: currentColor;
+        -webkit-text-stroke: .8px rgba(18, 31, 23, .16);
+    }
+
     .hero-grid{
         display: grid;
         grid-template-columns: 1.06fr .94fr;
@@ -3978,117 +4009,7 @@
         <img class="hero-rig-image" src="/renders/argos-front-chrome-transparent.png" alt="">
       </div>
     </section>
-    <section class="hero-overview-section">
-      <div class="wrap hero-grid hero-overview-grid">
-        <div class="hero-visual reveal">
-          <div class="glow"></div>
-
-
-          <div class="dashboard-card">
-            <div class="card-header">
-              <div>
-                <div class="card-title"><strong>Guardian glucose overview</strong></div>
-              </div>
-              <span class="pill">Updated now</span>
-            </div>
-
-            <div class="reading">
-              <div class="reading-main">
-                <div class="small-label">30 min prediction</div>
-                <div class="big-number">112</div>
-                <div class="trend">↗ Stable rise</div>
-              </div>
-              <div class="reading-side">
-                <div class="small-label">Confidence</div>
-                <div style="font-size:2rem;font-weight:900;letter-spacing:-.06em;">High</div>
-                <div style="color:var(--muted);line-height:1.6;">Recent movement suggests a smooth trend and a more confident estimate.</div>
-              </div>
-            </div>
-
-            <div class="chart">
-              <div>
-                <div class="small-label">24 hour trend</div>
-                <div style="font-size:1.4rem;font-weight:800;letter-spacing:-.05em;margin-top:6px;">Efficient Analysis for predictive insights</div>
-              </div>
-              <div class="chart-grid">
-                <svg class="chart-line" viewBox="0 0 700 220" preserveAspectRatio="none" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stop-color="#09B02C" stop-opacity=".28"></stop>
-                      <stop offset="100%" stop-color="#09B02C" stop-opacity="0"></stop>
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,170 C55,164 72,135 120,128 C168,121 198,145 236,138 C274,131 314,76 354,82 C394,88 430,150 466,144 C502,138 530,110 568,113 C606,116 648,87 700,96 L700,220 L0,220 Z" fill="url(#areaGradient)"></path>
-                  <path d="M0,170 C55,164 72,135 120,128 C168,121 198,145 236,138 C274,131 314,76 354,82 C394,88 430,150 466,144 C502,138 530,110 568,113 C606,116 648,87 700,96" fill="none" stroke="#09B02C" stroke-width="6" stroke-linecap="round"></path>
-                  <line 
-                    x1="500" 
-                    y1="0" 
-                    x2="500" 
-                    y2="220" 
-                    stroke="#09B02C" 
-                    stroke-width="2"
-                    stroke-dasharray="8,8"
-                    opacity="0.6"
-                  />
-                  <line 
-                    x1="500" 
-                    y1="133" 
-                    x2="700" 
-                    y2="100" 
-                    stroke="#09B02C" 
-                    stroke-width="2"
-                    stroke-dasharray="8,8"
-                    opacity="0.6"
-                  />
-                  <line 
-                    x1="500" 
-                    y1="133" 
-                    x2="700" 
-                    y2="30" 
-                    stroke="#09B02C" 
-                    stroke-width="2"
-                    stroke-dasharray="8,8"
-                    opacity="0.6"
-                  />
-                  <circle cx="500" cy="133" r="8" fill="#09B02C"></circle>
-                  <circle cx="700" cy="96" r="10" fill="#09B02C"></circle>
-                </svg>
-              </div>
-              <div class="chart-meta">
-                <span>6 AM</span>
-                <span>12 PM</span>
-                <span>6 PM</span>
-                <span>Now</span>
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div>
-                <div class="small-label">Guide suggestion</div>
-                <p>Current pattern looks controlled. Stay hydrated, keep monitoring, and avoid over-correcting just because one reading moved a little.</p>
-              </div>
-              <span class="pill">Low urgency</span>
-            </div>
-          </div>
-
-        </div>
-        </div>
-    </section>
-    <section class="argos-model-section" id="argos-model">
-                 <h1 style= "text-align:center;;font-weight:700;color:rgb(0, 0, 0);letter-spacing:-0.02em;line-height:1.1;">
-    The Hardware
-       </h1>
-      <div class="argos-model-sticky">
-        <div class="argos-model-stage" aria-hidden="true">
-          <div id="heroModelViewer"></div>
-          <div class="hero-model-annotations" id="heroModelAnnotations">
-            <svg id="heroModelAnnotationLines" aria-hidden="true"></svg>
-            <div id="heroModelAnnotationCards"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <section class="section" id="features">
+        <section class="section" id="features">
       <div class="wrap">
         <div class="section-head reveal">
           <div>
@@ -4109,12 +4030,41 @@
           </article>
           <article class="feature reveal">
             <div class="feature-icon">⚡</div>
-            <h3>One-file simplicity</h3>
-            <p>Everything lives in a single HTML file with embedded CSS and JavaScript, because fragmentation is annoying enough already.</p>
+            <h3>Quick information</h3>
+            <p>Data is collected just as fast as Dexcom gets it and analysis is instantaneous.</p>
           </article>
         </div>
       </div>
     </section>
+    <section class="argos-model-section" id="argos-model">
+      <h1 class="argos-model-heading" aria-label="The Hardware">
+        <span class="argos-model-heading-word" aria-hidden="true">
+          <span class="argos-model-heading-letter">T</span>
+          <span class="argos-model-heading-letter">h</span>
+          <span class="argos-model-heading-letter">e</span>
+        </span>
+        <span class="argos-model-heading-word" aria-hidden="true">
+          <span class="argos-model-heading-letter">H</span>
+          <span class="argos-model-heading-letter">a</span>
+          <span class="argos-model-heading-letter">r</span>
+          <span class="argos-model-heading-letter">d</span>
+          <span class="argos-model-heading-letter">w</span>
+          <span class="argos-model-heading-letter">a</span>
+          <span class="argos-model-heading-letter">r</span>
+          <span class="argos-model-heading-letter">e</span>
+        </span>
+      </h1>
+      <div class="argos-model-sticky">
+        <div class="argos-model-stage" aria-hidden="true">
+          <div id="heroModelViewer"></div>
+          <div class="hero-model-annotations" id="heroModelAnnotations">
+            <svg id="heroModelAnnotationLines" aria-hidden="true"></svg>
+            <div id="heroModelAnnotationCards"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
 
     <section class="section" id="guide">
       <div class="wrap guide-grid">
@@ -4128,29 +4078,29 @@
             <article class="step">
               <div class="step-num">1</div>
               <div>
-                <h3>Check the reading</h3>
-                <p>Start with the current glucose value, but do not stop there. One number without context is just a dramatic little liar.</p>
+                <h3>Login</h3>
+                <p>After pressing "Get Started," log in to your Dexcom account.</p>
               </div>
             </article>
             <article class="step">
               <div class="step-num">2</div>
               <div>
-                <h3>Review the trend</h3>
-                <p>Look at whether the line is rising, falling, or steady. The direction matters almost as much as the number itself.</p>
+                <h3>Turn on your Robot</h3>
+                <p>Press the power button on your device and wait for it to start.</p>
               </div>
             </article>
             <article class="step">
               <div class="step-num">3</div>
               <div>
-                <h3>Consider context</h3>
-                <p>Meals, insulin, exercise, stress, and time of day can all shift what the reading means and what the response should be.</p>
+                <h3>Set up your device</h3>
+                <p>Go to home and follow onscreen instructions, connect main wifi network and connect bluetooth.</p>
               </div>
             </article>
             <article class="step">
               <div class="step-num">4</div>
               <div>
-                <h3>Make a calm adjustment</h3>
-                <p>Use the guide to support the next move and avoid panic corrections. Fast reactions are fun in action movies, less so here.</p>
+                <h3>Adjust your settings</h3>
+                <p>Review and customize your device settings to suit your preferences and needs.</p>
               </div>
             </article>
           </div>
@@ -8853,19 +8803,22 @@ const HERO_MODEL_TRANSFORM = {
 // Overall material/look controls for the hero model.
 const HERO_MODEL_LOOK = {
   // Main surface color. Hex number.
-  color: 0xf7fff9,
+  color: 0x8f949b,
 
   // Glow color. Hex number.
-  emissive: 0x0aa43a,
+  emissive: 0x000000,
 
   // How strong the emissive/glow effect feels.
-  emissiveIntensity: .08,
+  emissiveIntensity: 0,
 
   // 0 = matte, 1 = very metallic.
-  metalness: 0.38,
+  metalness: 1,
 
   // 0 = glossy, 1 = rough.
-  roughness: 0.42,
+  roughness: 0.025,
+
+  // Stronger reflections when the material supports them.
+  envMapIntensity: 5.6,
 
   // 1 = fully visible, lower = more transparent.
   opacity: 1,
@@ -8877,7 +8830,7 @@ const HERO_MODEL_LOOK = {
   doubleSided: true,
 
   // Global renderer exposure. Higher = brighter overall render.
-  toneMappingExposure: 1.14
+  toneMappingExposure: 0.82
 };
 
 // Testing and playback controls.
@@ -9090,10 +9043,10 @@ const HERO_MODEL_LIGHTING = {
 
   // Hemisphere fill for a softer overall base.
   //fill: { skyColor: 0xffffff, groundColor: 0x06210f, intensity: 0.95 }
-  ambient: { color: 0xffffff, intensity: 0.82 },
-  key: { color: 0xffffff, intensity: 2.2, position: [5.5, 6.5, 6] },
-  rim: { color: 0x63ff93, intensity: 1.2, position: [-5.5, 2.5, -5] },
-  fill: { skyColor: 0xf8fff9, groundColor: 0x04170a, intensity: 0.58 }
+  ambient: { color: 0xffffff, intensity: 0.42 },
+  key: { color: 0xffffff, intensity: 1.46, position: [5.5, 6.5, 6] },
+  rim: { color: 0xf5f8fd, intensity: 1.72, position: [-5.5, 2.5, -5] },
+  fill: { skyColor: 0xc5ccd6, groundColor: 0x020304, intensity: 0.24 }
 };
 
 // Helpful while dialing in exact part IDs for per-part explosion control.
@@ -9447,6 +9400,7 @@ const heroModelAnnotationTempWorld = new THREE.Vector3();
 const heroModelAnnotationTempScreen = new THREE.Vector3();
 const heroModelRaycaster = new THREE.Raycaster();
 const heroModelPointer = new THREE.Vector2();
+let heroModelEnvironmentTexture = null;
 const HERO_EXPLODE_DEV_HIGHLIGHT_COLOR = 0xff1f1f;
 const HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE = 0xff0000;
 const HERO_EXPLODE_DEV_HIGHLIGHT_EMISSIVE_INTENSITY = 0.65;
@@ -9455,7 +9409,6 @@ const HERO_EXPLODE_DEV_PANEL_STORAGE_KEY = "guardian.hero.explode.panel.v1";
 const HERO_MOTION_DEV_VALUES_STORAGE_KEY = "guardian.hero.motion.values.v1";
 const HERO_MOTION_DEV_PANEL_STORAGE_KEY = "guardian.hero.motion.panel.v1";
 const HERO_EXPLODE_DEV_ENABLED =
-  /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) ||
   new URLSearchParams(window.location.search).get("explodeDev") === "1";
 let heroExplodeDevOverrides = loadHeroExplodeDevOverrides();
 let heroExplodeDevPanelBound = false;
@@ -10881,6 +10834,65 @@ function clearHeroModelStatus() {
   if (status) status.remove();
 }
 
+function createHeroModelEnvironment(renderer) {
+  if (!window.THREE || !renderer || !THREE.PMREMGenerator) return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, "#f8fafc");
+  bg.addColorStop(0.08, "#d9e0e7");
+  bg.addColorStop(0.2, "#8b929b");
+  bg.addColorStop(0.4, "#2f3439");
+  bg.addColorStop(0.62, "#090b0d");
+  bg.addColorStop(1, "#000000");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const drawStudioStrip = (x, y, w, h, color, blur = 60) => {
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = blur;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  };
+
+  const drawGlow = (x, y, r, inner, outer) => {
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, inner);
+    grad.addColorStop(1, outer);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  drawStudioStrip(canvas.width * 0.06, canvas.height * 0.04, canvas.width * 0.07, canvas.height * 0.82, "rgba(255,255,255,0.98)", 96);
+  drawStudioStrip(canvas.width * 0.18, canvas.height * 0.07, canvas.width * 0.14, canvas.height * 0.78, "rgba(4,5,6,0.72)", 82);
+  drawStudioStrip(canvas.width * 0.37, canvas.height * 0.07, canvas.width * 0.14, canvas.height * 0.22, "rgba(255,255,255,0.7)", 88);
+  drawStudioStrip(canvas.width * 0.55, canvas.height * 0.12, canvas.width * 0.14, canvas.height * 0.72, "rgba(0,0,0,0.6)", 80);
+  drawStudioStrip(canvas.width * 0.76, canvas.height * 0.09, canvas.width * 0.06, canvas.height * 0.76, "rgba(255,255,255,0.92)", 88);
+  drawGlow(canvas.width * 0.5, canvas.height * 0.4, canvas.width * 0.15, "rgba(255,255,255,0.22)", "rgba(255,255,255,0)");
+  drawGlow(canvas.width * 0.5, canvas.height * 0.87, canvas.width * 0.28, "rgba(88,94,100,0.22)", "rgba(88,94,100,0)");
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.encoding = THREE.sRGBEncoding;
+
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileEquirectangularShader();
+  const envTarget = pmremGenerator.fromEquirectangular(texture);
+  texture.dispose();
+  pmremGenerator.dispose();
+
+  return envTarget.texture;
+}
+
 function styleHeroModel(root) {
   // Applies the look controls above to every mesh in the loaded model.
   root.traverse((child) => {
@@ -10903,6 +10915,11 @@ function styleHeroModel(root) {
       if ("emissiveIntensity" in next && HERO_MODEL_LOOK.emissiveIntensity != null) next.emissiveIntensity = HERO_MODEL_LOOK.emissiveIntensity;
       if ("metalness" in next && HERO_MODEL_LOOK.metalness != null) next.metalness = HERO_MODEL_LOOK.metalness;
       if ("roughness" in next && HERO_MODEL_LOOK.roughness != null) next.roughness = HERO_MODEL_LOOK.roughness;
+      if ("envMapIntensity" in next && HERO_MODEL_LOOK.envMapIntensity != null) next.envMapIntensity = HERO_MODEL_LOOK.envMapIntensity;
+      if ("reflectivity" in next && HERO_MODEL_LOOK.envMapIntensity != null) next.reflectivity = Math.min(HERO_MODEL_LOOK.envMapIntensity, 1);
+      if ("envMap" in next && heroModelEnvironmentTexture) next.envMap = heroModelEnvironmentTexture;
+      if ("clearcoat" in next) next.clearcoat = 0.22;
+      if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.03;
         if ("transparent" in next) next.transparent = HERO_MODEL_LOOK.transparent || HERO_MODEL_LOOK.opacity < 1;
         if ("opacity" in next && HERO_MODEL_LOOK.opacity != null) next.opacity = HERO_MODEL_LOOK.opacity;
         if ("side" in next) next.side = HERO_MODEL_LOOK.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
@@ -11478,6 +11495,7 @@ function initHeroModelViewer() {
   heroModelRenderer.outputEncoding = THREE.sRGBEncoding;
   heroModelRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   heroModelRenderer.toneMappingExposure = HERO_MODEL_LOOK.toneMappingExposure;
+  heroModelRenderer.physicallyCorrectLights = true;
   heroModelRenderer.domElement.style.width = "100%";
   heroModelRenderer.domElement.style.height = "100%";
   heroModelRenderer.domElement.style.display = "block";
@@ -11485,6 +11503,11 @@ function initHeroModelViewer() {
   heroModelRenderer.domElement.style.touchAction = HERO_EXPLODE_DEV_ENABLED ? "pan-y" : "auto";
   heroModelRenderer.domElement.style.cursor = HERO_EXPLODE_DEV_ENABLED ? "crosshair" : "default";
   wrap.appendChild(heroModelRenderer.domElement);
+
+  heroModelEnvironmentTexture = createHeroModelEnvironment(heroModelRenderer);
+  if (heroModelEnvironmentTexture) {
+    heroModelScene.environment = heroModelEnvironmentTexture;
+  }
 
   if (HERO_EXPLODE_DEV_ENABLED) {
     heroModelRenderer.domElement.addEventListener("pointerdown", beginHeroModelPartPick);

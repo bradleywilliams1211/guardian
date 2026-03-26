@@ -4434,9 +4434,6 @@
                   <p id="Urgency" class="dashboard-feature-stat-value">Waiting for data…</p>
                 </div>
               </div>
-
-              <div id="analysis-debug" class="analysis-debug"></div>
-              <p class="dashboard-feature-footer">Demo only. Not medical advice.</p>
             </div>
 
           </div>
@@ -4471,9 +4468,7 @@
         <section class="page-intro-card">
           <span class="page-kicker">Device</span>
           <h1 class="page-title home-page-title">Home</h1>
-          <p class="page-subtitle">
-            Set up GUARD once, then let it reconnect quietly in the background while you keep an eye on the robot side here.
-          </p>
+
         </section>
 
         <div class="card home-card">
@@ -4483,9 +4478,7 @@
               <div class="setup-main-card">
                 <div class="setup-hero">
                   <h2>Set up your GUARD.</h2>
-                  <p>
-                    Enter the main Wi-Fi GUARD should use. Guardian handles the local setup in the background during first-time setup.
-                  </p>
+
                 </div>
 
                 <div class="setup-action-card">
@@ -4618,9 +4611,7 @@
         <section class="page-intro-card">
           <span class="page-kicker">Preferences</span>
           <h1 class="page-title">Settings</h1>
-          <p class="page-subtitle">
-            Choose the comfort range GUARD should watch, add extra networks for roaming, and keep reset tucked away for true start-over moments.
-          </p>
+
         </section>
         <div class="column">
           <div class="card settings-card settings-span-2">
@@ -4696,7 +4687,6 @@
             <div>
               <span class="settings-card-kicker">Session</span>
               <strong class="settings-card-title">Account</strong>
-              <p class="settings-account-copy">Sign out when you want to disconnect this browser from your Dexcom and GUARD session.</p>
             </div>
             <button class="smallbtn" onclick="openlogin(); logout();">Logout</button>
           </div>
@@ -12035,7 +12025,6 @@ function updateAnalysisUI(normalizedPts) {
 
   urgEl.textContent = u + " urgency";
 
-  dbg("Analysis OK. Points=" + normalizedPts.length + ". WindowUsed=" + r.minutesUsed.toFixed(1) + " min.");
 }
 /* ============================================================
    Low and High RANGE lines draw

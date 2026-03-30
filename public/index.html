@@ -1739,10 +1739,88 @@
         position: relative;
         z-index: 1;
         display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
+        align-items: center;
+        justify-content: flex-start;
         gap: 16px;
-        margin-top: 18px;
+        margin-top: 22px;
+    }
+
+    .dashboard-glucose-ring{
+        --glucose-age-progress: 0deg;
+        position: relative;
+        width: clamp(184px, 24vw, 230px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background:
+          conic-gradient(
+            from -90deg,
+            rgba(9,176,44,.98) 0deg,
+            rgba(9,176,44,.98) var(--glucose-age-progress),
+            rgba(210,227,213,.9) var(--glucose-age-progress),
+            rgba(210,227,213,.9) 360deg
+          );
+        box-shadow: 0 18px 34px rgba(16,25,21,.08);
+        transition: background .45s ease, transform .25s ease;
+    }
+
+    .dashboard-glucose-ring::before{
+        content: "";
+        position: absolute;
+        inset: 16px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 18% 16%, rgba(255,255,255,.94), rgba(255,255,255,.7) 26%, rgba(255,255,255,.96) 72%),
+          linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,250,246,.94));
+        box-shadow:
+          inset 0 0 0 1px rgba(16,25,21,.06),
+          inset 0 18px 30px rgba(255,255,255,.42);
+    }
+
+    .dashboard-glucose-ring.is-stale{
+        background:
+          conic-gradient(
+            from -90deg,
+            rgba(227,164,34,.98) 0deg,
+            rgba(227,164,34,.98) var(--glucose-age-progress),
+            rgba(223,229,217,.86) var(--glucose-age-progress),
+            rgba(223,229,217,.86) 360deg
+          );
+    }
+
+    .dashboard-glucose-ring.is-empty{
+        background:
+          conic-gradient(
+            from -90deg,
+            rgba(215,223,216,.9) 0deg,
+            rgba(215,223,216,.9) 360deg
+          );
+    }
+
+    .dashboard-glucose-ring-inner{
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+        text-align: center;
+        padding: 0 16px;
+    }
+
+    .dashboard-glucose-ring .dashboard-stat-value{
+        justify-content: center;
+        align-items: flex-end;
+        font-size: clamp(2.55rem, 5vw, 4.3rem);
+    }
+
+    .dashboard-glucose-cycle{
+        margin: 0;
+        font-size: .76rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: rgba(16,25,21,.48);
     }
 
     .dashboard-stat-label{
@@ -4021,7 +4099,7 @@
           <article class="feature reveal">
             <div class="feature-icon">↗</div>
             <h3>Trend-first visuals</h3>
-            <p>Readings are paired with direction and context so the screen tells a story instead of dumping numbers at your face.</p>
+            <p>Readings are paired with direction and context so the numbers tell a story on he screen.</p>
           </article>
           <article class="feature reveal">
             <div class="feature-icon">◎</div>
@@ -4263,13 +4341,12 @@
       <div class="wrap">
         <div class="section-head reveal">
           <div><h2>FAQ</h2></div>
-          <p>Useful because every nice-looking landing page eventually needs a section where it acts organized.</p>
         </div>
           
         <div class="faq">
           <details class="reveal" open>
             <summary>Is my Dexcom Data safe?</summary>
-            <p>Yes, the data is from the Dexcom API and your information is not hard coded so no data leaks.</p>
+            <p>Yes, the data is from the Dexcom API and your information is not hard coded and only runs locally so no data leaks.</p>
           </details>
           <details class="reveal">
             <summary>How accurate is the forecast?</summary>
@@ -4398,7 +4475,12 @@
                   <span class="dashboard-glucose-badge">Live</span>
                 </div>
                 <div class="dashboard-glucose-reading">
-                  <p class="dashboard-stat-value"><span id="glucose-value">—</span><small>mg/dL</small></p>
+                  <div class="dashboard-glucose-ring is-empty" id="glucose-age-ring">
+                    <div class="dashboard-glucose-ring-inner">
+                      <p class="dashboard-stat-value"><span id="glucose-value">—</span><small>mg/dL</small></p>
+                      <p class="dashboard-glucose-cycle" id="glucose-cycle">Waiting for data</p>
+                    </div>
+                  </div>
                 </div>
                 <div class="dashboard-stat-meta">
                   <p id="glucose-trend">Trend: —</p>
@@ -5020,7 +5102,14 @@ be announced in the future.
   <section id="changelog-page" class="footer-page">
     <h1>ChangeLog</h1>
     <div class="footercentertext">
-            <h3>v0.4.0 — March 9 2026</h3>
+
+          <h3>v1.0.0 — March 30 2026</h3>
+        <ul>
+          <li>First full release</li>
+          <li>Hero completion</li>
+          <li>Base Website and robot completed</li>
+        </ul>
+            <h3>v0.4.0 — March 30 2026</h3>
         <ul>
           <li>Added developer mode login</li>
           <li>Improved glucose forecasting</li>
@@ -12565,28 +12654,78 @@ async function loadDexcomRecent() {
 /* ============================================================
    Right now glucose information
    ============================================================ */
+const GLUCOSE_RING_MAX_AGE_MS = 5 * 60 * 1000;
+let latestGlucoseTimestampSec = null;
+
+function setLatestGlucoseRingState({ ageMs = null, hasData = false } = {}) {
+  const ringEl = document.getElementById("glucose-age-ring");
+  const cycleEl = document.getElementById("glucose-cycle");
+  const ageEl = document.getElementById("glucose-age");
+
+  if (!ringEl) return;
+
+  ringEl.classList.remove("is-empty", "is-stale");
+
+  if (!hasData || !Number.isFinite(ageMs)) {
+    ringEl.classList.add("is-empty");
+    ringEl.style.setProperty("--glucose-age-progress", "0deg");
+    if (cycleEl) cycleEl.textContent = "Waiting for data";
+    if (ageEl) ageEl.textContent = "—";
+    return;
+  }
+
+  const safeAgeMs = Math.max(0, ageMs);
+  const clampedAgeMs = Math.min(GLUCOSE_RING_MAX_AGE_MS, safeAgeMs);
+  const progressDeg = (clampedAgeMs / GLUCOSE_RING_MAX_AGE_MS) * 360;
+  const ageMin = safeAgeMs < 60000 ? "<1" : String(Math.floor(safeAgeMs / 60000));
+
+  ringEl.style.setProperty("--glucose-age-progress", `${progressDeg}deg`);
+  ringEl.classList.toggle("is-stale", safeAgeMs >= GLUCOSE_RING_MAX_AGE_MS);
+
+  if (cycleEl) {
+    const remainingMs = Math.max(0, GLUCOSE_RING_MAX_AGE_MS - safeAgeMs);
+    const remainingMin = Math.floor(remainingMs / 60000);
+    const remainingSec = Math.floor((remainingMs % 60000) / 1000);
+    cycleEl.textContent = safeAgeMs >= GLUCOSE_RING_MAX_AGE_MS
+      ? "Awaiting next reading"
+      : `Next expected in ${remainingMin}:${String(remainingSec).padStart(2, "0")}`;
+  }
+
+  if (ageEl) {
+    ageEl.textContent = `Age: ${ageMin} min`;
+  }
+}
+
+function refreshLatestGlucoseAgeTicker() {
+  if (!Number.isFinite(latestGlucoseTimestampSec)) {
+    setLatestGlucoseRingState({ hasData: false });
+    return;
+  }
+
+  setLatestGlucoseRingState({
+    hasData: true,
+    ageMs: Date.now() - (latestGlucoseTimestampSec * 1000),
+  });
+}
+
 async function refreshLatestCardFromRecent(recent) {
   if (!recent?.latest) {
+    latestGlucoseTimestampSec = null;
     document.getElementById("glucose-value").textContent = "—";
     document.getElementById("glucose-trend").textContent = "Trend: —";
     document.getElementById("glucose-time").textContent =
       recent?.status === "no_recent_data" ? "No recent Dexcom data" : "No active Dexcom sensor";
-    document.getElementById("glucose-age").textContent = "—";
+    setLatestGlucoseRingState({ hasData: false });
     return;
   }
   const l = recent.latest;
+  latestGlucoseTimestampSec = Number.isFinite(l.ts) ? l.ts : null;
 
   document.getElementById("glucose-value").textContent = l.glucose ?? "—";
   document.getElementById("glucose-trend").textContent = "Trend: " + (l.trend ?? "—");
   document.getElementById("glucose-time").textContent =
     "Dexcom time: " + new Date(l.ts * 1000).toLocaleString();
-
-  const ageEl = document.getElementById("glucose-age");
-  if (ageEl && Number.isFinite(l.ts)) {
-    const ageMs = Date.now() - (l.ts * 1000);
-    const ageMin = Math.max(0, Math.round(ageMs / 60000));
-    ageEl.textContent = "Age: " + ageMin + " min";
-  }
+  refreshLatestGlucoseAgeTicker();
 }
 
 /* ============================================================
@@ -13040,17 +13179,19 @@ async function logout() {
    ============================================================ */
 function showNoActiveSensorUI() {
   renderLastHour([]);
+  latestGlucoseTimestampSec = null;
   document.getElementById("glucose-value").textContent = "—";
   document.getElementById("glucose-trend").textContent = "Trend: —";
   document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
-  document.getElementById("glucose-age").textContent = "—";
+  setLatestGlucoseRingState({ hasData: false });
 }
 function showNoRecentDataUI() {
   renderLastHour([]);
+  latestGlucoseTimestampSec = null;
   document.getElementById("glucose-value").textContent = "—";
   document.getElementById("glucose-trend").textContent = "Trend: —";
   document.getElementById("glucose-time").textContent = "No recent Dexcom data";
-  document.getElementById("glucose-age").textContent = "—";
+  setLatestGlucoseRingState({ hasData: false });
 }
 async function enterDashboard(){
   if (!getSessionToken()) {
@@ -13116,6 +13257,7 @@ async function enterDashboard(){
     await refreshLatestCardFromRecent(r);
   }, 60000);
 
+    setInterval(refreshLatestGlucoseAgeTicker, 1000);
     setInterval(updateStatus, 5000);
   }
 }
@@ -13166,11 +13308,7 @@ async function pollDexcomNow() {
   }
 
   if (r.status === "no_active_sensor") {
-    renderLastHour([]);
-    document.getElementById("glucose-value").textContent = "—";
-    document.getElementById("glucose-trend").textContent = "Trend: —";
-    document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
-    document.getElementById("glucose-age").textContent = "—";
+    showNoActiveSensorUI();
     if (el) el.textContent = "No active sensor";
     return;
   }

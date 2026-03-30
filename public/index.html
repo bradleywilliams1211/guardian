@@ -1755,7 +1755,7 @@
         place-items: center;
         background:
           conic-gradient(
-            from -90deg,
+            from 0deg,
             rgba(9,176,44,.98) 0deg,
             rgba(9,176,44,.98) var(--glucose-age-progress),
             rgba(210,227,213,.9) var(--glucose-age-progress),
@@ -1781,7 +1781,7 @@
     .dashboard-glucose-ring.is-stale{
         background:
           conic-gradient(
-            from -90deg,
+            from 0deg,
             rgba(227,164,34,.98) 0deg,
             rgba(227,164,34,.98) var(--glucose-age-progress),
             rgba(223,229,217,.86) var(--glucose-age-progress),
@@ -1792,7 +1792,7 @@
     .dashboard-glucose-ring.is-empty{
         background:
           conic-gradient(
-            from -90deg,
+            from 0deg,
             rgba(215,223,216,.9) 0deg,
             rgba(215,223,216,.9) 360deg
           );
@@ -12656,6 +12656,14 @@ async function loadDexcomRecent() {
    ============================================================ */
 const GLUCOSE_RING_MAX_AGE_MS = 5 * 60 * 1000;
 let latestGlucoseTimestampSec = null;
+let latestGlucoseCadenceMs = GLUCOSE_RING_MAX_AGE_MS;
+
+function formatGlucoseAgeClock(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
 
 function setLatestGlucoseRingState({ ageMs = null, hasData = false } = {}) {
   const ringEl = document.getElementById("glucose-age-ring");
@@ -12674,25 +12682,29 @@ function setLatestGlucoseRingState({ ageMs = null, hasData = false } = {}) {
     return;
   }
 
+  const cycleMs = Math.max(
+    1000,
+    Math.min(
+      GLUCOSE_RING_MAX_AGE_MS,
+      Number.isFinite(latestGlucoseCadenceMs) ? latestGlucoseCadenceMs : GLUCOSE_RING_MAX_AGE_MS
+    )
+  );
   const safeAgeMs = Math.max(0, ageMs);
-  const clampedAgeMs = Math.min(GLUCOSE_RING_MAX_AGE_MS, safeAgeMs);
-  const progressDeg = (clampedAgeMs / GLUCOSE_RING_MAX_AGE_MS) * 360;
-  const ageMin = safeAgeMs < 60000 ? "<1" : String(Math.floor(safeAgeMs / 60000));
+  const clampedAgeMs = Math.min(cycleMs, safeAgeMs);
+  const progressDeg = (clampedAgeMs / cycleMs) * 360;
 
   ringEl.style.setProperty("--glucose-age-progress", `${progressDeg}deg`);
-  ringEl.classList.toggle("is-stale", safeAgeMs >= GLUCOSE_RING_MAX_AGE_MS);
+  ringEl.classList.toggle("is-stale", safeAgeMs >= cycleMs);
 
   if (cycleEl) {
-    const remainingMs = Math.max(0, GLUCOSE_RING_MAX_AGE_MS - safeAgeMs);
-    const remainingMin = Math.floor(remainingMs / 60000);
-    const remainingSec = Math.floor((remainingMs % 60000) / 1000);
-    cycleEl.textContent = safeAgeMs >= GLUCOSE_RING_MAX_AGE_MS
+    const remainingMs = Math.max(0, cycleMs - safeAgeMs);
+    cycleEl.textContent = safeAgeMs >= cycleMs
       ? "Awaiting next reading"
-      : `Next expected in ${remainingMin}:${String(remainingSec).padStart(2, "0")}`;
+      : `Next expected in ${formatGlucoseAgeClock(remainingMs)}`;
   }
 
   if (ageEl) {
-    ageEl.textContent = `Age: ${ageMin} min`;
+    ageEl.textContent = `Age: ${formatGlucoseAgeClock(safeAgeMs)}`;
   }
 }
 
@@ -12711,6 +12723,7 @@ function refreshLatestGlucoseAgeTicker() {
 async function refreshLatestCardFromRecent(recent) {
   if (!recent?.latest) {
     latestGlucoseTimestampSec = null;
+    latestGlucoseCadenceMs = GLUCOSE_RING_MAX_AGE_MS;
     document.getElementById("glucose-value").textContent = "—";
     document.getElementById("glucose-trend").textContent = "Trend: —";
     document.getElementById("glucose-time").textContent =
@@ -12720,6 +12733,16 @@ async function refreshLatestCardFromRecent(recent) {
   }
   const l = recent.latest;
   latestGlucoseTimestampSec = Number.isFinite(l.ts) ? l.ts : null;
+  latestGlucoseCadenceMs = GLUCOSE_RING_MAX_AGE_MS;
+
+  if (Array.isArray(recent?.points) && recent.points.length >= 2) {
+    const latestPointTs = Number(recent.points[recent.points.length - 1]?.ts);
+    const previousPointTs = Number(recent.points[recent.points.length - 2]?.ts);
+    const observedCadenceMs = (latestPointTs - previousPointTs) * 1000;
+    if (Number.isFinite(observedCadenceMs) && observedCadenceMs > 0) {
+      latestGlucoseCadenceMs = Math.min(GLUCOSE_RING_MAX_AGE_MS, observedCadenceMs);
+    }
+  }
 
   document.getElementById("glucose-value").textContent = l.glucose ?? "—";
   document.getElementById("glucose-trend").textContent = "Trend: " + (l.trend ?? "—");
@@ -13180,6 +13203,7 @@ async function logout() {
 function showNoActiveSensorUI() {
   renderLastHour([]);
   latestGlucoseTimestampSec = null;
+  latestGlucoseCadenceMs = GLUCOSE_RING_MAX_AGE_MS;
   document.getElementById("glucose-value").textContent = "—";
   document.getElementById("glucose-trend").textContent = "Trend: —";
   document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
@@ -13188,6 +13212,7 @@ function showNoActiveSensorUI() {
 function showNoRecentDataUI() {
   renderLastHour([]);
   latestGlucoseTimestampSec = null;
+  latestGlucoseCadenceMs = GLUCOSE_RING_MAX_AGE_MS;
   document.getElementById("glucose-value").textContent = "—";
   document.getElementById("glucose-trend").textContent = "Trend: —";
   document.getElementById("glucose-time").textContent = "No recent Dexcom data";

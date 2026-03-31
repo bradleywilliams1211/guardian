@@ -1742,14 +1742,14 @@
         align-items: center;
         justify-content: flex-start;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
         margin-top: 22px;
     }
 
     .dashboard-glucose-ring{
         --glucose-age-progress: 0deg;
         position: relative;
-        width: clamp(184px, 24vw, 230px);
+        width: clamp(144px, 18vw, 186px);
         aspect-ratio: 1;
         border-radius: 50%;
         display: grid;
@@ -1781,7 +1781,7 @@
     .dashboard-glucose-ring::before{
         content: "";
         position: absolute;
-        inset: 16px;
+        inset: 13px;
         border-radius: 50%;
         background:
           radial-gradient(circle at 18% 16%, rgba(255,255,255,.94), rgba(255,255,255,.7) 26%, rgba(255,255,255,.96) 72%),
@@ -1827,16 +1827,16 @@
         position: relative;
         z-index: 1;
         display: grid;
-        gap: 8px;
+        gap: 6px;
         justify-items: center;
         text-align: center;
-        padding: 0 16px;
+        padding: 0 12px;
     }
 
     .dashboard-glucose-kicker{
         display: block;
         margin: 0;
-        font-size: .74rem;
+        font-size: .66rem;
         font-weight: 900;
         letter-spacing: .12em;
         text-transform: uppercase;
@@ -1846,12 +1846,13 @@
     .dashboard-glucose-ring .dashboard-stat-value{
         justify-content: center;
         align-items: flex-end;
-        font-size: clamp(2.55rem, 5vw, 4.3rem);
+        font-size: clamp(2rem, 4vw, 3.35rem);
+        gap: 7px;
     }
 
     .dashboard-glucose-cycle{
         margin: 0;
-        font-size: .76rem;
+        font-size: .66rem;
         font-weight: 900;
         letter-spacing: .08em;
         text-transform: uppercase;
@@ -3682,10 +3683,13 @@
         grid-template-columns: 1fr;
         }
 
-        .dashboard-glucose-head,
-        .dashboard-glucose-reading{
+        .dashboard-glucose-head{
         flex-direction: column;
         align-items: flex-start;
+        }
+
+        .dashboard-glucose-reading{
+        justify-content: center;
         }
 
         .dashboard-stat-value{

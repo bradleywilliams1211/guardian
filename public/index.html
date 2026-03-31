@@ -1741,6 +1741,7 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
+        flex-wrap: wrap;
         gap: 16px;
         margin-top: 22px;
     }
@@ -1763,6 +1764,18 @@
           );
         box-shadow: 0 18px 34px rgba(16,25,21,.08);
         transition: background .45s ease, transform .25s ease;
+    }
+
+    .dashboard-glucose-prediction-ring{
+        background:
+          conic-gradient(
+            from 0deg,
+            rgba(9,176,44,.94) 0deg,
+            rgba(9,176,44,.94) 360deg
+          );
+        box-shadow:
+          0 18px 34px rgba(16,25,21,.08),
+          0 0 0 10px rgba(9,176,44,.08);
     }
 
     .dashboard-glucose-ring::before{
@@ -1798,6 +1811,18 @@
           );
     }
 
+    .dashboard-glucose-prediction-ring.is-alert{
+        background:
+          conic-gradient(
+            from 0deg,
+            rgba(215,55,55,.98) 0deg,
+            rgba(215,55,55,.98) 360deg
+          );
+        box-shadow:
+          0 18px 36px rgba(117,20,20,.18),
+          0 0 0 10px rgba(215,55,55,.12);
+    }
+
     .dashboard-glucose-ring-inner{
         position: relative;
         z-index: 1;
@@ -1806,6 +1831,16 @@
         justify-items: center;
         text-align: center;
         padding: 0 16px;
+    }
+
+    .dashboard-glucose-kicker{
+        display: block;
+        margin: 0;
+        font-size: .74rem;
+        font-weight: 900;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: rgba(16,25,21,.52);
     }
 
     .dashboard-glucose-ring .dashboard-stat-value{
@@ -4470,7 +4505,6 @@
                 <div class="dashboard-glucose-head">
                   <div>
                     <span class="dashboard-stat-label">Latest Glucose</span>
-                    <p class="dashboard-glucose-copy">Your most recent reading, refreshed automatically as Guardian checks in.</p>
                   </div>
                   <span class="dashboard-glucose-badge">Live</span>
                 </div>
@@ -4479,6 +4513,13 @@
                     <div class="dashboard-glucose-ring-inner">
                       <p class="dashboard-stat-value"><span id="glucose-value">—</span><small>mg/dL</small></p>
                       <p class="dashboard-glucose-cycle" id="glucose-cycle">Waiting for data</p>
+                    </div>
+                  </div>
+                  <div class="dashboard-glucose-ring dashboard-glucose-prediction-ring is-empty" id="glucose-prediction-ring">
+                    <div class="dashboard-glucose-ring-inner">
+                      <p class="dashboard-glucose-kicker">Predicted in 30 min</p>
+                      <p class="dashboard-stat-value"><span id="glucose-prediction-value">—</span><small>mg/dL</small></p>
+                      <p class="dashboard-glucose-cycle" id="glucose-prediction-note">Waiting for forecast</p>
                     </div>
                   </div>
                 </div>
@@ -4499,9 +4540,7 @@
                 <div>
                   <span class="dashboard-feature-kicker">Live Pattern Read</span>
                   <h2 class="dashboard-feature-title">Analysis</h2>
-                  <p class="dashboard-feature-copy">
-                    A softer read on how the last hour is moving, so trend changes feel obvious at a glance.
-                  </p>
+
                 </div>
                 <span class="pill">Auto</span>
               </div>
@@ -12665,6 +12704,44 @@ function formatGlucoseAgeClock(ms) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+function getPredictedGlucose30Min(rawPoints) {
+  const forecast = buildCgmForecastWithBands(rawPoints);
+  const predictedPoint = Array.isArray(forecast?.mean) ? forecast.mean[forecast.mean.length - 1] : null;
+  return Number.isFinite(predictedPoint?.y) ? predictedPoint.y : null;
+}
+
+function setPredictedGlucoseRingState({ predictedValue = null } = {}) {
+  const ringEl = document.getElementById("glucose-prediction-ring");
+  const valueEl = document.getElementById("glucose-prediction-value");
+  const noteEl = document.getElementById("glucose-prediction-note");
+
+  if (!ringEl || !valueEl || !noteEl) return;
+
+  ringEl.classList.remove("is-empty", "is-alert");
+
+  if (!Number.isFinite(predictedValue)) {
+    ringEl.classList.add("is-empty");
+    valueEl.textContent = "—";
+    noteEl.textContent = "Waiting for forecast";
+    return;
+  }
+
+  const roundedPrediction = Math.round(predictedValue);
+  const isBelowLow = roundedPrediction < RANGE_LOW;
+  const isAboveHigh = roundedPrediction > RANGE_HIGH;
+
+  valueEl.textContent = roundedPrediction;
+  ringEl.classList.toggle("is-alert", isBelowLow || isAboveHigh);
+
+  if (isBelowLow) {
+    noteEl.textContent = `Below low (${RANGE_LOW})`;
+  } else if (isAboveHigh) {
+    noteEl.textContent = `Above high (${RANGE_HIGH})`;
+  } else {
+    noteEl.textContent = "Within range";
+  }
+}
+
 function setLatestGlucoseRingState({ ageMs = null, hasData = false } = {}) {
   const ringEl = document.getElementById("glucose-age-ring");
   const cycleEl = document.getElementById("glucose-cycle");
@@ -12729,6 +12806,7 @@ async function refreshLatestCardFromRecent(recent) {
     document.getElementById("glucose-time").textContent =
       recent?.status === "no_recent_data" ? "No recent Dexcom data" : "No active Dexcom sensor";
     setLatestGlucoseRingState({ hasData: false });
+    setPredictedGlucoseRingState({ predictedValue: null });
     return;
   }
   const l = recent.latest;
@@ -12748,6 +12826,7 @@ async function refreshLatestCardFromRecent(recent) {
   document.getElementById("glucose-trend").textContent = "Trend: " + (l.trend ?? "—");
   document.getElementById("glucose-time").textContent =
     "Dexcom time: " + new Date(l.ts * 1000).toLocaleString();
+  setPredictedGlucoseRingState({ predictedValue: getPredictedGlucose30Min(recent?.points) });
   refreshLatestGlucoseAgeTicker();
 }
 
@@ -13208,6 +13287,7 @@ function showNoActiveSensorUI() {
   document.getElementById("glucose-trend").textContent = "Trend: —";
   document.getElementById("glucose-time").textContent = "No active Dexcom sensor";
   setLatestGlucoseRingState({ hasData: false });
+  setPredictedGlucoseRingState({ predictedValue: null });
 }
 function showNoRecentDataUI() {
   renderLastHour([]);
@@ -13217,6 +13297,7 @@ function showNoRecentDataUI() {
   document.getElementById("glucose-trend").textContent = "Trend: —";
   document.getElementById("glucose-time").textContent = "No recent Dexcom data";
   setLatestGlucoseRingState({ hasData: false });
+  setPredictedGlucoseRingState({ predictedValue: null });
 }
 async function enterDashboard(){
   if (!getSessionToken()) {

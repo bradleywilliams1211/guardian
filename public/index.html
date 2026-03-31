@@ -12267,27 +12267,40 @@ function weightedSlope(points, lookbackMin = 25, tauMin = 8) {
 /* ============================================================
    estimates acceleration of last 4 points for more recency bias
    ============================================================ */
-function estimateAccel(points) {
+function estimateAccel(points, sampleCount = 6) {
   if (!points || points.length < 4) return 0;
 
-  const p3 = points[points.length - 4];
-  const p2 = points[points.length - 3];
-  const p1 = points[points.length - 2];
-  const p0 = points[points.length - 1];
+  const windowed = points.slice(-Math.max(4, sampleCount));
+  if (windowed.length < 4) return 0;
 
-  const dt1 = (p0.x - p1.x) / 60000;
-  const dt2 = (p1.x - p2.x) / 60000;
-  const dt3 = (p2.x - p3.x) / 60000;
-  if (!(dt1>0 && dt2>0 && dt3>0)) return 0;
+  const slopes = [];
+  for (let i = 1; i < windowed.length; i++) {
+    const dt = (windowed[i].x - windowed[i - 1].x) / 60000;
+    if (!(dt > 0)) return 0;
+    slopes.push({
+      slope: (windowed[i].y - windowed[i - 1].y) / dt,
+      dt
+    });
+  }
 
-  const s1 = (p0.y - p1.y) / dt1;
-  const s2 = (p1.y - p2.y) / dt2;
-  const s3 = (p2.y - p3.y) / dt3;
+  if (slopes.length < 3) return 0;
 
-  const a1 = (s1 - s2) / Math.max(1e-6, (dt1+dt2)/2);
-  const a2 = (s2 - s3) / Math.max(1e-6, (dt2+dt3)/2);
+  const accelSteps = [];
+  for (let i = 1; i < slopes.length; i++) {
+    const avgDt = Math.max(1e-6, (slopes[i].dt + slopes[i - 1].dt) / 2);
+    accelSteps.push((slopes[i].slope - slopes[i - 1].slope) / avgDt);
+  }
 
-  return clamp(0.65*a1 + 0.35*a2, -6, 6);
+  let weightedSum = 0;
+  let totalWeight = 0;
+  for (let i = 0; i < accelSteps.length; i++) {
+    const weight = i + 1;
+    weightedSum += accelSteps[i] * weight;
+    totalWeight += weight;
+  }
+
+  if (!Number.isFinite(totalWeight) || totalWeight <= 0) return 0;
+  return clamp((weightedSum / totalWeight) * 0.6, -4, 4);
 }
 
 /* ============================================================
@@ -12337,9 +12350,11 @@ function buildCgmForecastWithBands(rawPoints, {
   const lastX = last.x;
   const lastY = last.y;
 
-  let slope = clamp(weightedSlope(pts, 25, 8), -8, 8);
-  let accel = estimateAccel(pts);
-  const sigma0 = estimateResidualSigma(pts, 30, 10);
+  // Use a longer weighted memory so the 30-minute forecast does not overreact
+  // to the newest one or two Dexcom points.
+  let slope = clamp(weightedSlope(pts, 45, 18), -8, 8);
+  let accel = estimateAccel(pts, 6);
+  const sigma0 = estimateResidualSigma(pts, 45, 16);
 
   const mean = [{ x: lastX, y: lastY }];
   const lo90 = [{ x: lastX, y: lastY }];
